@@ -1,0 +1,68 @@
+@startuml
+class Colectivo {
+nombre : String
+descripcion : String
+ubicacion : String
+tipo: TipoColectivo
+proyectos : List<Proyecto>
+}
+
+class Proyecto {
+titulo : String
+descripcion : String
+habilidades : List<Habilidad>
+tipoCompromiso : TipoCompromiso
+modalidadColaboracion : ModalidadColaboracion
+}
+
+class TipoCompromiso {
+cantHoras : Int
+periodo : Periodo
+}
+
+class Habilidad {
+titulo : String
+id : String
+descripcion : String
+}
+
+class Colaborador{
+nombre : String
+apellido : String
+nombreFantasia : String
+cuentaGit : String
+habilidades : List<Habilidad>
+pronombres : List<String>
+presentacion : String
+}
+
+class Colaboracion {
+proyecto : Proyecto
+colaborador : Colaborador
+}
+
+class ModalidadColaboracion {
+incentivoEconomico : Float
+posibleContratacion : boolean
+}
+
+enum TipoColectivo {
+FUNDACION, ASOCIACION_BARRIAL, ONG, ASAMBLEA
+}
+
+enum Periodo {
+MENSUAL, SEMANAL, TOTAL
+}
+
+Colectivo ->"" Proyecto
+Colectivo -> TipoColectivo
+
+Proyecto ->"" Habilidad
+Proyecto -> TipoCompromiso
+Proyecto -> ModalidadColaboracion
+
+Colaboracion -> Proyecto
+Colaborador <- Colaboracion
+
+TipoCompromiso -> Periodo
+@enduml
