@@ -8,6 +8,7 @@ proyectos : List<Proyecto>
 }
 
 class Proyecto {
+id : Int 
 titulo : String
 descripcion : String
 habilidades : List<Habilidad>
