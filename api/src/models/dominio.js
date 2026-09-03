@@ -1,5 +1,6 @@
 class Colectivo {
-    constructor(nombre, descripcion, ubicacion, tipo, proyectos) {
+    constructor(id, nombre, descripcion, ubicacion, tipo, proyectos) {
+        this.id = id
         this.nombre = nombre
         this.descripcion = descripcion
         this.ubicacion = ubicacion
