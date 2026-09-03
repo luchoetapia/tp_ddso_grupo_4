@@ -1,5 +1,6 @@
 @startuml
 class Colectivo {
+id : int
 nombre : String
 descripcion : String
 ubicacion : String
