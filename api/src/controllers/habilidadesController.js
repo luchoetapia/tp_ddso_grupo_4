@@ -1,12 +1,11 @@
-import { Habilidad } from "../models/dominio";
-
+const Habilidad = require('../models/dominio').Habilidad;
 const habilidades = []
 
-export const obtenerHabilidades = (req, res) => {
+const obtenerHabilidades = (req, res) => {
     res.status(200).json(habilidades)
 }
 
-export const crearHabilidad = (req, res) => {
+const crearHabilidad = (req, res) => {
     const { titulo, descripcion } = req.body
     const id = habilidades.length + 1
 
@@ -16,7 +15,7 @@ export const crearHabilidad = (req, res) => {
     res.status(200).json({ message: 'Habilidad creada exitosamente' })
 }
 
-export const obtenerHabilidadPorId = (req, res) => {
+const obtenerHabilidadPorId = (req, res) => {
     const { id } = req.params
     const habilidad = habilidades.find(c => c.id === parseInt(id))
 
@@ -25,3 +24,5 @@ export const obtenerHabilidadPorId = (req, res) => {
     }
     res.status(200).json(habilidad)
 }
+
+module.exports = { obtenerHabilidades, crearHabilidad, obtenerHabilidadPorId };

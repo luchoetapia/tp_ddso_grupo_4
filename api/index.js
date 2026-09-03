@@ -2,10 +2,10 @@ const express = require('express');
 const app = express();
 const PORT = 3000;
 
-const proyectosRouter = require('./routers/proyectosRouter.js');
-const colectivosRouter = require('./routers/colectivosRouter.js');
-const habilidadesRouter = require('./routers/habilidadesRouter.js');
-const colaboradoresRouter = require('./routers/colaboradoresRouter.js');
+const proyectosRouter = require('./src/routers/proyectosRouter.js');
+const colectivosRouter = require('./src/routers/colectivosRouter.js');
+const habilidadesRouter = require('./src/routers/habilidadesRouter.js');
+const colaboradoresRouter = require('./src/routers/colaboradoresRouter.js');
 
 app.use(express.json());
 

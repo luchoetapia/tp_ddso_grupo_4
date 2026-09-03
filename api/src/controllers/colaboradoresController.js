@@ -1,12 +1,11 @@
-import { Colaborador } from "../models/dominio";
-
+const Colaborador = require('../models/dominio').Colaborador;
 const colaboradores = []
 
-export const obtenerColaboradoras = (req, res) => {
+const obtenerColaboradoras = (req, res) => {
     res.status(200).json(colaboradores)
 }
 
-export const crearColaboradora = (req, res) => {
+const crearColaboradora = (req, res) => {
     const { nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion } = req.body
 
     const colaboradora = new Colaborador(nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion)
@@ -15,7 +14,7 @@ export const crearColaboradora = (req, res) => {
     res.status(200).json({ message: 'Colaboradora creada exitosamente' })
 }
 
-export const obtenerColaboradoraPorCuentaGit = (req, res) => {
+const obtenerColaboradoraPorCuentaGit = (req, res) => {
     const { cuentaGit } = req.params
     const colaboradora = colaboradores.find(c => c.cuentaGit === cuentaGit)
 
@@ -24,3 +23,5 @@ export const obtenerColaboradoraPorCuentaGit = (req, res) => {
     }
     res.status(200).json(colaboradora)
 }
+
+module.exports = { obtenerColaboradoras, crearColaboradora, obtenerColaboradoraPorCuentaGit };

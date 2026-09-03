@@ -1,12 +1,11 @@
-import { Proyecto } from "../models/dominio";
+const Proyecto = require('../models/dominio').Proyecto;
+const proyectos = [];
 
-const proyectos = []
-
-export const obtenerProyectos = (req, res) => {
+const obtenerProyectos = (req, res) => {
     res.status(200).json(proyectos)
 }
 
-export const crearProyecto = (req, res) => {
+const crearProyecto = (req, res) => {
     const { titulo, descripcion, habilidades, tipoCompromiso, modalidadColaboracion } = req.body
     const id = proyectos.length + 1
 
@@ -16,7 +15,7 @@ export const crearProyecto = (req, res) => {
     res.status(200).json({ message: 'Proyecto creado exitosamente' })
 }
 
-export const obtenerProyectoPorId = (req, res) => {
+const obtenerProyectoPorId = (req, res) => {
     const { id } = req.params
     const proyecto = proyectos.find(p => p.id === parseInt(id))
 
@@ -25,3 +24,5 @@ export const obtenerProyectoPorId = (req, res) => {
     }
     res.status(200).json(proyecto)
 }
+
+module.exports = { obtenerProyectos, crearProyecto, obtenerProyectoPorId };

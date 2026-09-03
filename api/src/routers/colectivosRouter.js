@@ -1,4 +1,4 @@
-const express = requiere('express');
+const express = require('express');
 const colectivosController = require('../controllers/colectivosController');
 
 const colectivosRouter = express.Router();

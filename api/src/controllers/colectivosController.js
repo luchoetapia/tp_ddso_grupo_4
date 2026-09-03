@@ -1,12 +1,11 @@
-import { Colectivo } from "../models/dominio";
-
+const Colectivo = require('../models/dominio').Colectivo;
 const colectivos = []
 
-export const obtenerColectivos = (req, res) => {
+const obtenerColectivos = (req, res) => {
     res.status(200).json(colectivos)
 }
 
-export const crearColectivo = (req, res) => {
+const crearColectivo = (req, res) => {
     const { nombre, descripcion, ubicacion, tipo, proyectos } = req.body
     const id = colectivos.length + 1
 
@@ -16,7 +15,7 @@ export const crearColectivo = (req, res) => {
     res.status(200).json({ message: 'Colectivo creado exitosamente' })
 }
 
-export const obtenerColectivoPorId = (req, res) => {
+const obtenerColectivoPorId = (req, res) => {
     const { id } = req.params
     const colectivo = colectivos.find(c => c.id === parseInt(id))
     
@@ -25,3 +24,5 @@ export const obtenerColectivoPorId = (req, res) => {
     }
     res.status(200).json(colectivo)
 }
+
+module.exports = { obtenerColectivos, crearColectivo, obtenerColectivoPorId };
