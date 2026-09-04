@@ -28,9 +28,10 @@ class tipoCompromiso {
 }
 
 class Habilidad {
-    constructor(id, titulo, descripcion) {
+    constructor(id, titulo, tipoHabilidad, descripcion) {
         this.id = id
         this.titulo = titulo
+        this.tipoHabilidad = tipoHabilidad
         this.descripcion = descripcion
     }
 }
@@ -74,7 +75,16 @@ const TipoColectivo = {
     ASAMBLEA: 'asamblea',
 }
 
+const TipoHabilidad = {
+    PROGRAMACION: 'programacion',
+    DISEÑO: 'diseño',
+    MARKETING: 'marketing',
+    COMUNICACION: 'comunicacion',
+    GESTION_PROYECTOS: 'gestion_proyectos',
+    COLABORACION: 'colaboracion',
+}
+
 module.exports = {
     Colectivo, Proyecto, tipoCompromiso, Habilidad, Colaborador, Colaboracion,
-    ModalidadColaboracion, Periodo, TipoColectivo
+    ModalidadColaboracion, Periodo, TipoColectivo, TipoHabilidad
 }

@@ -1,5 +1,7 @@
 @startuml
+
 class Colectivo {
+id : Int
 nombre : String
 descripcion : String
 ubicacion : String
@@ -23,6 +25,7 @@ periodo : Periodo
 
 class Habilidad {
 titulo : String
+tipoHabilidad : TipoHabilidad
 id : String
 descripcion : String
 }
@@ -48,22 +51,39 @@ posibleContratacion : boolean
 }
 
 enum TipoColectivo {
-FUNDACION, ASOCIACION_BARRIAL, ONG, ASAMBLEA
+FUNDACION, 
+ASOCIACION_BARRIAL, 
+ONG, 
+ASAMBLEA,
 }
 
 enum Periodo {
-MENSUAL, SEMANAL, TOTAL
+MENSUAL, 
+SEMANAL, 
+TOTAL,
 }
 
-Colectivo ->"" Proyecto
-Colectivo -> TipoColectivo
+enum TipoHabilidad {
+PROGRAMACION, 
+DISEÑO, 
+MARKETING, 
+COMUNICACION, 
+GESTION_PROYECTOS, 
+COLABORACION,
+}
 
-Proyecto ->"" Habilidad
-Proyecto -> TipoCompromiso
+Colectivo -d-> "*" Proyecto
+Colectivo -r-> TipoColectivo
+
+Proyecto -> "*" Habilidad
+Proyecto -d-> TipoCompromiso
 Proyecto -> ModalidadColaboracion
 
 Colaboracion -> Proyecto
 Colaborador <- Colaboracion
+Colaborador -u-> "*" Habilidad
 
-TipoCompromiso -> Periodo
+TipoCompromiso -r-> Periodo
+Habilidad -l-> TipoHabilidad
+
 @enduml

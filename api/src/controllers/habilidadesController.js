@@ -9,7 +9,7 @@ const crearHabilidad = (req, res) => {
     const { titulo, descripcion } = req.body
     const id = habilidades.length + 1
 
-    const habilidad = new Habilidad(id, titulo, descripcion)
+    const habilidad = new Habilidad(id, titulo, tipoHabilidad, descripcion)
     habilidades.push(habilidad)
 
     res.status(200).json({ message: 'Habilidad creada exitosamente' })
