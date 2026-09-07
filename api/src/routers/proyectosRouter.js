@@ -1,14 +1,15 @@
-const express = require('express');
-const proyectosController = require('../controllers/proyectosController');
+import express from "express"
+import { ProyectoController } from "../controllers/proyectoController.js"
 
-const proyectosRouter = express.Router();
+const proyectoController = new ProyectoController()
+const router = express.Router()
 
-proyectosRouter.route('/')
-    .get((req, res) => proyectosController.obtenerProyectos(req, res))
-    .post((req, res) => proyectosController.crearProyecto(req, res))
+router.route('/')
+    .get((req, res) => proyectoController.obtenerProyectos(req, res))
+    .post((req, res) => proyectoController.crearProyecto(req, res))
 
 
-proyectosRouter.route('/:id')
-    .get((req, res) => proyectosController.obtenerProyectoPorId(req, res))
+router.route('/:id')
+    .get((req, res) => proyectoController.obtenerProyectoPorId(req, res))
 
-module.exports = proyectosRouter;
+export default router

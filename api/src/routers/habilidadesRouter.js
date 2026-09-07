@@ -1,14 +1,15 @@
-const express = require('express');
-const habilidadesController = require('../controllers/habilidadesController');
+import express from "express"
+import { HabilidadController } from "../controllers/habilidadController.js"
 
-const habilidadesRouter = express.Router();
+const habilidadController = new HabilidadController()
+const router = express.Router()
 
-habilidadesRouter.route('/')
-    .get((req, res) => habilidadesController.obtenerHabilidades(req, res))
-    .post((req, res) => habilidadesController.crearHabilidad(req, res))
+router.route('/')
+    .get((req, res) => habilidadController.obtenerHabilidades(req, res))
+    .post((req, res) => habilidadController.crearHabilidad(req, res))
 
 
-habilidadesRouter.route('/:id')
-    .get((req, res) => habilidadesController.obtenerHabilidadPorId(req, res))
+router.route('/:id')
+    .get((req, res) => habilidadController.obtenerHabilidadPorId(req, res))
 
-module.exports = habilidadesRouter;
+export default router

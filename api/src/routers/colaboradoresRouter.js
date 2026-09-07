@@ -1,13 +1,14 @@
-const express = require('express');
-const colaboradorasController = require('../controllers/colaboradoresController');
+import express from "express"
+import { ColaboradorController } from "../controllers/colaboradorController.js"
 
-const colaboradoresRouter = express.Router();
+const colaboradorController = new ColaboradorController()
+const router = express.Router()
 
-colaboradoresRouter.route('/')
-    .get((req, res) => colaboradorasController.obtenerColaboradoras(req, res))
-    .post((req, res) => colaboradorasController.crearColaboradora(req, res))
+router.route('/')
+    .get((req, res) => colaboradorController.obtenerColaboradores(req, res))
+    .post((req, res) => colaboradorController.crearColaborador(req, res))
 
-colaboradoresRouter.route('/:cuentaGit')
-    .get((req, res) => colaboradorasController.obtenerColaboradoraPorCuentaGit(req, res))
+router.route('/:cuentaGit')
+    .get((req, res) => colaboradorController.obtenerColaboradorPorCuentaGit(req, res))
 
-module.exports = colaboradoresRouter;
+export default router

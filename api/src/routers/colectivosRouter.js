@@ -1,13 +1,14 @@
-const express = require('express');
-const colectivosController = require('../controllers/colectivosController');
+import express from "express"
+import { ColectivoController } from "../controllers/colectivoController.js"
 
-const colectivosRouter = express.Router();
+const colectivoController = new ColectivoController()
+const router = express.Router()
 
-colectivosRouter.route('/')
-    .get((req, res) => colectivosController.obtenerColectivos(req, res))
-    .post((req, res) => colectivosController.crearColectivo(req, res))
+router.route('/')
+    .get((req, res) => colectivoController.obtenerColectivos(req, res))
+    .post((req, res) => colectivoController.crearColectivo(req, res))
 
-colectivosRouter.route('/:id')
-    .get((req, res) => colectivosController.obtenerColectivoPorId(req, res))
+router.route('/:id')
+    .get((req, res) => colectivoController.obtenerColectivoPorId(req, res))
 
-module.exports = colectivosRouter;
+export default router
