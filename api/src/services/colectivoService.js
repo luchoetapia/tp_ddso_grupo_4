@@ -1,8 +1,8 @@
-import { ColectivoRepository } from "../repositories/colectivoRepository.js"
-import { Colectivo } from "../domain/Colectivo.js"
-import { ConflictError, NotFoundError } from "../errors/AppError.js"
+const { ColectivoRepository } = require('../repositories/colectivoRepository.js');
+const { Colectivo } = require('../models/dominio.js');
+const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 
-export class ColectivoService {
+class ColectivoService {
     constructor(colectivoRepository = new ColectivoRepository()) {
         this.colectivoRepository = colectivoRepository;
     }
@@ -18,6 +18,7 @@ export class ColectivoService {
         }
 
         const colectivo = new Colectivo(
+            datos.id,
             datos.nombre,
             datos.descripcion,
             datos.ubicacion,
@@ -36,3 +37,5 @@ export class ColectivoService {
         return colectivo
     }
 }
+
+module.exports = { ColectivoService };

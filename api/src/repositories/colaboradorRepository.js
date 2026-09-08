@@ -1,4 +1,4 @@
-export class ColaboradorRepository {
+class ColaboradorRepository {
     constructor() {
         this.colaboradores = [];
     }
@@ -16,3 +16,5 @@ export class ColaboradorRepository {
         return colaborador;
     }
 }
+
+module.exports = { ColaboradorRepository };

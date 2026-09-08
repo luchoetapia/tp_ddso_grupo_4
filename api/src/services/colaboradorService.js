@@ -1,8 +1,8 @@
-import { ColaboradorRepository } from "../repositories/colaboradorRepository.js"
-import { Colaborador } from "../domain/Colaborador.js"
-import { ConflictError, NotFoundError } from "../errors/AppError.js"
+const { ColaboradorRepository } = require('../repositories/colaboradorRepository.js');
+const { Colaborador } = require('../models/dominio.js');
+const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 
-export class ColaboradorService {
+class ColaboradorService {
     constructor(colaboradorRepository = new ColaboradorRepository()) {
         this.colaboradorRepository = colaboradorRepository;
     }
@@ -38,3 +38,5 @@ export class ColaboradorService {
         return colaborador
     }
 }
+
+module.exports = { ColaboradorService };

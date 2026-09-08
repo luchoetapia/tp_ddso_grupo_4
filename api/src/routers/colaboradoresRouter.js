@@ -1,5 +1,5 @@
-import express from "express"
-import { ColaboradorController } from "../controllers/colaboradorController.js"
+const express = require('express')
+const { ColaboradorController } = require('../controllers/colaboradorController.js')
 
 const colaboradorController = new ColaboradorController()
 const router = express.Router()
@@ -11,4 +11,4 @@ router.route('/')
 router.route('/:cuentaGit')
     .get((req, res) => colaboradorController.obtenerColaboradorPorCuentaGit(req, res))
 
-export default router
+module.exports = router

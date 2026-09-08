@@ -1,4 +1,6 @@
-import { ColaboradorService } from "../services/colaboradorService.js"
+const { z } = require('zod');
+const { ColaboradorService } = require('../services/colaboradorService.js');
+const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
     nombre: z.string().min(1),
@@ -10,33 +12,34 @@ const colaboradorSchema = z.object({
     presentacion: z.string().max(300).optional(),
 }).strict()
 
-export class ColaboradorController {
+class ColaboradorController {
     constructor(colaboradorService = new ColaboradorService()) {
         this.colaboradorService = colaboradorService;
     }
 
-    obtenerColaboradoras = (req, res) => {
-    const colaboradores = this.colaboradorService.obtenerTodos()
-    res.status(200).json(colaboradores)
-}
+    obtenerColaboradores = (req, res) => {
+        const colaboradores = this.colaboradorService.obtenerTodos()
+        res.status(200).json(colaboradores)
+    }
 
-    crearColaboradora = (req, res) => {
-    const resultado = colaboradorSchema.safeParse(req.body)
+    crearColaborador = (req, res) => {
+        const resultado = colaboradorSchema.safeParse(req.body)
         if (resultado.error) {
             throw new BadRequestError("Datos inválidos", resultado.error.issues)
         }
 
-    const colaboradoraNueva = this.colaboradorService.crear(resultado.data)
-    res.status(201).json({ message: 'Colaboradora creada exitosamente', data: colaboradoraNueva })
-}
-
-    obtenerColaboradoraPorCuentaGit = (req, res) => {
-    const { cuentaGit } = req.params
-    const colaboradora = this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
-    if (!colaboradora) {
-        return res.status(404).json({ message: 'Colaboradora no encontrada' })
+        const colaboradoraNueva = this.colaboradorService.crear(resultado.data)
+        res.status(201).json({ message: 'Colaboradora creada exitosamente', data: colaboradoraNueva })
     }
-    res.status(200).json(colaboradora)
+
+    obtenerColaboradorPorCuentaGit = (req, res) => {
+        const { cuentaGit } = req.params
+        const colaborador = this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
+        if (!colaborador) {
+            return res.status(404).json({ message: 'Colaboradora no encontrada' })
+        }
+        res.status(200).json(colaborador)
+    }
 }
 
-}
+module.exports = { ColaboradorController };

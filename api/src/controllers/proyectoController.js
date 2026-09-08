@@ -1,4 +1,6 @@
-import { ProyectoService } from "../services/proyectoService.js"
+const { z } = require('zod');
+const { ProyectoService } = require('../services/proyectoService.js');
+const { BadRequestError } = require('../errors/AppError.js');
 
 const proyectoSchema = z.object({
     id: z.number().int().positive(),
@@ -9,34 +11,34 @@ const proyectoSchema = z.object({
     modalidadColaboracion: z.string().min(1)
 }).strict()
 
-export class ProyectoController {
+class ProyectoController {
     constructor(proyectoService = new ProyectoService()) {
         this.proyectoService = proyectoService;
     }
 
     obtenerProyectos = (req, res) => {
-    const proyectos = this.proyectoService.obtenerTodos()
-    res.status(200).json(proyectos)
-}
+        const proyectos = this.proyectoService.obtenerTodos()
+        res.status(200).json(proyectos)
+    }
 
     crearProyecto = (req, res) => {
-    const resultuado = proyectoSchema.safeParse(req.body)
-        if (resultuado.error) {
-            throw new BadRequestError("Datos inválidos", resultuado.error.issues)
+        const resultado = proyectoSchema.safeParse(req.body)
+        if (resultado.error) {
+            throw new BadRequestError("Datos inválidos", resultado.error.issues)
         }
-    const proyectoNuevo = this.proyectoService.crear(resultuado.data)
-    res.status(201).json({ message: 'Proyecto creado exitosamente', data: proyectoNuevo })
-}
-
+        const proyectoNuevo = this.proyectoService.crear(resultado.data)
+        res.status(201).json({ message: 'Proyecto creado exitosamente', data: proyectoNuevo })
+    }
 
     obtenerProyectoPorId = (req, res) => {
-    const { id } = req.params
-    const proyecto = this.proyectoService.obtenerPorId(parseInt(id))
+        const { id } = req.params
+        const proyecto = this.proyectoService.obtenerPorId(parseInt(id))
 
-    if (!proyecto) {
-        return res.status(404).json({ message: 'Proyecto no encontrado' })
+        if (!proyecto) {
+            return res.status(404).json({ message: 'Proyecto no encontrado' })
+        }
+        res.status(200).json(proyecto)
     }
-    res.status(200).json(proyecto)
 }
 
-}
+module.exports = { ProyectoController };

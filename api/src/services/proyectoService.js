@@ -1,8 +1,8 @@
-import { ProyectoRepsoitory } from "../repositories/proyectoRespository.js"
-import { Proyecto } from "../domain/Proyecto.js"
-import { ConflictError, NotFoundError } from "../errors/AppError.js"
+const { ProyectoRepository } = require('../repositories/proyectoRepository.js');
+const { Proyecto } = require('../models/dominio.js');
+const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 
-export class ProyectoService {
+class ProyectoService {
     constructor(proyectoRepository = new ProyectoRepository()) {
         this.proyectoRepository = proyectoRepository;
     }
@@ -18,10 +18,12 @@ export class ProyectoService {
         }
 
         const proyecto = new Proyecto(
+            datos.id,
             datos.titulo,
+            datos.descripcion,
+            datos.habilidades,
             datos.tipoCompromiso,
-            datos.modalidadColaboracion,
-            datos.descripcion
+            datos.modalidadColaboracion
         )
 
         return this.proyectoRepository.save(proyecto)
@@ -32,7 +34,8 @@ export class ProyectoService {
         if (!proyecto) {
             throw new NotFoundError("Proyecto no encontrado")
         }
-        return proyecto 
+        return proyecto
     }
 }
 
+module.exports = { ProyectoService };

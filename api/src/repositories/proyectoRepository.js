@@ -1,4 +1,4 @@
-export class ProyectoRepository {
+class ProyectoRepository {
     constructor() {
         this.proyectos = [];
     }
@@ -7,8 +7,12 @@ export class ProyectoRepository {
         return this.proyectos;
     }
 
-    findByCuentaGit(cuentaGit) {
-        return this.proyectos.find(p => p.cuentaGit === cuentaGit);
+    findByTitulo(titulo) {
+        return this.proyectos.find(p => p.titulo === titulo);
+    }
+
+    findById(id) {
+        return this.proyectos.find(p => p.id === id);
     }
 
     save(proyecto) {
@@ -16,3 +20,5 @@ export class ProyectoRepository {
         return proyecto;
     }
 }
+
+module.exports = { ProyectoRepository };

@@ -1,8 +1,8 @@
-import { HbailidadRepsoitory } from "../repositories/habilidadRespository.js"
-import { Habilidad } from "../domain/Habilidad.js"
-import { ConflictError, NotFoundError } from "../errors/AppError.js"
+const { HabilidadRepository } = require('../repositories/habilidadRepository.js');
+const { Habilidad } = require('../models/dominio.js');
+const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 
-export class HabilidadService {
+class HabilidadService {
     constructor(habilidadRepository = new HabilidadRepository()) {
         this.habilidadRepository = habilidadRepository;
     }
@@ -18,6 +18,7 @@ export class HabilidadService {
         }
 
         const habilidad = new Habilidad(
+            datos.id,
             datos.titulo,
             datos.tipoHabilidad,
             datos.descripcion
@@ -35,3 +36,4 @@ export class HabilidadService {
     }
 }
 
+module.exports = { HabilidadService };
