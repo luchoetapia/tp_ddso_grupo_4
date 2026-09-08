@@ -86,4 +86,5 @@ Colaborador -u-> "*" Habilidad
 TipoCompromiso -r-> Periodo
 Habilidad -l-> TipoHabilidad
 
+TipoCompromiso -> Periodo
 @enduml
