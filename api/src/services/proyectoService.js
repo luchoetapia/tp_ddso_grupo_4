@@ -1,10 +1,12 @@
-const { ProyectoRepository } = require('../repositories/proyectoRepository.js');
+const proyectoRepository = require('../repositories/proyectoRepository.js');
+const habilidadeService = require("./habilidadService.js");
 const { Proyecto } = require('../models/dominio.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
-    constructor(proyectoRepository = new ProyectoRepository()) {
+    constructor() {
         this.proyectoRepository = proyectoRepository;
+        this.habilidadeService = habilidadeService;
     }
 
     obtenerTodos = () => {
@@ -17,11 +19,13 @@ class ProyectoService {
             throw new ConflictError("Ya existe un proyecto con ese título")
         }
 
+        const habilidadesDelProyecto = this.habilidadeService.obtenerPorListaId(datos.habilidades);
+
         const proyecto = new Proyecto(
             datos.id,
             datos.titulo,
             datos.descripcion,
-            datos.habilidades,
+            habilidadesDelProyecto,
             datos.tipoCompromiso,
             datos.modalidadColaboracion
         )
@@ -44,4 +48,4 @@ class ProyectoService {
     }
 }
 
-module.exports = { ProyectoService };
+module.exports = new ProyectoService();

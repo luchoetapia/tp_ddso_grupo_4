@@ -1,12 +1,15 @@
-const { ColaboradorRepository } = require('../repositories/colaboradorRepository.js');
+const colaboradorRepository = require('../repositories/colaboradorRepository.js');
 const { Colaborador } = require('../models/dominio.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
-const { ColaboracionService } = require('./colaboracionService.js');
+const colaboracionService = require('./colaboracionService.js');
+const habilidadService = require("./habilidadService.js");
+
 
 class ColaboradorService {
-    constructor(colaboradorRepository = new ColaboradorRepository(), colaboracionService = new ColaboracionService()) {
+    constructor() {
         this.colaboradorRepository = colaboradorRepository;
         this.colaboracionService = colaboracionService;
+        this.habilidadService = habilidadService;
     }
 
     obtenerTodos = () => {
@@ -15,16 +18,19 @@ class ColaboradorService {
 
     crear = (datos) => {
         const existente = this.colaboradorRepository.findByCuentaGit(datos.cuentaGit)
+
         if (existente) {
             throw new ConflictError("Ya existe un colaborador con esa cuenta de Git")
         }
+
+        const habilidadesColaborador = this.habilidadService.obtenerPorListaId(datos.habilidades);
 
         const colaborador = new Colaborador(
             datos.nombre,
             datos.apellido,
             datos.nombreFantasia,
             datos.cuentaGit,
-            datos.habilidades,
+            habilidadesColaborador,
             datos.pronombres,
             datos.presentacion
         )
@@ -45,4 +51,4 @@ class ColaboradorService {
     }
 }
 
-module.exports = { ColaboradorService };
+module.exports = new ColaboradorService();

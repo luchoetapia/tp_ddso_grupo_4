@@ -21,4 +21,4 @@ class HabilidadRepository {
     }
 }
 
-module.exports = { HabilidadRepository };
+module.exports = new HabilidadRepository() ;
