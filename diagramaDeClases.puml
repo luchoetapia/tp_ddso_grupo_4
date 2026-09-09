@@ -16,6 +16,7 @@ descripcion : String
 habilidades : List<Habilidad>
 tipoCompromiso : TipoCompromiso
 modalidadColaboracion : ModalidadColaboracion
+finalizado: boolean
 }
 
 class TipoCompromiso {

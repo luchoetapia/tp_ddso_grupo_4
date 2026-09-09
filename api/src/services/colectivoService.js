@@ -1,10 +1,12 @@
 const { ColectivoRepository } = require('../repositories/colectivoRepository.js');
 const { Colectivo } = require('../models/dominio.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { ProyectoService } = require('./proyectoService.js');
 
 class ColectivoService {
-    constructor(colectivoRepository = new ColectivoRepository()) {
+    constructor(colectivoRepository = new ColectivoRepository(), proyectoService = new ProyectoService()) {
         this.colectivoRepository = colectivoRepository;
+        this.proyectoService = proyectoService;
     }
 
     obtenerTodos = () => {
@@ -35,6 +37,11 @@ class ColectivoService {
             throw new NotFoundError("Colectivo no encontrado")
         }
         return colectivo
+    }
+
+    finalizarProyecto = (idColectivo, idProyecto) => {
+        this.obtenerPorId(idColectivo)
+        return this.proyectoService.finalizar(idProyecto)
     }
 }
 

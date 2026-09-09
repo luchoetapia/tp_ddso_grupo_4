@@ -10,13 +10,14 @@ class Colectivo {
 }
 
 class Proyecto {
-    constructor(id, titulo, descripcion, habilidades, tipoCompromiso, modalidadColaboracion) {
+    constructor(id, titulo, descripcion, habilidades, tipoCompromiso, modalidadColaboracion, finalizado = false) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
         this.habilidades = habilidades
         this.tipoCompromiso = tipoCompromiso
         this.modalidadColaboracion = modalidadColaboracion
+        this.finalizado = finalizado
     }
 }
 

@@ -36,6 +36,12 @@ class ProyectoService {
         }
         return proyecto
     }
+
+    finalizar = (id) => {
+        const proyecto = this.obtenerPorId(id)
+        proyecto.finalizado = true
+        return proyecto
+    }
 }
 
 module.exports = { ProyectoService };

@@ -1,7 +1,7 @@
 const { ColaboracionRepository } = require('../repositories/colaboracionRepository.js');
 const { ProyectoService } = require('./proyectoService.js');
 const { Colaboracion } = require('../models/dominio.js');
-const { BadRequestError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError } = require('../errors/AppError.js');
 
 class ColaboracionService {
     constructor(colaboracionRepository = new ColaboracionRepository(), proyectoService = new ProyectoService()) {
@@ -11,6 +11,10 @@ class ColaboracionService {
 
     crear = (colaborador, idProyecto) => {
         const proyecto = this.proyectoService.obtenerPorId(idProyecto)
+
+        if (proyecto.finalizado) {
+            throw new ConflictError("El proyecto ya fue finalizado y no admite nuevas personas colaboradoras")
+        }
 
         const tieneHabilidadRequerida = colaborador.habilidades.some(h => (proyecto.habilidades || []).includes(h))
         if (!tieneHabilidadRequerida) {

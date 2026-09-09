@@ -11,4 +11,7 @@ router.route('/')
 router.route('/:id')
     .get((req, res) => colectivoController.obtenerColectivoPorId(req, res))
 
+router.route('/:id/finalizarProyecto/:idProyecto')
+    .post((req, res) => colectivoController.finalizarProyecto(req, res))
+
 module.exports = router
