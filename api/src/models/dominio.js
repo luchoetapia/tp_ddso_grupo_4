@@ -37,11 +37,11 @@ class Habilidad {
 }
 
 class Colaborador {
-    constructor(nombre, apellido, nombreFantasia, git, habilidades, pronombres, presentacion) {
+    constructor(nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion) {
         this.nombre = nombre
         this.apellido = apellido
         this.nombreFantasia = nombreFantasia
-        this.git = git
+        this.cuentaGit = cuentaGit
         this.habilidades = habilidades
         this.pronombres = pronombres
         this.presentacion = presentacion

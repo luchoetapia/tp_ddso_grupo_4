@@ -11,4 +11,4 @@ router.route('/')
 router.route('/:id')
     .get((req, res) => proyectoController.obtenerProyectoPorId(req, res))
 
-module.exports = router
+module.exports = {router}

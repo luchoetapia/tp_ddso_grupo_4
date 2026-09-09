@@ -1,7 +1,9 @@
 const express = require('express')
 const { ColaboradorController } = require('../controllers/colaboradorController.js')
+const { ColaboradorService } = require('../services/colaboradorService.js')
 
-const colaboradorController = new ColaboradorController()
+const colaboradorService = new ColaboradorService()
+const colaboradorController = new ColaboradorController(colaboradorService)
 const router = express.Router()
 
 router.route('/')
@@ -10,5 +12,8 @@ router.route('/')
 
 router.route('/:cuentaGit')
     .get((req, res) => colaboradorController.obtenerColaboradorPorCuentaGit(req, res))
+
+router.route('/:cuentaGit/anotarProyecto/:idProyecto')
+    .post((req, res) => colaboradorController.anotarColaboradorAProyecto(req, res))
 
 module.exports = router

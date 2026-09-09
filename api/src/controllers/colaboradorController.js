@@ -40,6 +40,15 @@ class ColaboradorController {
         }
         res.status(200).json(colaborador)
     }
+    anotarColaboradorAProyecto = (req, res) => {
+        const { cuentaGit, idProyecto } = req.params;
+        const colaborador = this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
+        if (!colaborador) {
+            return res.status(404).json({ message: 'Colaboradora no encontrada' })
+        }
+        const colaboracion = this.colaboradorService.anotarAProyecto(colaborador, parseInt(idProyecto, 10))
+        res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
+    }
 }
 
 module.exports = { ColaboradorController };

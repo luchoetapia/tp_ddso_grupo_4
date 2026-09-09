@@ -1,10 +1,12 @@
 const { ColaboradorRepository } = require('../repositories/colaboradorRepository.js');
 const { Colaborador } = require('../models/dominio.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { ColaboracionService } = require('./colaboracionService.js');
 
 class ColaboradorService {
-    constructor(colaboradorRepository = new ColaboradorRepository()) {
+    constructor(colaboradorRepository = new ColaboradorRepository(), colaboracionService = new ColaboracionService()) {
         this.colaboradorRepository = colaboradorRepository;
+        this.colaboracionService = colaboracionService;
     }
 
     obtenerTodos = () => {
@@ -36,6 +38,10 @@ class ColaboradorService {
             throw new NotFoundError("Colaborador no encontrado")
         }
         return colaborador
+    }
+
+    anotarAProyecto = (colaborador, idProyecto) => {
+        return this.colaboracionService.crear(colaborador, idProyecto)
     }
 }
 

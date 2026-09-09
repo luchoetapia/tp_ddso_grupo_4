@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
   res.send('¡Hola Mundo!');
 });
 
-app.use('/proyectos', proyectosRouter);
+app.use('/proyectos', proyectosRouter.router);
 app.use('/colectivos', colectivosRouter);
 app.use('/habilidades', habilidadesRouter);
 app.use('/colaboradores', colaboradoresRouter);

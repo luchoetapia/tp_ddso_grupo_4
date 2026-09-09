@@ -15,6 +15,7 @@ class ColaboradorRepository {
         this.colaboradores.push(colaborador);
         return colaborador;
     }
+  
 }
 
 module.exports = { ColaboradorRepository };
