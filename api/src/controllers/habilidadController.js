@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { HabilidadService } = require('../services/habilidadService.js');
+const habilidadService = require('../services/habilidadService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const habilidadSchema = z.object({
@@ -10,7 +10,7 @@ const habilidadSchema = z.object({
 }).strict()
 
 class HabilidadController {
-    constructor(habilidadService = new HabilidadService()) {
+    constructor() {
         this.habilidadService = habilidadService;
     }
 

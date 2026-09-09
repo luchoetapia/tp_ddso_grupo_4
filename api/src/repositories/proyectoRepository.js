@@ -21,4 +21,4 @@ class ProyectoRepository {
     }
 }
 
-module.exports = { ProyectoRepository };
+module.exports = new ProyectoRepository();

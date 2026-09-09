@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { ColectivoService } = require('../services/colectivoService.js');
+const colectivoService = require('../services/colectivoService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colectivoSchema = z.object({
@@ -12,7 +12,7 @@ const colectivoSchema = z.object({
 }).strict()
 
 class ColectivoController {
-    constructor(colectivoService = new ColectivoService()) {
+    constructor() {
         this.colectivoService = colectivoService;
     }
 

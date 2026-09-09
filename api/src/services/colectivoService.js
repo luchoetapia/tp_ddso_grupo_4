@@ -1,10 +1,10 @@
-const { ColectivoRepository } = require('../repositories/colectivoRepository.js');
+const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { Colectivo } = require('../models/dominio.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
-const { ProyectoService } = require('./proyectoService.js');
+const proyectoService = require('./proyectoService.js');
 
 class ColectivoService {
-    constructor(colectivoRepository = new ColectivoRepository(), proyectoService = new ProyectoService()) {
+    constructor() {
         this.colectivoRepository = colectivoRepository;
         this.proyectoService = proyectoService;
     }
@@ -45,4 +45,4 @@ class ColectivoService {
     }
 }
 
-module.exports = { ColectivoService };
+module.exports = new ColectivoService();

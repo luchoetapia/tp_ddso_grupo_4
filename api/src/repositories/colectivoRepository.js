@@ -21,4 +21,4 @@ class ColectivoRepository {
     }
 }
 
-module.exports = { ColectivoRepository };
+module.exports = new ColectivoRepository();

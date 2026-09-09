@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { ColaboradorService } = require('../services/colaboradorService.js');
+const colaboradorService = require('../services/colaboradorService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
@@ -13,7 +13,7 @@ const colaboradorSchema = z.object({
 }).strict()
 
 class ColaboradorController {
-    constructor(colaboradorService = new ColaboradorService()) {
+    constructor() {
         this.colaboradorService = colaboradorService;
     }
 

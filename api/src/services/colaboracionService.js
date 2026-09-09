@@ -1,10 +1,10 @@
-const { ColaboracionRepository } = require('../repositories/colaboracionRepository.js');
-const { ProyectoService } = require('./proyectoService.js');
+const colaboracionRepository = require('../repositories/colaboracionRepository.js');
+const proyectoService = require('./proyectoService.js');
 const { Colaboracion } = require('../models/dominio.js');
 const { BadRequestError, ConflictError } = require('../errors/AppError.js');
 
 class ColaboracionService {
-    constructor(colaboracionRepository = new ColaboracionRepository(), proyectoService = new ProyectoService()) {
+    constructor() {
         this.colaboracionRepository = colaboracionRepository;
         this.proyectoService = proyectoService;
     }
@@ -26,4 +26,4 @@ class ColaboracionService {
     }
 }
 
-module.exports = { ColaboracionService };
+module.exports = new ColaboracionService();

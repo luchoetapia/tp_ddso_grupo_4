@@ -25,13 +25,14 @@ periodo : Periodo
 }
 
 class Habilidad {
+id : Int
 titulo : String
 tipoHabilidad : TipoHabilidad
-id : String
 descripcion : String
 }
 
 class Colaborador{
+id: Int
 nombre : String
 apellido : String
 nombreFantasia : String

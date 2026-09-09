@@ -1,9 +1,9 @@
-const { HabilidadRepository } = require('../repositories/habilidadRepository.js');
+const habilidadRepository = require('../repositories/habilidadRepository.js');
 const { Habilidad } = require('../models/dominio.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class HabilidadService {
-    constructor(habilidadRepository = new HabilidadRepository()) {
+    constructor() {
         this.habilidadRepository = habilidadRepository;
     }
 
@@ -34,6 +34,11 @@ class HabilidadService {
         }
         return habilidad
     }
+
+    obtenerPorListaId = (listaDeIDs) => {
+        return listaDeIDs.map(idHabilidad => this.obtenerPorId(idHabilidad))
+    } 
+
 }
 
-module.exports = { HabilidadService };
+module.exports = new HabilidadService();

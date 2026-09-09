@@ -1,9 +1,7 @@
 const express = require('express')
 const { ColaboradorController } = require('../controllers/colaboradorController.js')
-const { ColaboradorService } = require('../services/colaboradorService.js')
 
-const colaboradorService = new ColaboradorService()
-const colaboradorController = new ColaboradorController(colaboradorService)
+const colaboradorController = new ColaboradorController()
 const router = express.Router()
 
 router.route('/')

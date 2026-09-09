@@ -13,4 +13,4 @@ class ColaboracionRepository {
     }
 }
 
-module.exports = { ColaboracionRepository };
+module.exports = new ColaboracionRepository();

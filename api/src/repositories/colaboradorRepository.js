@@ -18,4 +18,4 @@ class ColaboradorRepository {
   
 }
 
-module.exports = { ColaboradorRepository };
+module.exports = new ColaboradorRepository();

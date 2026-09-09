@@ -1,5 +1,6 @@
 const { z } = require('zod');
-const { ProyectoService } = require('../services/proyectoService.js');
+const proyectoService = require('../services/proyectoService.js');
+const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
 const proyectoSchema = z.object({
@@ -7,12 +8,18 @@ const proyectoSchema = z.object({
     titulo: z.string().min(1),
     descripcion: z.string().optional(),
     habilidades: z.array(z.number().int().positive()).optional(),
-    tipoCompromiso: z.string().min(1),
-    modalidadColaboracion: z.string().min(1)
-}).strict()
+    tipoCompromiso: z.object({
+        cantHoras: z.number().positive(),
+        periodo: z.enum(Object.values(Periodo))
+    }),
+    modalidadColaboracion: z.object({
+        incentivoEconomico: z.float32(),
+        posibleContratacion: z.boolean()
+    })
+}).strict();
 
 class ProyectoController {
-    constructor(proyectoService = new ProyectoService()) {
+    constructor() {
         this.proyectoService = proyectoService;
     }
 
