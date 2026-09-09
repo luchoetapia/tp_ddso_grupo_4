@@ -4,14 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/luchoetapia/tp_dsi_grupo_4.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Grupo 4 - DSI",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
@@ -19,6 +20,7 @@
   },
   "homepage": "https://github.com/luchoetapia/tp_dsi_grupo_4#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "zod": "^4.5.4"
   }
 }
