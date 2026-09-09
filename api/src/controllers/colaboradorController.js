@@ -7,7 +7,7 @@ const colaboradorSchema = z.object({
     apellido: z.string().min(1),
     nombreFantasia: z.string().optional(),
     cuentaGit: z.string().min(1),
-    habilidades: z.array(z.string()).default([]),
+    habilidades: z.array(z.number().int().positive()).default([]),
     pronombres: z.string().optional(),
     presentacion: z.string().max(300).optional(),
 }).strict()

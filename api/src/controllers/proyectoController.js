@@ -6,7 +6,7 @@ const proyectoSchema = z.object({
     id: z.number().int().positive(),
     titulo: z.string().min(1),
     descripcion: z.string().optional(),
-    habilidades: z.array(z.string()).optional(),
+    habilidades: z.array(z.number().int().positive()).optional(),
     tipoCompromiso: z.string().min(1),
     modalidadColaboracion: z.string().min(1)
 }).strict()

@@ -21,7 +21,7 @@ class Proyecto {
     }
 }
 
-class tipoCompromiso {
+class TipoCompromiso {
     constructor(cantHoras, periodo) {
         this.cantHoras = cantHoras
         this.periodo = periodo
@@ -86,6 +86,6 @@ const TipoHabilidad = {
 }
 
 module.exports = {
-    Colectivo, Proyecto, tipoCompromiso, Habilidad, Colaborador, Colaboracion,
+    Colectivo, Proyecto, TipoCompromiso, Habilidad, Colaborador, Colaboracion,
     ModalidadColaboracion, Periodo, TipoColectivo, TipoHabilidad
 }
