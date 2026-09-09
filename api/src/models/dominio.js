@@ -38,7 +38,8 @@ class Habilidad {
 }
 
 class Colaborador {
-    constructor(nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion) {
+    constructor(id, nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion) {
+        this.id = id;
         this.nombre = nombre
         this.apellido = apellido
         this.nombreFantasia = nombreFantasia
