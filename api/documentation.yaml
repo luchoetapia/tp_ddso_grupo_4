@@ -1,0 +1,373 @@
+openapi: 3.0.4
+info:
+  title: DOCUMENTACION API - TP DDSO Grupo 4
+  description: Documentación de la API de proyectos, colectivos, habilidades y colaboradores
+
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Proyectos
+    description: Gestión de proyectos
+  - name: Colectivos
+    description: Gestión de colectivos
+  - name: Habilidades
+    description: Gestión de habilidades
+  - name: Colaboradores
+    description: Gestión de colaboradoras/es
+
+paths:
+  /proyectos:
+    get:
+      summary: Obtiene todos los proyectos
+      tags: [Proyectos]
+      responses:
+        "200":
+          description: Lista de proyectos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proyecto"
+    post:
+      summary: Crea un nuevo proyecto
+      tags: [Proyectos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Proyecto"
+      responses:
+        "201":
+          description: Proyecto creado exitosamente
+        "400":
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /proyectos/{id}:
+    get:
+      summary: Obtiene un proyecto por id
+      tags: [Proyectos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Proyecto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proyecto"
+        "404":
+          description: Proyecto no encontrado
+
+  /colectivos:
+    get:
+      summary: Obtiene todos los colectivos
+      tags: [Colectivos]
+      responses:
+        "200":
+          description: Lista de colectivos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colectivo"
+    post:
+      summary: Crea un nuevo colectivo
+      tags: [Colectivos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Colectivo"
+      responses:
+        "201":
+          description: Colectivo creado exitosamente
+        "400":
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colectivos/{id}:
+    get:
+      summary: Obtiene un colectivo por id
+      tags: [Colectivos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Colectivo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Colectivo"
+        "404":
+          description: Colectivo no encontrado
+
+  /colectivos/{id}/finalizarProyecto/{idProyecto}:
+    post:
+      summary: Finaliza un proyecto de un colectivo
+      tags: [Colectivos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: idProyecto
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Proyecto finalizado exitosamente
+
+  /habilidades:
+    get:
+      summary: Obtiene todas las habilidades
+      tags: [Habilidades]
+      responses:
+        "200":
+          description: Lista de habilidades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Habilidad"
+    post:
+      summary: Crea una nueva habilidad
+      tags: [Habilidades]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Habilidad"
+      responses:
+        "201":
+          description: Habilidad creada exitosamente
+        "400":
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /habilidades/{id}:
+    get:
+      summary: Obtiene una habilidad por id
+      tags: [Habilidades]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Habilidad encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Habilidad"
+        "404":
+          description: Habilidad no encontrada
+
+  /colaboradores:
+    get:
+      summary: Obtiene todas las colaboradoras/es
+      tags: [Colaboradores]
+      responses:
+        "200":
+          description: Lista de colaboradoras/es
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colaborador"
+    post:
+      summary: Crea una nueva colaboradora/colaborador
+      tags: [Colaboradores]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Colaborador"
+      responses:
+        "201":
+          description: Colaboradora creada exitosamente
+        "400":
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colaboradores/{cuentaGit}:
+    get:
+      summary: Obtiene una colaboradora/colaborador por cuenta de Git
+      tags: [Colaboradores]
+      parameters:
+        - in: path
+          name: cuentaGit
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Colaboradora encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Colaborador"
+        "404":
+          description: Colaboradora no encontrada
+
+  /colaboradores/{cuentaGit}/anotarProyecto/{idProyecto}:
+    post:
+      summary: Anota a una colaboradora/colaborador a un proyecto
+      tags: [Colaboradores]
+      parameters:
+        - in: path
+          name: cuentaGit
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: idProyecto
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Colaboradora anotada al proyecto exitosamente
+        "404":
+          description: Colaboradora no encontrada
+
+components:
+  schemas:
+    Proyecto:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+          example: Huerta comunitaria
+        descripcion:
+          type: string
+        habilidades:
+          type: array
+          items:
+            type: string
+        tipoCompromiso:
+          type: string
+        modalidadColaboracion:
+          type: string
+        finalizado:
+          type: boolean
+          default: false
+      required:
+        - id
+        - titulo
+        - tipoCompromiso
+        - modalidadColaboracion
+
+    Colectivo:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        ubicacion:
+          type: string
+        tipo:
+          type: string
+          enum: [fundacion, asociacion_barrial, ong, asamblea]
+        proyectos:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - nombre
+
+    Habilidad:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+        tipoHabilidad:
+          type: string
+          enum: [programacion, diseño, marketing, comunicacion, gestion_proyectos, colaboracion]
+        descripcion:
+          type: string
+      required:
+        - id
+        - titulo
+        - tipoHabilidad
+
+    Colaborador:
+      type: object
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        nombreFantasia:
+          type: string
+        cuentaGit:
+          type: string
+          example: noeaversa
+        habilidades:
+          type: array
+          items:
+            type: string
+        pronombres:
+          type: string
+        presentacion:
+          type: string
+          maxLength: 300
+      required:
+        - nombre
+        - apellido
+        - cuentaGit
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
