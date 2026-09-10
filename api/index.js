@@ -25,3 +25,5 @@ app.get("/healthcheck", (request, response) => {
 app.listen(PORT, () => {
   console.log(`Servidor en http://localhost:${PORT}`);
 });
+
+module.exports = app;
