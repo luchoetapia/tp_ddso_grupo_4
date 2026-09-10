@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const PORT = 3000;
 
-const router = require("./api/src/routers/router.js");
+const router = require("./src/routers/router.js");
 
 app.use(express.json());
 app.use(router);
@@ -29,3 +29,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Servidor en http://localhost:${PORT}`);
 });
+
+module.exports = app;
