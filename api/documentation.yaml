@@ -32,18 +32,65 @@ paths:
                   $ref: "#/components/schemas/Proyecto"
     post:
       summary: Crea un nuevo proyecto
+      description: >
+        Las habilidades se referencian por id y deben existir previamente
+        (crealas primero con POST /habilidades: ver ejemplos "backend" e
+        "diseño"). No se permiten campos adicionales a los declarados en el
+        schema.
       tags: [Proyectos]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Proyecto"
+              $ref: "#/components/schemas/ProyectoInput"
+            examples:
+              completo:
+                summary: Proyecto que requiere dos habilidades
+                value:
+                  id: 1
+                  titulo: Huerta comunitaria
+                  descripcion: Espacio verde barrial mantenido por vecinas y vecinos. Requiere quien programe el sitio de inscripciones y quien diseñe la cartelería.
+                  habilidades: [1, 2]
+                  tipoCompromiso:
+                    cantHoras: 4
+                    periodo: semanal
+                  modalidadColaboracion:
+                    incentivoEconomico: 0
+                    posibleContratacion: false
+              minimo:
+                summary: Proyecto sin descripción ni habilidades (solo campos obligatorios)
+                value:
+                  id: 2
+                  titulo: Reciclado de residuos electrónicos
+                  habilidades: []
+                  tipoCompromiso:
+                    cantHoras: 10
+                    periodo: mensual
+                  modalidadColaboracion:
+                    incentivoEconomico: 0
+                    posibleContratacion: true
       responses:
         "201":
           description: Proyecto creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Proyecto creado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Proyecto"
         "400":
           description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe un proyecto con ese título
           content:
             application/json:
               schema:
@@ -59,6 +106,7 @@ paths:
           required: true
           schema:
             type: integer
+            example: 1
       responses:
         "200":
           description: Proyecto encontrado
@@ -84,6 +132,10 @@ paths:
                   $ref: "#/components/schemas/Colectivo"
     post:
       summary: Crea un nuevo colectivo
+      description: >
+        El campo "proyectos" se guarda tal cual se envía (por ejemplo, los
+        títulos de los proyectos asociados); a diferencia de "habilidades" en
+        Proyecto/Colaborador, no valida que exista un Proyecto con ese dato.
       tags: [Colectivos]
       requestBody:
         required: true
@@ -91,11 +143,34 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Colectivo"
+            example:
+              id: 1
+              nombre: Vecinos Autoconvocados
+              descripcion: Asamblea barrial de Villa Urquiza
+              ubicacion: Villa Urquiza, CABA
+              tipo: asamblea
+              proyectos: [Huerta comunitaria]
       responses:
         "201":
           description: Colectivo creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colectivo creado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Colectivo"
         "400":
           description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe un colectivo con ese nombre
           content:
             application/json:
               schema:
@@ -111,6 +186,7 @@ paths:
           required: true
           schema:
             type: integer
+            example: 1
       responses:
         "200":
           description: Colectivo encontrado
@@ -131,14 +207,22 @@ paths:
           required: true
           schema:
             type: integer
+            example: 1
         - in: path
           name: idProyecto
           required: true
           schema:
             type: integer
+            example: 1
       responses:
         "200":
           description: Proyecto finalizado exitosamente
+        "404":
+          description: Colectivo o proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /habilidades:
     get:
@@ -162,11 +246,42 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Habilidad"
+            examples:
+              backend:
+                summary: Desarrollo backend (programación)
+                value:
+                  id: 1
+                  titulo: Desarrollo backend
+                  tipoHabilidad: programacion
+                  descripcion: Node.js, bases de datos y APIs REST
+              diseño:
+                summary: Diseño gráfico
+                value:
+                  id: 2
+                  titulo: Diseño gráfico
+                  tipoHabilidad: diseño
+                  descripcion: Piezas gráficas para difusión de proyectos comunitarios
       responses:
         "201":
           description: Habilidad creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Habilidad creada exitosamente
+                  data:
+                    $ref: "#/components/schemas/Habilidad"
         "400":
           description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe una habilidad con ese título
           content:
             application/json:
               schema:
@@ -182,6 +297,7 @@ paths:
           required: true
           schema:
             type: integer
+            example: 1
       responses:
         "200":
           description: Habilidad encontrada
@@ -207,18 +323,58 @@ paths:
                   $ref: "#/components/schemas/Colaborador"
     post:
       summary: Crea una nueva colaboradora/colaborador
+      description: >
+        Las habilidades se referencian por id y deben existir previamente
+        (crealas primero con POST /habilidades).
       tags: [Colaboradores]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Colaborador"
+              $ref: "#/components/schemas/ColaboradorInput"
+            examples:
+              backend:
+                summary: Colaboradora con habilidad de programación
+                value:
+                  nombre: Noelia
+                  apellido: Aversa
+                  nombreFantasia: noeaversa
+                  cuentaGit: noeaversa
+                  habilidades: [1]
+                  pronombres: ella
+                  presentacion: Desarrolladora full stack con ganas de sumar a proyectos comunitarios.
+              diseño:
+                summary: Colaborador con habilidad de diseño
+                value:
+                  nombre: Facundo
+                  apellido: Martínez
+                  nombreFantasia: facumartinez
+                  cuentaGit: facumartinez
+                  habilidades: [2]
+                  pronombres: él
+                  presentacion: Diseñador gráfico, disponible fines de semana.
       responses:
         "201":
           description: Colaboradora creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colaboradora creada exitosamente
+                  data:
+                    $ref: "#/components/schemas/Colaborador"
         "400":
           description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe una colaboradora con esa cuenta de Git
           content:
             application/json:
               schema:
@@ -234,6 +390,7 @@ paths:
           required: true
           schema:
             type: string
+            example: noeaversa
       responses:
         "200":
           description: Colaboradora encontrada
@@ -247,6 +404,11 @@ paths:
   /colaboradores/{cuentaGit}/anotarProyecto/{idProyecto}:
     post:
       summary: Anota a una colaboradora/colaborador a un proyecto
+      description: >
+        La colaboradora debe tener al menos una habilidad en común con las
+        requeridas por el proyecto, y el proyecto no debe estar finalizado.
+        Ejemplo: noeaversa tiene la habilidad 1 (programación), que el
+        proyecto 1 requiere.
       tags: [Colaboradores]
       parameters:
         - in: path
@@ -254,19 +416,93 @@ paths:
           required: true
           schema:
             type: string
+            example: noeaversa
         - in: path
           name: idProyecto
           required: true
           schema:
             type: integer
+            example: 1
       responses:
         "200":
           description: Colaboradora anotada al proyecto exitosamente
+        "400":
+          description: La colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
-          description: Colaboradora no encontrada
+          description: Colaboradora o proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El proyecto ya fue finalizado y no admite nuevas personas colaboradoras
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
+    TipoCompromiso:
+      type: object
+      properties:
+        cantHoras:
+          type: number
+          example: 4
+        periodo:
+          type: string
+          enum: [semanal, mensual, total]
+          example: semanal
+      required:
+        - cantHoras
+        - periodo
+
+    ModalidadColaboracion:
+      type: object
+      properties:
+        incentivoEconomico:
+          type: number
+          example: 0
+        posibleContratacion:
+          type: boolean
+          example: false
+      required:
+        - incentivoEconomico
+        - posibleContratacion
+
+    ProyectoInput:
+      type: object
+      description: Body esperado por POST /proyectos. No admite campos adicionales.
+      properties:
+        id:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+          example: Huerta comunitaria
+        descripcion:
+          type: string
+          example: Espacio verde barrial mantenido por vecinas y vecinos
+        habilidades:
+          type: array
+          description: Ids de habilidades existentes (ver GET /habilidades)
+          items:
+            type: integer
+          example: [1, 2]
+        tipoCompromiso:
+          $ref: "#/components/schemas/TipoCompromiso"
+        modalidadColaboracion:
+          $ref: "#/components/schemas/ModalidadColaboracion"
+      required:
+        - id
+        - titulo
+        - tipoCompromiso
+        - modalidadColaboracion
+
     Proyecto:
       type: object
       properties:
@@ -281,11 +517,11 @@ components:
         habilidades:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/Habilidad"
         tipoCompromiso:
-          type: string
+          $ref: "#/components/schemas/TipoCompromiso"
         modalidadColaboracion:
-          type: string
+          $ref: "#/components/schemas/ModalidadColaboracion"
         finalizado:
           type: boolean
           default: false
@@ -336,6 +572,40 @@ components:
         - titulo
         - tipoHabilidad
 
+    ColaboradorInput:
+      type: object
+      description: Body esperado por POST /colaboradores. No admite campos adicionales.
+      properties:
+        nombre:
+          type: string
+          example: Noelia
+        apellido:
+          type: string
+          example: Aversa
+        nombreFantasia:
+          type: string
+          example: noeaversa
+        cuentaGit:
+          type: string
+          example: noeaversa
+        habilidades:
+          type: array
+          description: Ids de habilidades existentes (ver GET /habilidades)
+          items:
+            type: integer
+          default: []
+          example: [1]
+        pronombres:
+          type: string
+          example: ella
+        presentacion:
+          type: string
+          maxLength: 300
+      required:
+        - nombre
+        - apellido
+        - cuentaGit
+
     Colaborador:
       type: object
       properties:
@@ -351,7 +621,7 @@ components:
         habilidades:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/Habilidad"
         pronombres:
           type: string
         presentacion:
