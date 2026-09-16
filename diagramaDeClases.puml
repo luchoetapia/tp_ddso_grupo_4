@@ -9,14 +9,30 @@ tipo: TipoColectivo
 proyectos : List<Proyecto>
 }
 
+'(Fran): Aca sacaría el finalizado y le dejearía el porcentaje solo.
 class Proyecto {
 id : Int 
 titulo : String
 descripcion : String
-habilidades : List<Habilidad>
+finalizado: boolean
+porcentajeFinalizado: Float
+enlaceSistema : String
+enlaceCodigoFuente : String
+logros: List<Logros>
+}
+
+'(Fran): No estoy seguro que mas agregarle a los logros, consultar.
+class Logro {
+titulo: String
+descripcion: String
+}
+
+class Perfil {
+descripcion : String
+habilidadesRequeridas : List<Habilidad>
+habilidadesOpcionales : List<Habilidad>
 tipoCompromiso : TipoCompromiso
 modalidadColaboracion : ModalidadColaboracion
-finalizado: boolean
 }
 
 class TipoCompromiso {
@@ -24,8 +40,9 @@ cantHoras : Int
 periodo : Periodo
 }
 
+' Cambio el id a String, porque el enunciado dice que es el titulo normalizado.
 class Habilidad {
-id : Int
+id : String
 titulo : String
 tipoHabilidad : TipoHabilidad
 descripcion : String
@@ -40,6 +57,25 @@ cuentaGit : String
 habilidades : List<Habilidad>
 pronombres : List<String>
 presentacion : String
+deseaSerContactado : Boolean
+notificaciones : List<Notificacion>
+}
+
+class Contacto {
+medio : MedioDeContacto
+valor : String
+}
+
+enum MedioDeContacto {
+EMAIL,
+WHATSAPP,
+SMS
+}
+
+class Notificacion {
+proyecto: Proyecto
+mensaje: String
+fecha: LocalDate
 }
 
 class Colaboracion {
@@ -74,19 +110,26 @@ GESTION_PROYECTOS,
 COLABORACION,
 }
 
-Colectivo -d-> "*" Proyecto
-Colectivo -r-> TipoColectivo
+Colectivo -d-> " * " Proyecto
+Colectivo -l-> TipoColectivo
 
-Proyecto -> "*" Habilidad
-Proyecto -d-> TipoCompromiso
-Proyecto -> ModalidadColaboracion
+Proyecto -d-> " * " Perfil
+Proyecto -> " * " Logro
 
-Colaboracion -> Proyecto
-Colaborador <- Colaboracion
-Colaborador -u-> "*" Habilidad
+Perfil -r-> TipoCompromiso
+Perfil -l-> ModalidadColaboracion
+Perfil -u-> " * " Habilidad
+
+Colaboracion -d-> Proyecto
+
+Colaborador <-u- Colaboracion
+Colaborador -d-> " * " Habilidad
+Colaborador -l-> " * " Contacto
+Colaborador -> " * " Notificacion
+
+Contacto -u-> MedioDeContacto
 
 TipoCompromiso -r-> Periodo
-Habilidad -l-> TipoHabilidad
 
-TipoCompromiso -> Periodo
+Habilidad -l-> TipoHabilidad
 @enduml
