@@ -59,6 +59,7 @@ pronombres : List<String>
 presentacion : String
 deseaSerContactado : Boolean
 notificaciones : List<Notificacion>
+contactos : List<Contacto>
 }
 
 class Contacto {
