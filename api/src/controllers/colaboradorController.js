@@ -18,7 +18,7 @@ class ColaboradorController {
     }
 
     obtenerColaboradores = (req, res) => {
-        const colaboradores = this.colaboradorService.obtenerTodos()
+        const colaboradores = this.colaboradorRepository.findAll();
         res.status(200).json(colaboradores)
     }
 
