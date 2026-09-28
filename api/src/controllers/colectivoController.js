@@ -40,12 +40,6 @@ class ColectivoController {
         }
         res.status(200).json(colectivo)
     }
-
-    finalizarProyecto = (req, res) => {
-        const { id, idProyecto } = req.params
-        const proyecto = this.colectivoService.finalizarProyecto(parseInt(id), parseInt(idProyecto))
-        res.status(200).json({ message: 'Proyecto finalizado exitosamente', data: proyecto })
-    }
 }
 
 module.exports = { ColectivoController };
