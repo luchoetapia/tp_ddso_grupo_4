@@ -14,4 +14,7 @@ router.route('/:id')
 router.route('/:id/finalizar')
     .post((req, res) => proyectoController.finalizarProyecto(req, res));
 
+router.route('/seed')
+    .post((req, res) => proyectoController.seed(req, res));
+
 module.exports = router

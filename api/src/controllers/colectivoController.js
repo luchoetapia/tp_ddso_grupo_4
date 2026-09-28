@@ -40,6 +40,32 @@ class ColectivoController {
         }
         res.status(200).json(colectivo)
     }
+
+    seed = (req, res) => {
+        const COLECTIVOS_INICIALES = [
+            {
+                id: 1,
+                nombre: "Colectivo Software Libre",
+                descripcion: "Comunidad enfocada en desarrollo de software abierto",
+                ubicacion: "Buenos Aires",
+                tipo: "ONG",
+                proyectos: []
+            },
+            {
+                id: 2,
+                nombre: "Tech For Good",
+                descripcion: "Proyectos tecnológicos con impacto social",
+                ubicacion: "Córdoba",
+                tipo: "Fundación",
+                proyectos: []
+            }
+        ];
+
+        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : COLECTIVOS_INICIALES;
+        const creados = lista.map(datos => this.colectivoService.crear(datos));
+
+        return res.status(201).json({ status: "success", data: creados });
+    }
 }
 
 module.exports = { ColectivoController };

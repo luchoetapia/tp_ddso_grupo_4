@@ -49,6 +49,35 @@ class ColaboradorController {
         const colaboracion = this.colaboradorService.anotarAProyecto(colaborador, parseInt(idProyecto, 10))
         res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
     }
+
+    seed = (req, res) => {
+        const COLABORADORES_INICIALES = [
+            {
+                nombre: "Juan",
+                apellido: "Pérez",
+                nombreFantasia: "Juani",
+                cuentaGit: "juanperez",
+                habilidades: [1, 2],
+                pronombres: "Él",
+                presentacion: "Desarrollador backend apasionado por Node.js"
+            },
+            {
+                nombre: "María",
+                apellido: "Gómez",
+                nombreFantasia: "Mari",
+                cuentaGit: "mariagomez",
+                habilidades: [2],
+                pronombres: "Ella",
+                presentacion: "Frontend dev y diseñadora UX"
+            }
+        ];
+
+        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : COLABORADORES_INICIALES;
+    
+        const creados = lista.map(datos => this.colaboradorService.crear(datos));
+
+        return res.status(201).json({ status: "success", data: creados });
+    }
 }
 
 module.exports = { ColaboradorController };

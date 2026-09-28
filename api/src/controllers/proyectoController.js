@@ -64,6 +64,30 @@ class ProyectoController {
             data: proyecto 
         });
     }
+
+    seed = (req, res) => {
+        const PROYECTOS_INICIALES = [
+            {
+                id: 1,
+                titulo: "Plataforma Educativa",
+                descripcion: "Desarrollo de aula virtual accesible",
+                habilidades: [1, 2],
+                tipoCompromiso: {
+                    cantHoras: 10,
+                    periodo: "SEMANAL" 
+            },
+                modalidadColaboracion: {
+                incentivoEconomico: 0,
+                posibleContratacion: false
+            }
+            }
+        ];
+
+        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : PROYECTOS_INICIALES;
+        const creados = lista.map(datos => this.proyectoService.crear(datos));
+
+        return res.status(201).json({ status: "success", data: creados });
+    }
 }
 
 module.exports = { ProyectoController };
