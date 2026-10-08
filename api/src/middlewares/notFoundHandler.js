@@ -1,5 +1,7 @@
-import { NotFoundError } from "../errors/AppError.js"
+const { NotFoundError } = require("../errors/AppError.js");
 
-export function notFoundHandler(req, res, next) {
-    next(new NotFoundError(`Ruta ${req.originalUrl} no encontrada`))
+function notFoundHandler(req, res, next) {
+    next(new NotFoundError(`Ruta ${req.originalUrl} no encontrada`));
 }
+
+module.exports = { notFoundHandler };

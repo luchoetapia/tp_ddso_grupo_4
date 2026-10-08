@@ -1,6 +1,6 @@
-import { notFoundHandler } from "./middlewares/notFoundHandler.js"
-import { errorLogger } from "./middlewares/errorLogger.js"
-import { errorHandler } from "./middlewares/errorHandler.js"
+const { notFoundHandler } = require("./src/middlewares/notFoundHandler.js");
+const { errorLogger } = require("./src/middlewares/errorLogger.js");
+const { errorHandler } = require("./src/middlewares/errorHandler.js");
 
 const express = require('express');
 const app = express();
