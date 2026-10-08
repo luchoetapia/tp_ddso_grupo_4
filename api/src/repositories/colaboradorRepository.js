@@ -7,6 +7,10 @@ class ColaboradorRepository {
         return this.colaboradores;
     }
 
+    findByID(idBuscado) {
+        return this.colaboradores.find(c => c.id === idBuscado);
+    }
+
     findByCuentaGit(cuentaGit) {
         return this.colaboradores.find(c => c.cuentaGit === cuentaGit);
     }

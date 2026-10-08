@@ -3,6 +3,7 @@ const colaboradorService = require('../services/colaboradorService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
+    id: z.int().positive(),
     nombre: z.string().min(1),
     apellido: z.string().min(1),
     nombreFantasia: z.string().optional(),
@@ -43,9 +44,11 @@ class ColaboradorController {
     anotarColaboradorAProyecto = (req, res) => {
         const { cuentaGit, idProyecto } = req.params;
         const colaborador = this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
+        /* Excepcion ya manejada por colaboradorService
         if (!colaborador) {
             return res.status(404).json({ message: 'Colaboradora no encontrada' })
         }
+        */
         const colaboracion = this.colaboradorService.anotarAProyecto(colaborador, parseInt(idProyecto, 10))
         res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
     }
