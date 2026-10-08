@@ -17,7 +17,6 @@ class Proyecto {
         this.habilidades = habilidades
         this.tipoCompromiso = tipoCompromiso
         this.modalidadColaboracion = modalidadColaboracion
-        this.finalizado = finalizado //TODO: Considerar borrar esto y usar solo el porcentaje
         this.porcentajeFinalizado = porcentajeFinalizado,
         this.enlaceSistema = enlaceSistema,
         this.enlaceCodigoFuente = enlaceCodigoFuente,
