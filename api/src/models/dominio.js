@@ -10,14 +10,18 @@ class Colectivo {
 }
 
 class Proyecto {
-    constructor(id, titulo, descripcion, habilidades, tipoCompromiso, modalidadColaboracion, finalizado = false) {
+    constructor(id, titulo, descripcion, habilidades, tipoCompromiso, modalidadColaboracion, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = []) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
         this.habilidades = habilidades
         this.tipoCompromiso = tipoCompromiso
         this.modalidadColaboracion = modalidadColaboracion
-        this.finalizado = finalizado
+        this.finalizado = finalizado //TODO: Considerar borrar esto y usar solo el porcentaje
+        this.porcentajeFinalizado = porcentajeFinalizado,
+        this.enlaceSistema = enlaceSistema,
+        this.enlaceCodigoFuente = enlaceCodigoFuente,
+        this.logros = logros
     }
 }
 
@@ -38,8 +42,7 @@ class Habilidad {
 }
 
 class Colaborador {
-    constructor(id, nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion) {
-        this.id = id;
+    constructor(nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion, deseaSerContactado, notificaciones, contactos) {
         this.nombre = nombre
         this.apellido = apellido
         this.nombreFantasia = nombreFantasia
@@ -47,6 +50,9 @@ class Colaborador {
         this.habilidades = habilidades
         this.pronombres = pronombres
         this.presentacion = presentacion
+        this.deseaSerContactado = deseaSerContactado,
+        this.notificaciones = notificaciones
+        this.contactos = contactos
     }
 }
 

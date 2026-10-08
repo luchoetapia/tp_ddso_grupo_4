@@ -9,10 +9,6 @@ class ColectivoService {
         this.proyectoService = proyectoService;
     }
 
-    obtenerTodos = () => {
-        return this.colectivoRepository.findAll();
-    }
-
     crear = (datos) => {
         const existente = this.colectivoRepository.findByNombre(datos.nombre)
         if (existente) {

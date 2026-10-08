@@ -17,7 +17,7 @@ class ColectivoController {
     }
 
     obtenerColectivos = (req, res) => {
-        const colectivos = this.colectivoService.obtenerTodos()
+        const colectivos = this.colectivoRepository.findAll();
         res.status(200).json(colectivos)
     }
 
@@ -41,10 +41,30 @@ class ColectivoController {
         res.status(200).json(colectivo)
     }
 
-    finalizarProyecto = (req, res) => {
-        const { id, idProyecto } = req.params
-        const proyecto = this.colectivoService.finalizarProyecto(parseInt(id), parseInt(idProyecto))
-        res.status(200).json({ message: 'Proyecto finalizado exitosamente', data: proyecto })
+    seed = (req, res) => {
+        const COLECTIVOS_INICIALES = [
+            {
+                id: 1,
+                nombre: "Colectivo Software Libre",
+                descripcion: "Comunidad enfocada en desarrollo de software abierto",
+                ubicacion: "Buenos Aires",
+                tipo: "ONG",
+                proyectos: []
+            },
+            {
+                id: 2,
+                nombre: "Tech For Good",
+                descripcion: "Proyectos tecnológicos con impacto social",
+                ubicacion: "Córdoba",
+                tipo: "Fundación",
+                proyectos: []
+            }
+        ];
+
+        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : COLECTIVOS_INICIALES;
+        const creados = lista.map(datos => this.colectivoService.crear(datos));
+
+        return res.status(201).json({ status: "success", data: creados });
     }
 }
 

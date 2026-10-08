@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const proyectoService = require('../services/proyectoService.js');
+const colectivoService = require('../services/colectivoService.js');
 const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
@@ -21,10 +22,11 @@ const proyectoSchema = z.object({
 class ProyectoController {
     constructor() {
         this.proyectoService = proyectoService;
+        this.colectivoService = colectivoService
     }
 
     obtenerProyectos = (req, res) => {
-        const proyectos = this.proyectoService.obtenerTodos()
+        const proyectos = this.proyectoRepository.findAll();
         res.status(200).json(proyectos)
     }
 
@@ -45,6 +47,46 @@ class ProyectoController {
             return res.status(404).json({ message: 'Proyecto no encontrado' })
         }
         res.status(200).json(proyecto)
+    }
+
+    finalizarProyecto = (req, res) => {
+        const { id } = req.params;
+        const { idColectivo } = req.body; 
+
+        if (!idColectivo) {
+            throw new BadRequestError("Se requiere idColectivo para finalizar el proyecto");
+        }
+
+        const proyecto = this.colectivoService.finalizarProyecto(parseInt(idColectivo, 10), parseInt(id, 10));
+    
+        res.status(200).json({ 
+            message: 'Proyecto finalizado exitosamente por el colectivo', 
+            data: proyecto 
+        });
+    }
+
+    seed = (req, res) => {
+        const PROYECTOS_INICIALES = [
+            {
+                id: 1,
+                titulo: "Plataforma Educativa",
+                descripcion: "Desarrollo de aula virtual accesible",
+                habilidades: [1, 2],
+                tipoCompromiso: {
+                    cantHoras: 10,
+                    periodo: "SEMANAL" 
+            },
+                modalidadColaboracion: {
+                incentivoEconomico: 0,
+                posibleContratacion: false
+            }
+            }
+        ];
+
+        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : PROYECTOS_INICIALES;
+        const creados = lista.map(datos => this.proyectoService.crear(datos));
+
+        return res.status(201).json({ status: "success", data: creados });
     }
 }
 
