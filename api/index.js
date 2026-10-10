@@ -2,10 +2,13 @@ import { notFoundHandler } from "./middlewares/notFoundHandler.js"
 import { errorLogger } from "./middlewares/errorLogger.js"
 import { errorHandler } from "./middlewares/errorHandler.js"
 
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+const connectDB = require("./src/config/db.js");
 const router = require("./src/routers/router.js");
 
 app.use(express.json());
@@ -25,8 +28,15 @@ app.get("/healthcheck", (request, response) => {
     })
 })
 
-app.listen(PORT, () => {
-  console.log(`Servidor en http://localhost:${PORT}`);
-});
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Servidor en http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('No se pudo conectar a MongoDB:', error.message);
+    process.exit(1);
+  });
 
 module.exports = app;

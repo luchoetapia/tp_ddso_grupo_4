@@ -20,8 +20,10 @@
   },
   "homepage": "https://github.com/luchoetapia/tp_dsi_grupo_4#readme",
   "dependencies": {
+    "dotenv": "^18.0.7",
     "express": "^5.2.1",
     "js-yaml": "^5.4.1",
+    "mongoose": "^9.11.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.5.4"
