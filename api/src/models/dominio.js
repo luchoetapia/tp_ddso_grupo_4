@@ -56,9 +56,11 @@ class Colaborador {
 }
 
 class Colaboracion {
-    constructor(colaborador, proyecto) {
-        this.colaborador = colaborador
-        this.proyecto = proyecto
+    constructor(colaborador, proyecto, inicio, fin = null) {
+        this.colaborador = colaborador;
+        this.proyecto = proyecto;
+        this.inicio = inicio;
+        this.fin = fin || null;
     }
 }
 
