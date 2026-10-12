@@ -61,7 +61,7 @@ class ProyectoController {
         });
     }
 
-    seed = async (req, res) => {
+    llenarDatosPrueba = async (req, res) => {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {

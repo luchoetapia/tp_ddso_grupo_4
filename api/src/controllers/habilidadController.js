@@ -34,7 +34,7 @@ class HabilidadController {
         res.status(200).json(habilidad)
     }
 
-    seed = async (req, res) => {
+    llenarDatosPrueba = async (req, res) => {
         const HABILIDADES_INICIALES = [
             {
                 titulo: "JavaScript",

@@ -36,7 +36,7 @@ class ColectivoController {
         res.status(200).json(colectivo)
     }
 
-    seed = async (req, res) => {
+    llenarDatosPrueba = async (req, res) => {
         const COLECTIVOS_INICIALES = [
             {
                 nombre: "Colectivo Software Libre",

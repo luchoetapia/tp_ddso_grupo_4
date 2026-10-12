@@ -51,7 +51,7 @@ class ColaboradorController {
         res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
     }
 
-    seed = async (req, res) => {
+    llenarDatosPrueba = async (req, res) => {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
