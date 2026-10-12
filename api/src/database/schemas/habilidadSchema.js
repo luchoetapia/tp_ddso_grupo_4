@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const {tipoHabilidad} = require('../../models/dominio')
+const {tipoHabilidad, Habilidad} = require('../../models/dominio')
 
 const Schema = mongoose.Schema;
 
@@ -9,10 +9,12 @@ const valuesTipoHabilidad = Object.values(tipoHabilidad);
 const habilidadSchema = new Schema({
     titulo: {type: String, required: true},
     tipoHabilidad: {type: String, enum: valuesTipoHabilidad, required: true},
-    descripcion: {type: String, requiered: true}
+    descripcion: {type: String, required: true}
 }, {
     timestamps: true,
     versionKey: false,
 });
+
+habilidadSchema.loadClass(Habilidad)
 
 module.exports = mongoose.model('Habilidad', habilidadSchema);

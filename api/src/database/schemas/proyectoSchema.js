@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
-const { TipoCompromiso, ModalidadColaboracion, Proyecto } = require('../../models/dominio');
-const { Logro } = require('../../models/Logro')
+const { TipoCompromiso, ModalidadColaboracion} = require('../../models/dominio');
+const {Proyecto} = require('../../models/dominio');
+const Logro  = require('../../models/Logro')
 const Schema = mongoose.Schema;
 
 const tipoCompromisoSchema = new Schema({
@@ -32,6 +33,7 @@ const proyectoSchema = new Schema({
     enlaceCodigoFuente: { type: String, default: null },
     logros: {type: [logroSchema], default: []}
 }, {timestamps: true, versionKey: false})
+
 proyectoSchema.loadClass(Proyecto);
 
 module.exports = mongoose.model('Proyecto', proyectoSchema);
