@@ -1,6 +1,7 @@
-import { notFoundHandler } from "./middlewares/notFoundHandler.js"
-import { errorLogger } from "./middlewares/errorLogger.js"
-import { errorHandler } from "./middlewares/errorHandler.js"
+const { notFoundHandler } = require("./src/middlewares/notFoundHandler.js");
+const { errorLogger } = require("./src/middlewares/errorLogger.js");
+const { errorHandler } = require("./src/middlewares/errorHandler.js");
+const mongoClient = require("./src/database/mongoose.js");
 
 require('dotenv').config();
 
@@ -8,7 +9,6 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const connectDB = require("./src/config/db.js");
 const router = require("./src/routers/router.js");
 
 app.use(express.json());
@@ -18,7 +18,7 @@ app.use(errorLogger);
 app.use(errorHandler);
 
 app.get('/', (req, res) => {
-  res.send('¡Hola Mundo!');
+    res.send('¡Hola Mundo!');
 });
 
 app.get("/healthcheck", (request, response) => {
@@ -28,15 +28,15 @@ app.get("/healthcheck", (request, response) => {
     })
 })
 
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Servidor en http://localhost:${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error('No se pudo conectar a MongoDB:', error.message);
-    process.exit(1);
-  });
+app.listen(PORT, async () => {
+    console.log(`Servidor en http://localhost:${PORT}`);
+
+    try {
+        await mongoClient.connect();
+    }
+    catch (error) {
+        console.error("Error connecting to MongoDB:", error);
+    }
+});
 
 module.exports = app;

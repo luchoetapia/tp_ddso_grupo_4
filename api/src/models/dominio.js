@@ -17,7 +17,6 @@ class Proyecto {
         this.habilidades = habilidades
         this.tipoCompromiso = tipoCompromiso
         this.modalidadColaboracion = modalidadColaboracion
-        this.finalizado = finalizado //TODO: Considerar borrar esto y usar solo el porcentaje
         this.porcentajeFinalizado = porcentajeFinalizado,
         this.enlaceSistema = enlaceSistema,
         this.enlaceCodigoFuente = enlaceCodigoFuente,
@@ -57,9 +56,11 @@ class Colaborador {
 }
 
 class Colaboracion {
-    constructor(colaborador, proyecto) {
-        this.colaborador = colaborador
-        this.proyecto = proyecto
+    constructor(colaborador, proyecto, inicio, fin = null) {
+        this.colaborador = colaborador;
+        this.proyecto = proyecto;
+        this.inicio = inicio;
+        this.fin = fin || null;
     }
 }
 
