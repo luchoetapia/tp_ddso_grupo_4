@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
-const {tipoHabilidad, Habilidad} = require('../../models/dominio')
+const { TipoHabilidad, Habilidad } = require('../../models/dominio')
 
 const Schema = mongoose.Schema;
 
-const valuesTipoHabilidad = Object.values(tipoHabilidad);
+const valuesTipoHabilidad = Object.values(TipoHabilidad);
 
 const habilidadSchema = new Schema({
     titulo: {type: String, required: true},

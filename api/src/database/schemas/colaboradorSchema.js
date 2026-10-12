@@ -14,7 +14,7 @@ const colaboradorSchema = new Schema({
     nombre: { type: String, default: null},
     apellido: { type: String, default: null },
     nombreFantasia: { type: String, required: true},
-    cuentaGit: { type: String, enum: valuesTipocolaborador, required: true },
+    cuentaGit: { type: String,  required: true },
     pronombres: [{ type: String, ref: 'Proyecto', default: null}],
     habilidades: [{ type: Schema.Types.ObjectId, required: true, ref: 'Habilidad' }],
     presentacion: {type: String},
