@@ -1,14 +1,13 @@
+const { obtenerStatusCode } = require("./errorHandler.js");
+
 function errorLogger(err, req, res, next) {
-    console.error({
-        timestamp: new Date().toISOString(),
-        method: req.method,
-        path: req.originalUrl,
-        error: {
-            name: err.name,
-            message: err.message,
-            stack: err.stack,
-        },
-    })
+    const statusCode = obtenerStatusCode(err);
+    const linea = `${new Date().toISOString()} | ${req.method} ${req.originalUrl} | ${statusCode} | ${err.name}: ${err.message}`;
+
+    if (statusCode >= 500) 
+        console.error(`${linea}\n${err.stack}`);
+    else
+        console.error(linea);
 
     next(err)
 }
