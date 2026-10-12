@@ -5,20 +5,20 @@ class HabilidadRepository {
         this.model = HabilidadModel;
     }
 
-    findAll() {
-        return this.model.find();
+    async findAll() {
+        return await this.model.find();
     }
 
-    findByTitulo(titulo) {
-        return this.model.findOne({ titulo: titulo });
+    async findByTitulo(titulo) {
+        return await this.model.findOne({ titulo: titulo });
     }
 
-    findById(id) {
-        return this.model.findById(id);
+    async findById(id) {
+        return await this.model.findById(id);
     }
 
-    save(habilidad) {
-        return this.model.create(habilidad);
+    async save(habilidad) {
+        return await this.model.create(habilidad);
     }
 }
 

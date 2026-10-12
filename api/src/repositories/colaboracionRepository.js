@@ -5,12 +5,12 @@ class ColaboracionRepository {
         this.model = ColaboracionModel;
     }
 
-    findAll() {
-        return this.model.find();
+    async findAll() {
+        return await this.model.find();
     }
 
-    save(colaboracion) {
-        return this.model.create(colaboracion);
+    async save(colaboracion) {
+        return await this.model.create(colaboracion);
     }
 }
 
