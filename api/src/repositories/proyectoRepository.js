@@ -1,23 +1,30 @@
+const ProyectoModel = require('../database/schemas/proyectoSchema.js');
+
 class ProyectoRepository {
-    constructor() {
-        this.proyectos = [];
+    async findAll() {
+        return await ProyectoModel.find().populate('habilidades');
     }
 
-    findAll() {
-        return this.proyectos;
+    async findByTitulo(titulo) {
+        return await ProyectoModel.findOne({ titulo });
     }
 
-    findByTitulo(titulo) {
-        return this.proyectos.find(p => p.titulo === titulo);
+    async findById(id) {
+        return await ProyectoModel.findById(id).populate('habilidades');
     }
 
-    findById(id) {
-        return this.proyectos.find(p => p.id === id);
+    async findByIds(ids) {
+        return await ProyectoModel.find({ _id: { $in: ids } });
     }
 
-    save(proyecto) {
-        this.proyectos.push(proyecto);
-        return proyecto;
+    async save(datos) {
+        const proyecto = new ProyectoModel(datos);
+        await proyecto.save();
+        return await proyecto.populate('habilidades');
+    }
+
+    async update(id, cambios) {
+        return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('habilidades');
     }
 }
 

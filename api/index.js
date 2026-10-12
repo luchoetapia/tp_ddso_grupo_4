@@ -3,9 +3,11 @@ const { errorLogger } = require("./src/middlewares/errorLogger.js");
 const { errorHandler } = require("./src/middlewares/errorHandler.js");
 const mongoClient = require("./src/database/mongoose.js");
 
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const router = require("./src/routers/router.js");
 
@@ -31,7 +33,7 @@ app.listen(PORT, async () => {
 
     try {
         await mongoClient.connect();
-    } 
+    }
     catch (error) {
         console.error("Error connecting to MongoDB:", error);
     }

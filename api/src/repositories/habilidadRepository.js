@@ -1,24 +1,26 @@
+const HabilidadModel = require('../database/schemas/habilidadSchema.js');
+
 class HabilidadRepository {
-    constructor() {
-        this.habilidades = [];
+    async findAll() {
+        return await HabilidadModel.find();
     }
 
-    findAll() {
-        return this.habilidades;
+    async findByTitulo(titulo) {
+        return await HabilidadModel.findOne({ titulo });
     }
 
-    findByTitulo(titulo) {
-        return this.habilidades.find(h => h.titulo === titulo);
+    async findById(id) {
+        return await HabilidadModel.findById(id);
     }
 
-    findById(id) {
-        return this.habilidades.find(h => h.id === id);
+    async findByIds(ids) {
+        return await HabilidadModel.find({ _id: { $in: ids } });
     }
 
-    save(habilidad) {
-        this.habilidades.push(habilidad);
-        return habilidad;
+    async save(datos) {
+        const habilidad = new HabilidadModel(datos);
+        return await habilidad.save();
     }
 }
 
-module.exports = new HabilidadRepository() ;
+module.exports = new HabilidadRepository();

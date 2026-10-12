@@ -1,25 +1,23 @@
+const ColaboradorModel = require('../database/schemas/colaboradorSchema.js');
+
 class ColaboradorRepository {
-    constructor() {
-        this.colaboradores = [];
+    async findAll() {
+        return await ColaboradorModel.find().populate('habilidades');
     }
 
-    findAll() {
-        return this.colaboradores;
+    async findById(id) {
+        return await ColaboradorModel.findById(id).populate('habilidades');
     }
 
-    findByID(idBuscado) {
-        return this.colaboradores.find(c => c.id === idBuscado);
+    async findByCuentaGit(cuentaGit) {
+        return await ColaboradorModel.findOne({ cuentaGit }).populate('habilidades');
     }
 
-    findByCuentaGit(cuentaGit) {
-        return this.colaboradores.find(c => c.cuentaGit === cuentaGit);
+    async save(datos) {
+        const colaborador = new ColaboradorModel(datos);
+        await colaborador.save();
+        return await colaborador.populate('habilidades');
     }
-
-    save(colaborador) {
-        this.colaboradores.push(colaborador);
-        return colaborador;
-    }
-  
 }
 
 module.exports = new ColaboradorRepository();
