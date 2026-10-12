@@ -1,23 +1,24 @@
+const ProyectoModel = require('../database/schemas/proyectoSchema');
+
 class ProyectoRepository {
     constructor() {
-        this.proyectos = [];
+        this.model = ProyectoModel;
     }
 
     findAll() {
-        return this.proyectos;
+        return this.model.find();
     }
 
     findByTitulo(titulo) {
-        return this.proyectos.find(p => p.titulo === titulo);
+        return this.model.findOne({ titulo: titulo });
     }
 
     findById(id) {
-        return this.proyectos.find(p => p.id === id);
+        return this.model.findById(id);
     }
 
     save(proyecto) {
-        this.proyectos.push(proyecto);
-        return proyecto;
+        return this.model.create(proyecto);
     }
 }
 

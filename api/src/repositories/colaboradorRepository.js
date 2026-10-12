@@ -1,23 +1,25 @@
+const ColaboradorModel = require('../database/schemas/colaboradorSchema');
+
 class ColaboradorRepository {
+
     constructor() {
-        this.colaboradores = [];
+        this.model = ColaboradorModel;
     }
 
     findAll() {
-        return this.colaboradores;
+        return this.model.find();
     }
 
     findByID(idBuscado) {
-        return this.colaboradores.find(c => c.id === idBuscado);
+        return this.model.findById(idBuscado);
     }
 
     findByCuentaGit(cuentaGit) {
-        return this.colaboradores.find(c => c.cuentaGit === cuentaGit);
+        return this.model.findOne({ cuentaGit: cuentaGit });
     }
 
     save(colaborador) {
-        this.colaboradores.push(colaborador);
-        return colaborador;
+        return this.model.create(colaborador);
     }
   
 }

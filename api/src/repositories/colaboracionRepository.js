@@ -1,15 +1,16 @@
+const ColaboracionModel = require('../database/schemas/colaboracionSchema');
+
 class ColaboracionRepository {
     constructor() {
-        this.colaboraciones = [];
+        this.model = ColaboracionModel;
     }
 
     findAll() {
-        return this.colaboraciones;
+        return this.model.find();
     }
 
     save(colaboracion) {
-        this.colaboraciones.push(colaboracion);
-        return colaboracion;
+        return this.model.create(colaboracion);
     }
 }
 

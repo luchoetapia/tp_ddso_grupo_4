@@ -1,23 +1,24 @@
+const HabilidadModel = require('../database/schemas/habilidadSchema');
+
 class HabilidadRepository {
     constructor() {
-        this.habilidades = [];
+        this.model = HabilidadModel;
     }
 
     findAll() {
-        return this.habilidades;
+        return this.model.find();
     }
 
     findByTitulo(titulo) {
-        return this.habilidades.find(h => h.titulo === titulo);
+        return this.model.findOne({ titulo: titulo });
     }
 
     findById(id) {
-        return this.habilidades.find(h => h.id === id);
+        return this.model.findById(id);
     }
 
     save(habilidad) {
-        this.habilidades.push(habilidad);
-        return habilidad;
+        return this.model.create(habilidad);
     }
 }
 

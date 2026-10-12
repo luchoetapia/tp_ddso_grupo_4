@@ -1,23 +1,24 @@
+const ColectivoModel = require('../database/schemas/colectivoSchema');
+
 class ColectivoRepository {
     constructor() {
-        this.colectivos = [];
+        this.model = ColectivoModel;
     }
 
     findAll() {
-        return this.colectivos;
+        return this.model.find();
     }
 
     findByNombre(nombre) {
-        return this.colectivos.find(c => c.nombre === nombre);
+        return this.model.findOne({ nombre: nombre });
     }
 
     findById(id) {
-        return this.colectivos.find(c => c.id === id);
+        return this.model.findById(id);
     }
 
     save(colectivo) {
-        this.colectivos.push(colectivo);
-        return colectivo;
+        return this.model.create(colectivo);
     }
 }
 
