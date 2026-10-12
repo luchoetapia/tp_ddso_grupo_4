@@ -13,10 +13,8 @@ const router = require("./src/routers/router.js");
 
 app.use(express.json());
 app.use(router);
-app.use(notFoundHandler);
-app.use(errorLogger);
-app.use(errorHandler);
 
+// Rutas de checkeo
 app.get('/', (req, res) => {
     res.send('¡Hola Mundo!');
 });
@@ -27,6 +25,11 @@ app.get("/healthcheck", (request, response) => {
         timestamp: new Date().toISOString(),
     })
 })
+
+// Handlers de errores
+app.use(notFoundHandler);
+app.use(errorLogger);
+app.use(errorHandler);
 
 app.listen(PORT, async () => {
     console.log(`Servidor en http://localhost:${PORT}`);
