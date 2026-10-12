@@ -1,14 +1,15 @@
-version: '3.8'
-
 services:
   api:
     build: .
     container_name: express_api_node24
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
     command: npm start
