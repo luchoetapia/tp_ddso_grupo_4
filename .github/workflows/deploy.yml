@@ -23,7 +23,7 @@ jobs:
 
             ok=0
             for i in $(seq 1 30); do
-              if curl -fs http://localhost:3000/health > /dev/null; then
+              if curl -fs http://localhost:3000/healthcheck > /dev/null; then
                 ok=1
                 break
               fi
