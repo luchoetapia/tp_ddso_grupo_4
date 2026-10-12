@@ -1,14 +1,14 @@
 const { z } = require('zod');
 const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
+const habilidadService = require('../services/habilidadService.js');
 const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
 const proyectoSchema = z.object({
-    id: z.number().int().positive(),
     titulo: z.string().min(1),
     descripcion: z.string().optional(),
-    habilidades: z.array(z.number().int().positive()).optional(),
+    habilidades: z.array(z.string()).optional(),
     tipoCompromiso: z.object({
         cantHoras: z.number().positive(),
         periodo: z.enum(Object.values(Periodo))
@@ -23,68 +23,74 @@ class ProyectoController {
     constructor() {
         this.proyectoService = proyectoService;
         this.colectivoService = colectivoService
+        this.habilidadService = habilidadService
     }
 
-    obtenerProyectos = (req, res) => {
-        const proyectos = this.proyectoRepository.findAll();
+    obtenerProyectos = async (req, res) => {
+        const proyectos = await this.proyectoService.obtenerTodos();
         res.status(200).json(proyectos)
     }
 
-    crearProyecto = (req, res) => {
+    crearProyecto = async (req, res) => {
         const resultado = proyectoSchema.safeParse(req.body)
         if (resultado.error) {
             throw new BadRequestError("Datos inválidos", resultado.error.issues)
         }
-        const proyectoNuevo = this.proyectoService.crear(resultado.data)
+        const proyectoNuevo = await this.proyectoService.crear(resultado.data)
         res.status(201).json({ message: 'Proyecto creado exitosamente', data: proyectoNuevo })
     }
 
-    obtenerProyectoPorId = (req, res) => {
-        const { id } = req.params
-        const proyecto = this.proyectoService.obtenerPorId(parseInt(id))
-
-        if (!proyecto) {
-            return res.status(404).json({ message: 'Proyecto no encontrado' })
-        }
+    obtenerProyectoPorId = async (req, res) => {
+        const proyecto = await this.proyectoService.obtenerPorId(req.params.id)
         res.status(200).json(proyecto)
     }
 
-    finalizarProyecto = (req, res) => {
+    finalizarProyecto = async (req, res) => {
         const { id } = req.params;
-        const { idColectivo } = req.body; 
+        const { idColectivo } = req.body ?? {};
 
         if (!idColectivo) {
             throw new BadRequestError("Se requiere idColectivo para finalizar el proyecto");
         }
 
-        const proyecto = this.colectivoService.finalizarProyecto(parseInt(idColectivo, 10), parseInt(id, 10));
-    
-        res.status(200).json({ 
-            message: 'Proyecto finalizado exitosamente por el colectivo', 
-            data: proyecto 
+        const proyecto = await this.colectivoService.finalizarProyecto(parseInt(idColectivo, 10), id);
+
+        res.status(200).json({
+            message: 'Proyecto finalizado exitosamente por el colectivo',
+            data: proyecto
         });
     }
 
-    seed = (req, res) => {
-        const PROYECTOS_INICIALES = [
-            {
-                id: 1,
-                titulo: "Plataforma Educativa",
-                descripcion: "Desarrollo de aula virtual accesible",
-                habilidades: [1, 2],
-                tipoCompromiso: {
-                    cantHoras: 10,
-                    periodo: "SEMANAL" 
-            },
-                modalidadColaboracion: {
-                incentivoEconomico: 0,
-                posibleContratacion: false
-            }
-            }
-        ];
+    seed = async (req, res) => {
+        let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
-        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : PROYECTOS_INICIALES;
-        const creados = lista.map(datos => this.proyectoService.crear(datos));
+        if (!lista) {
+            const habilidades = await this.habilidadService.obtenerTodas();
+            lista = [
+                {
+                    titulo: "Plataforma Educativa",
+                    descripcion: "Desarrollo de aula virtual accesible",
+                    habilidades: habilidades.slice(0, 2).map(h => h._id.toString()),
+                    tipoCompromiso: {
+                        cantHoras: 10,
+                        periodo: Periodo.SEMANAL
+                    },
+                    modalidadColaboracion: {
+                        incentivoEconomico: 0,
+                        posibleContratacion: false
+                    }
+                }
+            ];
+        }
+
+        const creados = [];
+        for (const datos of lista) {
+            const resultado = proyectoSchema.safeParse(datos)
+            if (resultado.error) {
+                throw new BadRequestError("Datos inválidos", resultado.error.issues)
+            }
+            creados.push(await this.proyectoService.crear(resultado.data));
+        }
 
         return res.status(201).json({ status: "success", data: creados });
     }

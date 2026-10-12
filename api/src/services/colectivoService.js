@@ -35,9 +35,9 @@ class ColectivoService {
         return colectivo
     }
 
-    finalizarProyecto = (idColectivo, idProyecto) => {
+    finalizarProyecto = async (idColectivo, idProyecto) => {
         this.obtenerPorId(idColectivo)
-        return this.proyectoService.finalizar(idProyecto)
+        return await this.proyectoService.finalizar(idProyecto)
     }
 }
 
