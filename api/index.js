@@ -1,3 +1,4 @@
+const { requestLogger } = require("./src/middlewares/requestLogger.js");
 const { notFoundHandler } = require("./src/middlewares/notFoundHandler.js");
 const { errorLogger } = require("./src/middlewares/errorLogger.js");
 const { errorHandler } = require("./src/middlewares/errorHandler.js");
@@ -11,12 +12,13 @@ const PORT = process.env.PORT || 3000;
 
 const router = require("./src/routers/router.js");
 
+// Logs de consultas exitosas
+app.use(requestLogger);
+
 app.use(express.json());
 app.use(router);
-app.use(notFoundHandler);
-app.use(errorLogger);
-app.use(errorHandler);
 
+// Rutas de checkeo
 app.get('/', (req, res) => {
     res.send('¡Hola Mundo!');
 });
@@ -27,6 +29,11 @@ app.get("/healthcheck", (request, response) => {
         timestamp: new Date().toISOString(),
     })
 })
+
+// Handlers de errores
+app.use(notFoundHandler);
+app.use(errorLogger);
+app.use(errorHandler);
 
 app.listen(PORT, async () => {
     console.log(`Servidor en http://localhost:${PORT}`);
