@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  api-starts:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build de la imagen
+        run: docker build -t api-ci ./api
+
+      - name: Levantar la API
+        run: |
+          docker run -d --name api-ci --network host \
+            -e PORT=3000 \
+            -e NODE_ENV=test \
+            -e MONGO_URI=mongodb://localhost:27017/test \
+            api-ci
+
+      - name: Esperar que responda
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:3000/health; then
+              echo "API OK"
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' api-ci)" != "true" ]; then
+              echo "El contenedor se cayó"
+              docker logs api-ci
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Timeout esperando a la API"
+          docker logs api-ci
+          exit 1
