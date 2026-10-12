@@ -1,28 +1,29 @@
 const mongoose = require('mongoose');
 const { Colaborador } = require('../../models/dominio')
-const { MedioDeContacto } = require('../../models/Contacto/MedioDeContacto');
+const MedioDeContacto = require('../../models/Contacto/MedioDeContacto');
 const Schema = mongoose.Schema;
 
 const valuesMedioDeContacto = Object.values(MedioDeContacto);
 
+const contactoSchema = new Schema({
+    medio: { type: String, enum: valuesMedioDeContacto, required: true },
+    valor: { type: String, required: true }
+});
+
 const colaboradorSchema = new Schema({
-    nombre: { type: String, required: true },
-    apellido: { type: String, default: "" },
-    nombreFantasia: { type: String, default: null },
+    nombre: { type: String, default: null},
+    apellido: { type: String, default: null },
+    nombreFantasia: { type: String, required: true},
     cuentaGit: { type: String, enum: valuesTipocolaborador, required: true },
-    pronombres: [{ type: Schema.Types.ObjectId, ref: 'Proyecto' }],
-    habilidades: [{ type: [Schema.Types.ObjectId], required: true, ref: 'Habilidad' }],
+    pronombres: [{ type: String, ref: 'Proyecto', default: null}],
+    habilidades: [{ type: Schema.Types.ObjectId, required: true, ref: 'Habilidad' }],
     presentacion: {type: String},
     deseaSerContactado: {type: Boolean},
-    notificaciones: [{ type: [Schema.Types.ObjectId], required: true, ref: 'Notificacion' }],
-    contactos: [{type: {
-        medio: {type: String, enum: valuesMedioDeContacto}
-        //TODO
-    }}]
+    contactos: { type: [contactoSchema], default: [] }
 }, {
     timestamps: true,
-    versionKey: false,
-})
+    versionKey: false
+});
 
 colaboradorSchema.loadClass(Colaborador);
 
