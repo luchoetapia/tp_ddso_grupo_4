@@ -1,3 +1,4 @@
+const { requestLogger } = require("./src/middlewares/requestLogger.js");
 const { notFoundHandler } = require("./src/middlewares/notFoundHandler.js");
 const { errorLogger } = require("./src/middlewares/errorLogger.js");
 const { errorHandler } = require("./src/middlewares/errorHandler.js");
@@ -10,6 +11,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const router = require("./src/routers/router.js");
+
+// Logs de consultas exitosas
+app.use(requestLogger);
 
 app.use(express.json());
 app.use(router);
