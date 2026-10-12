@@ -1,14 +1,15 @@
 const { z } = require('zod');
 const colaboradorService = require('../services/colaboradorService.js');
+const colaboracionService = require('../services/colaboracionService.js');
+const habilidadService = require('../services/habilidadService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
-    id: z.int().positive(),
     nombre: z.string().min(1),
     apellido: z.string().min(1),
     nombreFantasia: z.string().optional(),
     cuentaGit: z.string().min(1),
-    habilidades: z.array(z.number().int().positive()).default([]),
+    habilidades: z.array(z.string()).default([]),
     pronombres: z.string().optional(),
     presentacion: z.string().max(300).optional(),
 }).strict()
@@ -16,68 +17,75 @@ const colaboradorSchema = z.object({
 class ColaboradorController {
     constructor() {
         this.colaboradorService = colaboradorService;
+        this.colaboracionService = colaboracionService;
+        this.habilidadService = habilidadService;
     }
 
-    obtenerColaboradores = (req, res) => {
-        const colaboradores = this.colaboradorRepository.findAll();
+    obtenerColaboradores = async (req, res) => {
+        const colaboradores = await this.colaboradorService.obtenerTodos();
         res.status(200).json(colaboradores)
     }
 
-    crearColaborador = (req, res) => {
+    crearColaborador = async (req, res) => {
         const resultado = colaboradorSchema.safeParse(req.body)
         if (resultado.error) {
             throw new BadRequestError("Datos inválidos", resultado.error.issues)
         }
 
-        const colaboradoraNueva = this.colaboradorService.crear(resultado.data)
+        const colaboradoraNueva = await this.colaboradorService.crear(resultado.data)
         res.status(201).json({ message: 'Colaboradora creada exitosamente', data: colaboradoraNueva })
     }
 
-    obtenerColaboradorPorCuentaGit = (req, res) => {
-        const { cuentaGit } = req.params
-        const colaborador = this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
-        if (!colaborador) {
-            return res.status(404).json({ message: 'Colaboradora no encontrada' })
-        }
+    obtenerColaboradorPorCuentaGit = async (req, res) => {
+        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit)
         res.status(200).json(colaborador)
     }
-    anotarColaboradorAProyecto = (req, res) => {
+
+    anotarColaboradorAProyecto = async (req, res) => {
         const { cuentaGit, idProyecto } = req.params;
-        const colaborador = this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
-        /* Excepcion ya manejada por colaboradorService
-        if (!colaborador) {
-            return res.status(404).json({ message: 'Colaboradora no encontrada' })
-        }
-        */
-        const colaboracion = this.colaboradorService.anotarAProyecto(colaborador, parseInt(idProyecto, 10))
+        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
+        const colaboracion = await this.colaboracionService.crear({
+            idColaborador: colaborador._id.toString(),
+            idProyecto
+        })
         res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
     }
 
-    seed = (req, res) => {
-        const COLABORADORES_INICIALES = [
-            {
-                nombre: "Juan",
-                apellido: "Pérez",
-                nombreFantasia: "Juani",
-                cuentaGit: "juanperez",
-                habilidades: [1, 2],
-                pronombres: "Él",
-                presentacion: "Desarrollador backend apasionado por Node.js"
-            },
-            {
-                nombre: "María",
-                apellido: "Gómez",
-                nombreFantasia: "Mari",
-                cuentaGit: "mariagomez",
-                habilidades: [2],
-                pronombres: "Ella",
-                presentacion: "Frontend dev y diseñadora UX"
-            }
-        ];
+    seed = async (req, res) => {
+        let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
-        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : COLABORADORES_INICIALES;
-    
-        const creados = lista.map(datos => this.colaboradorService.crear(datos));
+        if (!lista) {
+            const ids = (await this.habilidadService.obtenerTodas()).map(h => h._id.toString());
+            lista = [
+                {
+                    nombre: "Juan",
+                    apellido: "Pérez",
+                    nombreFantasia: "Juani",
+                    cuentaGit: "juanperez",
+                    habilidades: ids.slice(0, 2),
+                    pronombres: "Él",
+                    presentacion: "Desarrollador backend apasionado por Node.js"
+                },
+                {
+                    nombre: "María",
+                    apellido: "Gómez",
+                    nombreFantasia: "Mari",
+                    cuentaGit: "mariagomez",
+                    habilidades: ids.slice(1, 2),
+                    pronombres: "Ella",
+                    presentacion: "Frontend dev y diseñadora UX"
+                }
+            ];
+        }
+
+        const creados = [];
+        for (const datos of lista) {
+            const resultado = colaboradorSchema.safeParse(datos)
+            if (resultado.error) {
+                throw new BadRequestError("Datos inválidos", resultado.error.issues)
+            }
+            creados.push(await this.colaboradorService.crear(resultado.data));
+        }
 
         return res.status(201).json({ status: "success", data: creados });
     }

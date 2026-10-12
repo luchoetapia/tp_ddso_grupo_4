@@ -53,7 +53,7 @@ class ProyectoController {
             throw new BadRequestError("Se requiere idColectivo para finalizar el proyecto");
         }
 
-        const proyecto = await this.colectivoService.finalizarProyecto(parseInt(idColectivo, 10), id);
+        const proyecto = await this.colectivoService.finalizarProyecto(idColectivo, id);
 
         res.status(200).json({
             message: 'Proyecto finalizado exitosamente por el colectivo',

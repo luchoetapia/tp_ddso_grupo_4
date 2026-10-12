@@ -15,6 +15,8 @@ tags:
     description: Gestión de habilidades
   - name: Colaboradores
     description: Gestión de colaboradoras/es
+  - name: Colaboraciones
+    description: Participación de colaboradoras/es en proyectos
 
 paths:
   /proyectos:
@@ -48,10 +50,9 @@ paths:
               completo:
                 summary: Proyecto que requiere dos habilidades
                 value:
-                  id: 1
                   titulo: Huerta comunitaria
                   descripcion: Espacio verde barrial mantenido por vecinas y vecinos. Requiere quien programe el sitio de inscripciones y quien diseñe la cartelería.
-                  habilidades: [1, 2]
+                  habilidades: ["665f1c2b3a4d5e6f7a8b9c01", "665f1c2b3a4d5e6f7a8b9c02"]
                   tipoCompromiso:
                     cantHoras: 4
                     periodo: semanal
@@ -61,9 +62,7 @@ paths:
               minimo:
                 summary: Proyecto sin descripción ni habilidades (solo campos obligatorios)
                 value:
-                  id: 2
                   titulo: Reciclado de residuos electrónicos
-                  habilidades: []
                   tipoCompromiso:
                     cantHoras: 10
                     periodo: mensual
@@ -84,7 +83,9 @@ paths:
                   data:
                     $ref: "#/components/schemas/Proyecto"
         "400":
-          description: Datos inválidos
+          $ref: "#/components/responses/DatosInvalidos"
+        "404":
+          description: Alguna de las habilidades no existe
           content:
             application/json:
               schema:
@@ -96,17 +97,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /proyectos/seed:
+    post:
+      summary: Carga proyectos iniciales
+      description: >
+        Sin body, crea un proyecto de ejemplo con las primeras dos habilidades
+        existentes (correr antes POST /habilidades/seed). También acepta un
+        array de proyectos con el mismo formato que POST /proyectos.
+      tags: [Proyectos]
+      responses:
+        "201":
+          description: Proyectos creados
+        "409":
+          description: Alguno de los proyectos ya existe
+
   /proyectos/{id}:
     get:
       summary: Obtiene un proyecto por id
       tags: [Proyectos]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            example: 1
+        - $ref: "#/components/parameters/IdPath"
       responses:
         "200":
           description: Proyecto encontrado
@@ -114,8 +124,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Proyecto"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
         "404":
           description: Proyecto no encontrado
+
+  /proyectos/{id}/finalizar:
+    post:
+      summary: Finaliza un proyecto
+      description: >
+        Un colectivo marca el proyecto como finalizado. Un proyecto finalizado
+        no admite nuevas personas colaboradoras.
+      tags: [Proyectos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idColectivo:
+                  $ref: "#/components/schemas/ObjectId"
+              required:
+                - idColectivo
+      responses:
+        "200":
+          description: Proyecto finalizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Proyecto finalizado exitosamente por el colectivo
+                  data:
+                    $ref: "#/components/schemas/Proyecto"
+        "400":
+          description: Falta idColectivo o algún id es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colectivo o proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /colectivos:
     get:
@@ -123,7 +181,7 @@ paths:
       tags: [Colectivos]
       responses:
         "200":
-          description: Lista de colectivos
+          description: Lista de colectivos (con sus proyectos completos)
           content:
             application/json:
               schema:
@@ -133,23 +191,21 @@ paths:
     post:
       summary: Crea un nuevo colectivo
       description: >
-        El campo "proyectos" se guarda tal cual se envía (por ejemplo, los
-        títulos de los proyectos asociados); a diferencia de "habilidades" en
-        Proyecto/Colaborador, no valida que exista un Proyecto con ese dato.
+        Los proyectos se referencian por id y deben existir previamente
+        (ver GET /proyectos).
       tags: [Colectivos]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Colectivo"
+              $ref: "#/components/schemas/ColectivoInput"
             example:
-              id: 1
               nombre: Vecinos Autoconvocados
               descripcion: Asamblea barrial de Villa Urquiza
               ubicacion: Villa Urquiza, CABA
               tipo: asamblea
-              proyectos: [Huerta comunitaria]
+              proyectos: ["665f1c2b3a4d5e6f7a8b9c03"]
       responses:
         "201":
           description: Colectivo creado exitosamente
@@ -164,7 +220,9 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colectivo"
         "400":
-          description: Datos inválidos
+          $ref: "#/components/responses/DatosInvalidos"
+        "404":
+          description: Alguno de los proyectos no existe
           content:
             application/json:
               schema:
@@ -176,17 +234,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colectivos/seed:
+    post:
+      summary: Carga colectivos iniciales
+      description: >
+        Sin body, crea dos colectivos de ejemplo sin proyectos. También acepta
+        un array de colectivos con el mismo formato que POST /colectivos.
+      tags: [Colectivos]
+      responses:
+        "201":
+          description: Colectivos creados
+        "409":
+          description: Alguno de los colectivos ya existe
+
   /colectivos/{id}:
     get:
       summary: Obtiene un colectivo por id
       tags: [Colectivos]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            example: 1
+        - $ref: "#/components/parameters/IdPath"
       responses:
         "200":
           description: Colectivo encontrado
@@ -194,35 +260,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Colectivo"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
         "404":
           description: Colectivo no encontrado
-
-  /colectivos/{id}/finalizarProyecto/{idProyecto}:
-    post:
-      summary: Finaliza un proyecto de un colectivo
-      tags: [Colectivos]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            example: 1
-        - in: path
-          name: idProyecto
-          required: true
-          schema:
-            type: integer
-            example: 1
-      responses:
-        "200":
-          description: Proyecto finalizado exitosamente
-        "404":
-          description: Colectivo o proyecto no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
   /habilidades:
     get:
@@ -245,19 +286,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Habilidad"
+              $ref: "#/components/schemas/HabilidadInput"
             examples:
               backend:
                 summary: Desarrollo backend (programación)
                 value:
-                  id: 1
                   titulo: Desarrollo backend
                   tipoHabilidad: programacion
                   descripcion: Node.js, bases de datos y APIs REST
               diseño:
                 summary: Diseño gráfico
                 value:
-                  id: 2
                   titulo: Diseño gráfico
                   tipoHabilidad: diseño
                   descripcion: Piezas gráficas para difusión de proyectos comunitarios
@@ -275,11 +314,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Habilidad"
         "400":
-          description: Datos inválidos
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/DatosInvalidos"
         "409":
           description: Ya existe una habilidad con ese título
           content:
@@ -287,17 +322,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /habilidades/seed:
+    post:
+      summary: Carga habilidades iniciales
+      description: >
+        Sin body, crea dos habilidades de ejemplo (JavaScript y Node.js).
+        También acepta un array de habilidades con el mismo formato que
+        POST /habilidades.
+      tags: [Habilidades]
+      responses:
+        "201":
+          description: Habilidades creadas
+        "409":
+          description: Alguna de las habilidades ya existe
+
   /habilidades/{id}:
     get:
       summary: Obtiene una habilidad por id
       tags: [Habilidades]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            example: 1
+        - $ref: "#/components/parameters/IdPath"
       responses:
         "200":
           description: Habilidad encontrada
@@ -305,6 +349,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Habilidad"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
         "404":
           description: Habilidad no encontrada
 
@@ -314,7 +360,7 @@ paths:
       tags: [Colaboradores]
       responses:
         "200":
-          description: Lista de colaboradoras/es
+          description: Lista de colaboradoras/es (con sus habilidades completas)
           content:
             application/json:
               schema:
@@ -325,7 +371,7 @@ paths:
       summary: Crea una nueva colaboradora/colaborador
       description: >
         Las habilidades se referencian por id y deben existir previamente
-        (crealas primero con POST /habilidades).
+        (ver GET /habilidades).
       tags: [Colaboradores]
       requestBody:
         required: true
@@ -341,7 +387,7 @@ paths:
                   apellido: Aversa
                   nombreFantasia: noeaversa
                   cuentaGit: noeaversa
-                  habilidades: [1]
+                  habilidades: ["665f1c2b3a4d5e6f7a8b9c01"]
                   pronombres: ella
                   presentacion: Desarrolladora full stack con ganas de sumar a proyectos comunitarios.
               diseño:
@@ -351,7 +397,7 @@ paths:
                   apellido: Martínez
                   nombreFantasia: facumartinez
                   cuentaGit: facumartinez
-                  habilidades: [2]
+                  habilidades: ["665f1c2b3a4d5e6f7a8b9c02"]
                   pronombres: él
                   presentacion: Diseñador gráfico, disponible fines de semana.
       responses:
@@ -368,7 +414,9 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaborador"
         "400":
-          description: Datos inválidos
+          $ref: "#/components/responses/DatosInvalidos"
+        "404":
+          description: Alguna de las habilidades no existe
           content:
             application/json:
               schema:
@@ -379,6 +427,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  /colaboradores/seed:
+    post:
+      summary: Carga colaboradoras/es iniciales
+      description: >
+        Sin body, crea dos personas de ejemplo (juanperez y mariagomez) con
+        las habilidades existentes (correr antes POST /habilidades/seed).
+        También acepta un array con el mismo formato que POST /colaboradores.
+      tags: [Colaboradores]
+      responses:
+        "201":
+          description: Colaboradoras/es creadas/os
+        "409":
+          description: Alguna cuenta de Git ya existe
 
   /colaboradores/{cuentaGit}:
     get:
@@ -405,10 +467,9 @@ paths:
     post:
       summary: Anota a una colaboradora/colaborador a un proyecto
       description: >
-        La colaboradora debe tener al menos una habilidad en común con las
-        requeridas por el proyecto, y el proyecto no debe estar finalizado.
-        Ejemplo: noeaversa tiene la habilidad 1 (programación), que el
-        proyecto 1 requiere.
+        Crea una colaboración. La colaboradora debe tener al menos una
+        habilidad en común con las requeridas por el proyecto, el proyecto no
+        debe estar finalizado y no puede estar ya anotada en él.
       tags: [Colaboradores]
       parameters:
         - in: path
@@ -421,13 +482,22 @@ paths:
           name: idProyecto
           required: true
           schema:
-            type: integer
-            example: 1
+            $ref: "#/components/schemas/ObjectId"
       responses:
         "200":
           description: Colaboradora anotada al proyecto exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colaboradora anotada al proyecto exitosamente
+                  data:
+                    $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: La colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          description: Id de proyecto inválido, o la colaboradora no cuenta con ninguna habilidad requerida por el proyecto
           content:
             application/json:
               schema:
@@ -439,14 +509,116 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: El proyecto ya fue finalizado y no admite nuevas personas colaboradoras
+          description: El proyecto ya fue finalizado, o la colaboradora ya está anotada en él
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colaboraciones:
+    get:
+      summary: Obtiene todas las colaboraciones
+      tags: [Colaboraciones]
+      responses:
+        "200":
+          description: Lista de colaboraciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colaboracion"
+    post:
+      summary: Crea una colaboración
+      description: >
+        Equivalente a POST /colaboradores/{cuentaGit}/anotarProyecto/{idProyecto},
+        pero recibiendo los ids. Aplica las mismas reglas.
+      tags: [Colaboraciones]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idProyecto:
+                  $ref: "#/components/schemas/ObjectId"
+                idColaborador:
+                  $ref: "#/components/schemas/ObjectId"
+              required:
+                - idProyecto
+                - idColaborador
+      responses:
+        "201":
+          description: Colaboración creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colaboracion creada exitosamente
+                  data:
+                    $ref: "#/components/schemas/Colaboracion"
+        "400":
+          description: Datos inválidos, o la colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colaboradora o proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El proyecto ya fue finalizado, o la colaboradora ya está anotada en él
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
 
 components:
+  parameters:
+    IdPath:
+      in: path
+      name: id
+      required: true
+      schema:
+        $ref: "#/components/schemas/ObjectId"
+
+  responses:
+    DatosInvalidos:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    IdInvalido:
+      description: El id no tiene formato de ObjectId
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   schemas:
+    ObjectId:
+      type: string
+      pattern: "^[0-9a-fA-F]{24}$"
+      example: "665f1c2b3a4d5e6f7a8b9c01"
+
+    Timestamps:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     TipoCompromiso:
       type: object
       properties:
@@ -478,9 +650,6 @@ components:
       type: object
       description: Body esperado por POST /proyectos. No admite campos adicionales.
       properties:
-        id:
-          type: integer
-          example: 1
         titulo:
           type: string
           example: Huerta comunitaria
@@ -491,52 +660,62 @@ components:
           type: array
           description: Ids de habilidades existentes (ver GET /habilidades)
           items:
-            type: integer
-          example: [1, 2]
+            $ref: "#/components/schemas/ObjectId"
         tipoCompromiso:
           $ref: "#/components/schemas/TipoCompromiso"
         modalidadColaboracion:
           $ref: "#/components/schemas/ModalidadColaboracion"
       required:
-        - id
         - titulo
         - tipoCompromiso
         - modalidadColaboracion
 
     Proyecto:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        titulo:
-          type: string
-          example: Huerta comunitaria
-        descripcion:
-          type: string
-        habilidades:
-          type: array
-          items:
-            $ref: "#/components/schemas/Habilidad"
-        tipoCompromiso:
-          $ref: "#/components/schemas/TipoCompromiso"
-        modalidadColaboracion:
-          $ref: "#/components/schemas/ModalidadColaboracion"
-        finalizado:
-          type: boolean
-          default: false
-      required:
-        - id
-        - titulo
-        - tipoCompromiso
-        - modalidadColaboracion
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+              example: Huerta comunitaria
+            descripcion:
+              type: string
+            habilidades:
+              type: array
+              items:
+                $ref: "#/components/schemas/Habilidad"
+            tipoCompromiso:
+              $ref: "#/components/schemas/TipoCompromiso"
+            modalidadColaboracion:
+              $ref: "#/components/schemas/ModalidadColaboracion"
+            finalizado:
+              type: boolean
+              default: false
+            porcentajeFinalizado:
+              type: number
+              default: 0
+            enlaceSistema:
+              type: string
+              nullable: true
+            enlaceCodigoFuente:
+              type: string
+              nullable: true
+            logros:
+              type: array
+              items:
+                type: object
+                properties:
+                  titulo:
+                    type: string
+                  descripcion:
+                    type: string
+        - $ref: "#/components/schemas/Timestamps"
 
-    Colectivo:
+    ColectivoInput:
       type: object
+      description: Body esperado por POST /colectivos. No admite campos adicionales.
       properties:
-        id:
-          type: integer
-          example: 1
         nombre:
           type: string
         descripcion:
@@ -548,18 +727,40 @@ components:
           enum: [fundacion, asociacion_barrial, ong, asamblea]
         proyectos:
           type: array
+          description: Ids de proyectos existentes (ver GET /proyectos)
           items:
-            type: string
+            $ref: "#/components/schemas/ObjectId"
+          default: []
       required:
-        - id
         - nombre
+        - tipo
 
-    Habilidad:
+    Colectivo:
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            nombre:
+              type: string
+            descripcion:
+              type: string
+            ubicacion:
+              type: string
+              nullable: true
+            tipo:
+              type: string
+              enum: [fundacion, asociacion_barrial, ong, asamblea]
+            proyectos:
+              type: array
+              items:
+                $ref: "#/components/schemas/Proyecto"
+        - $ref: "#/components/schemas/Timestamps"
+
+    HabilidadInput:
       type: object
+      description: Body esperado por POST /habilidades. No admite campos adicionales.
       properties:
-        id:
-          type: integer
-          example: 1
         titulo:
           type: string
         tipoHabilidad:
@@ -568,9 +769,24 @@ components:
         descripcion:
           type: string
       required:
-        - id
         - titulo
         - tipoHabilidad
+        - descripcion
+
+    Habilidad:
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+            tipoHabilidad:
+              type: string
+              enum: [programacion, diseño, marketing, comunicacion, gestion_proyectos, colaboracion]
+            descripcion:
+              type: string
+        - $ref: "#/components/schemas/Timestamps"
 
     ColaboradorInput:
       type: object
@@ -592,9 +808,8 @@ components:
           type: array
           description: Ids de habilidades existentes (ver GET /habilidades)
           items:
-            type: integer
+            $ref: "#/components/schemas/ObjectId"
           default: []
-          example: [1]
         pronombres:
           type: string
           example: ella
@@ -607,30 +822,85 @@ components:
         - cuentaGit
 
     Colaborador:
-      type: object
-      properties:
-        nombre:
-          type: string
-        apellido:
-          type: string
-        nombreFantasia:
-          type: string
-        cuentaGit:
-          type: string
-          example: noeaversa
-        habilidades:
-          type: array
-          items:
-            $ref: "#/components/schemas/Habilidad"
-        pronombres:
-          type: string
-        presentacion:
-          type: string
-          maxLength: 300
-      required:
-        - nombre
-        - apellido
-        - cuentaGit
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            nombre:
+              type: string
+            apellido:
+              type: string
+            nombreFantasia:
+              type: string
+              nullable: true
+            cuentaGit:
+              type: string
+              example: noeaversa
+            habilidades:
+              type: array
+              items:
+                $ref: "#/components/schemas/Habilidad"
+            pronombres:
+              type: string
+              nullable: true
+            presentacion:
+              type: string
+              maxLength: 300
+              nullable: true
+            deseaSerContactado:
+              type: boolean
+            contactos:
+              type: array
+              items:
+                type: object
+                properties:
+                  medio:
+                    type: string
+                    enum: [Email, WhatsApp, SMS]
+                  valor:
+                    type: string
+        - $ref: "#/components/schemas/Timestamps"
+
+    Colaboracion:
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            colaborador:
+              type: object
+              description: Datos básicos de la colaboradora
+              properties:
+                _id:
+                  $ref: "#/components/schemas/ObjectId"
+                nombre:
+                  type: string
+                apellido:
+                  type: string
+                nombreFantasia:
+                  type: string
+                  nullable: true
+                cuentaGit:
+                  type: string
+            proyecto:
+              type: object
+              description: Datos básicos del proyecto
+              properties:
+                _id:
+                  $ref: "#/components/schemas/ObjectId"
+                titulo:
+                  type: string
+                finalizado:
+                  type: boolean
+            inicio:
+              type: string
+              format: date-time
+            fin:
+              type: string
+              format: date-time
+              nullable: true
+        - $ref: "#/components/schemas/Timestamps"
 
     Error:
       type: object
@@ -639,5 +909,4 @@ components:
           type: string
         details:
           type: array
-          items:
-            type: object
+          items: {}

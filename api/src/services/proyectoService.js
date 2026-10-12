@@ -42,6 +42,21 @@ class ProyectoService {
         return proyecto
     }
 
+    obtenerPorListaId = async (listaDeIDs) => {
+        const invalidos = listaDeIDs.filter(id => !mongoose.isValidObjectId(id))
+        if (invalidos.length > 0) {
+            throw new BadRequestError("Ids de proyecto inválidos", invalidos)
+        }
+
+        const proyectos = await this.proyectoRepository.findByIds(listaDeIDs)
+        const encontrados = proyectos.map(p => p._id.toString())
+        const faltantes = listaDeIDs.filter(id => !encontrados.includes(id))
+        if (faltantes.length > 0) {
+            throw new NotFoundError("Proyectos no encontrados", faltantes)
+        }
+        return proyectos
+    }
+
     finalizar = async (id) => {
         await this.obtenerPorId(id)
         return await this.proyectoRepository.update(id, { finalizado: true })

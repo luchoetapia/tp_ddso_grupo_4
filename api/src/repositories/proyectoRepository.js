@@ -13,6 +13,10 @@ class ProyectoRepository {
         return await ProyectoModel.findById(id).populate('habilidades');
     }
 
+    async findByIds(ids) {
+        return await ProyectoModel.find({ _id: { $in: ids } });
+    }
+
     async save(datos) {
         const proyecto = new ProyectoModel(datos);
         await proyecto.save();

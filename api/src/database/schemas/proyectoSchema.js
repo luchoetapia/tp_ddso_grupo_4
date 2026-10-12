@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { TipoCompromiso, ModalidadColaboracion, Proyecto, Periodo } = require('../../models/dominio');
-const { Logro } = require('../../models/Logro')
+const Logro = require('../../models/Logro')
 const Schema = mongoose.Schema;
 
 const tipoCompromisoSchema = new Schema({
@@ -23,8 +23,8 @@ logroSchema.loadClass(Logro);
 
 const proyectoSchema = new Schema({
     titulo: { type: String, required: true },
-    descripcion: { type: String, required: true },
-    habilidades: [{ type: [Schema.Types.ObjectId], required: true, ref: 'Habilidad' }],
+    descripcion: { type: String, default: "" },
+    habilidades: [{ type: Schema.Types.ObjectId, ref: 'Habilidad' }],
     tipoCompromiso: { type: tipoCompromisoSchema, required: true },
     modalidadColaboracion: { type: modalidadColaboracionSchema, required: true },
     finalizado: { type: Boolean, default: false },
