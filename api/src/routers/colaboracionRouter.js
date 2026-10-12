@@ -1,5 +1,5 @@
 const express = require('express')
-const { ColaboracionController } = require('../controllers/colaboracionController')
+const { ColaboracionController } = require('../controllers/colaboracionController.js')
 
 const colaboracionController = new ColaboracionController()
 const router = express.Router()

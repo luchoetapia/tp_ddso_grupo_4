@@ -1,4 +1,4 @@
-export function errorLogger(err, req, res, next) {
+function errorLogger(err, req, res, next) {
     console.error({
         timestamp: new Date().toISOString(),
         method: req.method,
@@ -12,3 +12,5 @@ export function errorLogger(err, req, res, next) {
 
     next(err)
 }
+
+module.exports = { errorLogger };
