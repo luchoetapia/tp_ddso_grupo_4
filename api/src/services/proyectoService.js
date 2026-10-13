@@ -9,6 +9,10 @@ class ProyectoService {
         this.habilidadeService = habilidadeService;
     }
 
+    obtenerTodos = () => {
+        return this.proyectoRepository.findAll();
+    }
+
     crear = (datos) => {
         const existente = this.proyectoRepository.findByTitulo(datos.titulo)
         if (existente) {

@@ -10,11 +10,11 @@ class Colectivo {
 }
 
 class Proyecto {
-    constructor(id, titulo, descripcion, habilidades, tipoCompromiso, modalidadColaboracion, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = []) {
+    constructor(id, titulo, descripcion, perfiles, tipoCompromiso, modalidadColaboracion, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = []) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
-        this.habilidades = habilidades
+        this.perfiles = perfiles
         this.tipoCompromiso = tipoCompromiso
         this.modalidadColaboracion = modalidadColaboracion
         this.porcentajeFinalizado = porcentajeFinalizado,
@@ -56,9 +56,10 @@ class Colaborador {
 }
 
 class Colaboracion {
-    constructor(colaborador, proyecto, inicio, fin = null) {
+    constructor(colaborador, proyecto, esAnonima = false, inicio, fin = null) {
         this.colaborador = colaborador;
         this.proyecto = proyecto;
+        this.esAnonima = esAnonima;
         this.inicio = inicio;
         this.fin = fin || null;
     }

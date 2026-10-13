@@ -26,7 +26,7 @@ class ProyectoController {
     }
 
     obtenerProyectos = (req, res) => {
-        const proyectos = this.proyectoRepository.findAll();
+        const proyectos = this.proyectoService.obtenerTodos();
         res.status(200).json(proyectos)
     }
 

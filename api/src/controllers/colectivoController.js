@@ -17,7 +17,7 @@ class ColectivoController {
     }
 
     obtenerColectivos = (req, res) => {
-        const colectivos = this.colectivoRepository.findAll();
+        const colectivos = this.colectivoService.obtenerTodos();
         res.status(200).json(colectivos)
     }
 

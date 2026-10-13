@@ -15,7 +15,7 @@ class HabilidadController {
     }
 
     obtenerHabilidades = (req, res) => {
-        const habilidades = this.habilidadRepository.findAll();
+        const habilidades = this.habilidadService.obtenerTodos();
         res.status(200).json(habilidades)
     }
 

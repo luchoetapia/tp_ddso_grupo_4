@@ -10,6 +10,10 @@ class ColaboradorService {
         this.habilidadService = habilidadService;
     }
 
+    obtenerTodos = () => {
+        return this.colaboradorRepository.findAll();
+    }
+
     crear = (datos) => {
         const existente = this.colaboradorRepository.findByCuentaGit(datos.cuentaGit)
 

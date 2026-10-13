@@ -7,6 +7,10 @@ class HabilidadService {
         this.habilidadRepository = habilidadRepository;
     }
 
+    obtenerTodos = () => {
+        return this.habilidadRepository.findAll();
+    }
+
     crear = (datos) => {
         const existente = this.habilidadRepository.findByTitulo(datos.titulo)
         if (existente) {
