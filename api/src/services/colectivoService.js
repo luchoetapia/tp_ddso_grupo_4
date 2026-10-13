@@ -1,6 +1,6 @@
+const mongoose = require('mongoose');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
-const { Colectivo } = require('../models/dominio.js');
-const { ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const proyectoService = require('./proyectoService.js');
 
 class ColectivoService {
@@ -9,39 +9,42 @@ class ColectivoService {
         this.proyectoService = proyectoService;
     }
 
-    obtenerTodos = () => {
-        return this.colectivoRepository.findAll();
+    obtenerTodos = async () => {
+        return await this.colectivoRepository.findAll()
     }
 
-    crear = (datos) => {
-        const existente = this.colectivoRepository.findByNombre(datos.nombre)
+    crear = async (datos) => {
+        const existente = await this.colectivoRepository.findByNombre(datos.nombre)
         if (existente) {
             throw new ConflictError("Ya existe un colectivo con ese nombre")
         }
 
-        const colectivo = new Colectivo(
-            datos.id,
-            datos.nombre,
-            datos.descripcion,
-            datos.ubicacion,
-            datos.tipo,
-            datos.proyectos
-        )
+        const proyectos = await this.proyectoService.obtenerPorListaId(datos.proyectos ?? [])
 
-        return this.colectivoRepository.save(colectivo)
+        return await this.colectivoRepository.save({
+            nombre: datos.nombre,
+            descripcion: datos.descripcion,
+            ubicacion: datos.ubicacion,
+            tipo: datos.tipo,
+            proyectos: proyectos.map(p => p._id)
+        })
     }
 
-    obtenerPorId = (id) => {
-        const colectivo = this.colectivoRepository.findById(id)
+    obtenerPorId = async (id) => {
+        if (!mongoose.isValidObjectId(id)) {
+            throw new BadRequestError("Id de colectivo inválido")
+        }
+
+        const colectivo = await this.colectivoRepository.findById(id)
         if (!colectivo) {
             throw new NotFoundError("Colectivo no encontrado")
         }
         return colectivo
     }
 
-    finalizarProyecto = (idColectivo, idProyecto) => {
-        this.obtenerPorId(idColectivo)
-        return this.proyectoService.finalizar(idProyecto)
+    finalizarProyecto = async (idColectivo, idProyecto) => {
+        await this.obtenerPorId(idColectivo)
+        return await this.proyectoService.finalizar(idProyecto)
     }
 }
 

@@ -11,7 +11,7 @@ router.route('/')
 router.route('/:id')
     .get((req, res) => habilidadController.obtenerHabilidadPorId(req, res))
 
-router.route('/seed')
-    .post((req, res) => habilidadController.seed(req, res));
+router.route('/llenarDatosPrueba')
+    .post((req, res) => habilidadController.llenarDatosPrueba(req, res));
 
 module.exports = router

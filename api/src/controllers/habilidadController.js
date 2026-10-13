@@ -1,12 +1,12 @@
 const { z } = require('zod');
 const habilidadService = require('../services/habilidadService.js');
+const { TipoHabilidad } = require('../models/dominio.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const habilidadSchema = z.object({
-    id: z.number().int().positive(),
     titulo: z.string().min(1),
-    tipoHabilidad: z.string().min(1),
-    descripcion: z.string().optional(),
+    tipoHabilidad: z.enum(Object.values(TipoHabilidad)),
+    descripcion: z.string().min(1),
 }).strict()
 
 class HabilidadController {
@@ -14,49 +14,50 @@ class HabilidadController {
         this.habilidadService = habilidadService;
     }
 
-    obtenerHabilidades = (req, res) => {
-        const habilidades = this.habilidadService.obtenerTodos();
+    obtenerHabilidades = async (req, res) => {
+        const habilidades = await this.habilidadService.obtenerTodas();
         res.status(200).json(habilidades)
     }
 
-    crearHabilidad = (req, res) => {
+    crearHabilidad = async (req, res) => {
         const resultado = habilidadSchema.safeParse(req.body)
         if (resultado.error) {
             throw new BadRequestError("Datos inválidos", resultado.error.issues)
         }
 
-        const habilidadNueva = this.habilidadService.crear(resultado.data)
+        const habilidadNueva = await this.habilidadService.crear(resultado.data)
         res.status(201).json({ message: 'Habilidad creada exitosamente', data: habilidadNueva })
     }
 
-    obtenerHabilidadPorId = (req, res) => {
-        const { id } = req.params
-        const habilidad = this.habilidadService.obtenerPorId(parseInt(id))
-
-        if (!habilidad) {
-            return res.status(404).json({ message: 'Habilidad no encontrada' })
-        }
+    obtenerHabilidadPorId = async (req, res) => {
+        const habilidad = await this.habilidadService.obtenerPorId(req.params.id)
         res.status(200).json(habilidad)
     }
 
-    seed = (req, res) => {
+    llenarDatosPrueba = async (req, res) => {
         const HABILIDADES_INICIALES = [
             {
-                id: 1,
                 titulo: "JavaScript",
-                tipoHabilidad: "Programación",
+                tipoHabilidad: TipoHabilidad.PROGRAMACION,
                 descripcion: "Lenguaje de programación de desarrollo web"
             },
             {
-                id: 2,
                 titulo: "Node.js",
-                tipoHabilidad: "Backend",
+                tipoHabilidad: TipoHabilidad.PROGRAMACION,
                 descripcion: "Entorno de ejecución para JavaScript"
             }
         ];
 
         const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : HABILIDADES_INICIALES;
-        const creadas = lista.map(datos => this.habilidadService.crear(datos));
+
+        const creadas = [];
+        for (const datos of lista) {
+            const resultado = habilidadSchema.safeParse(datos)
+            if (resultado.error) {
+                throw new BadRequestError("Datos inválidos", resultado.error.issues)
+            }
+            creadas.push(await this.habilidadService.crear(resultado.data));
+        }
 
         return res.status(201).json({ status: "success", data: creadas });
     }

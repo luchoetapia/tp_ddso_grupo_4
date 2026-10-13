@@ -1,25 +1,26 @@
-const HabilidadModel = require('../database/schemas/habilidadSchema');
+const HabilidadModel = require('../database/schemas/habilidadSchema.js');
 
 class HabilidadRepository {
-    constructor() {
-        this.model = HabilidadModel;
-    }
-
     async findAll() {
-        return await this.model.find();
+        return await HabilidadModel.find();
     }
 
     async findByTitulo(titulo) {
-        return await this.model.findOne({ titulo: titulo });
+        return await HabilidadModel.findOne({ titulo });
     }
 
     async findById(id) {
-        return await this.model.findById(id);
+        return await HabilidadModel.findById(id);
     }
 
-    async save(habilidad) {
-        return await this.model.create(habilidad);
+    async findByIds(ids) {
+        return await HabilidadModel.find({ _id: { $in: ids } });
+    }
+
+    async save(datos) {
+        const habilidad = new HabilidadModel(datos);
+        return await habilidad.save();
     }
 }
 
-module.exports = new HabilidadRepository() ;
+module.exports = new HabilidadRepository();

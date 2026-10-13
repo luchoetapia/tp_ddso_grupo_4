@@ -1,0 +1,43 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy por SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ~/tp_ddso_grupo_4
+            git pull origin main
+            cd api
+            docker compose up -d --build
+
+            ok=0
+            for i in $(seq 1 30); do
+              if curl -fs http://localhost:3000/healthcheck > /dev/null; then
+                ok=1
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "$ok" -ne 1 ]; then
+              echo "Deploy fallido, volviendo a $PREV"
+              docker compose logs --tail=50 api
+              cd ..
+              git reset --hard "$PREV"
+              cd api
+              docker compose up -d --build
+              exit 1
+            fi
+
+            docker image prune -f

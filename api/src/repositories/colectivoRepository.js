@@ -1,24 +1,22 @@
-const ColectivoModel = require('../database/schemas/colectivoSchema');
+const ColectivoModel = require('../database/schemas/colectivoSchema.js');
 
 class ColectivoRepository {
-    constructor() {
-        this.model = ColectivoModel;
-    }
-
     async findAll() {
-        return await this.model.find();
+        return await ColectivoModel.find().populate('proyectos');
     }
 
     async findByNombre(nombre) {
-        return await this.model.findOne({ nombre: nombre });
+        return await ColectivoModel.findOne({ nombre });
     }
 
     async findById(id) {
-        return await this.model.findById(id);
+        return await ColectivoModel.findById(id).populate('proyectos');
     }
 
-    async save(colectivo) {
-        return await this.model.create(colectivo);
+    async save(datos) {
+        const colectivo = new ColectivoModel(datos);
+        await colectivo.save();
+        return await colectivo.populate('proyectos');
     }
 }
 

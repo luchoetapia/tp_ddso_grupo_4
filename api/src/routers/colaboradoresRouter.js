@@ -14,7 +14,7 @@ router.route('/:cuentaGit')
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
     .post((req, res) => colaboradorController.anotarColaboradorAProyecto(req, res))
 
-router.route('/seed')
-    .post((req, res) => colaboradorController.seed(req, res));
+router.route('/llenarDatosPrueba')
+    .post((req, res) => colaboradorController.llenarDatosPrueba(req, res));
 
 module.exports = router

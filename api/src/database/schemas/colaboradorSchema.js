@@ -11,14 +11,14 @@ const contactoSchema = new Schema({
 });
 
 const colaboradorSchema = new Schema({
-    nombre: { type: String, default: null},
-    apellido: { type: String, default: null },
-    nombreFantasia: { type: String, required: true},
-    cuentaGit: { type: String,  required: true },
-    pronombres: { type: [String], default: null },
-    habilidades: [{ type: Schema.Types.ObjectId, required: true, ref: 'Habilidad' }],
-    presentacion: {type: String},
-    deseaSerContactado: {type: Boolean},
+    nombre: { type: String, required: true },
+    apellido: { type: String, required: true },
+    nombreFantasia: { type: String, default: null },
+    cuentaGit: { type: String, required: true },
+    pronombres: { type: String, default: null },
+    habilidades: [{ type: Schema.Types.ObjectId, ref: 'Habilidad' }],
+    presentacion: { type: String, default: null },
+    deseaSerContactado: { type: Boolean, default: false },
     contactos: { type: [contactoSchema], default: [] }
 }, {
     timestamps: true,

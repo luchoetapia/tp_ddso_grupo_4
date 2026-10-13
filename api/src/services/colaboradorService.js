@@ -1,8 +1,7 @@
+const mongoose = require('mongoose');
 const colaboradorRepository = require('../repositories/colaboradorRepository.js');
-const { Colaborador } = require('../models/dominio.js');
-const { ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const habilidadService = require("./habilidadService.js");
-
 
 class ColaboradorService {
     constructor() {
@@ -10,43 +9,43 @@ class ColaboradorService {
         this.habilidadService = habilidadService;
     }
 
-    obtenerTodos = () => {
-        return this.colaboradorRepository.findAll();
+    obtenerTodos = async () => {
+        return await this.colaboradorRepository.findAll()
     }
 
-    crear = (datos) => {
-        const existente = this.colaboradorRepository.findByCuentaGit(datos.cuentaGit)
-
+    crear = async (datos) => {
+        const existente = await this.colaboradorRepository.findByCuentaGit(datos.cuentaGit)
         if (existente) {
             throw new ConflictError("Ya existe un colaborador con esa cuenta de Git")
         }
 
-        const habilidadesColaborador = this.habilidadService.obtenerPorListaId(datos.habilidades);
+        const habilidades = await this.habilidadService.obtenerPorListaId(datos.habilidades ?? [])
 
-        const colaborador = new Colaborador(
-            datos.id,
-            datos.nombre,
-            datos.apellido,
-            datos.nombreFantasia,
-            datos.cuentaGit,
-            habilidadesColaborador,
-            datos.pronombres,
-            datos.presentacion
-        )
-
-        return this.colaboradorRepository.save(colaborador)
+        return await this.colaboradorRepository.save({
+            nombre: datos.nombre,
+            apellido: datos.apellido,
+            nombreFantasia: datos.nombreFantasia,
+            cuentaGit: datos.cuentaGit,
+            habilidades: habilidades.map(h => h._id),
+            pronombres: datos.pronombres,
+            presentacion: datos.presentacion
+        })
     }
 
-    obtenerPorId = (id) => {
-        const colaborador = this.colaboradorRepository.findByID(id)
+    obtenerPorId = async (id) => {
+        if (!mongoose.isValidObjectId(id)) {
+            throw new BadRequestError("Id de colaborador inválido")
+        }
+
+        const colaborador = await this.colaboradorRepository.findById(id)
         if (!colaborador) {
             throw new NotFoundError("Colaborador no encontrado")
         }
         return colaborador;
     }
 
-    obtenerPorCuentaGit = (cuentaGit) => {
-        const colaborador = this.colaboradorRepository.findByCuentaGit(cuentaGit)
+    obtenerPorCuentaGit = async (cuentaGit) => {
+        const colaborador = await this.colaboradorRepository.findByCuentaGit(cuentaGit)
         if (!colaborador) {
             throw new NotFoundError("Colaborador no encontrado")
         }

@@ -11,7 +11,7 @@ router.route('/')
 router.route('/:id')
     .get((req, res) => colectivoController.obtenerColectivoPorId(req, res))
 
-router.route('/seed')
-    .post((req, res) => colectivoController.seed(req, res));
+router.route('/llenarDatosPrueba')
+    .post((req, res) => colectivoController.llenarDatosPrueba(req, res));
 
 module.exports = router
