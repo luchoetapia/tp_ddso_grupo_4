@@ -82,6 +82,7 @@ fecha: LocalDate
 class Colaboracion {
 proyecto : Proyecto
 colaborador : Colaborador
+esAnonima : Boolean
 }
 
 class ModalidadColaboracion {

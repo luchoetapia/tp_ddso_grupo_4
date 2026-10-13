@@ -32,7 +32,8 @@ const proyectoSchema = new Schema({
     enlaceSistema: { type: String, default: null },
     enlaceCodigoFuente: { type: String, default: null },
     logros: {type: [logroSchema], default: []}
-}, {timestamps: true, versionKey: false})
+}, {timestamps: true, versionKey: false});
+
 proyectoSchema.loadClass(Proyecto);
 
 module.exports = mongoose.model('Proyecto', proyectoSchema);

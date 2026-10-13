@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const { TipoHabilidad } = require('../../models/dominio')
+const { TipoHabilidad, Habilidad } = require('../../models/dominio')
 
 const Schema = mongoose.Schema;
 
@@ -14,5 +14,7 @@ const habilidadSchema = new Schema({
     timestamps: true,
     versionKey: false,
 });
+
+habilidadSchema.loadClass(Habilidad)
 
 module.exports = mongoose.model('Habilidad', habilidadSchema);
