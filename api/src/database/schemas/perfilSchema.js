@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Periodo } = require('../../models/dominio');
+const { Perfil } = require('../../models/perfil');
 const Schema = mongoose.Schema;
 
 const valuesPeriodo = Object.values(Periodo);
@@ -26,5 +27,7 @@ const perfilSchema = new Schema({
     timestamps: true,
     versionKey: false
 });
+
+perfilSchema.loadClass(Perfil);
 
 module.exports = mongoose.model('Perfil', perfilSchema);
