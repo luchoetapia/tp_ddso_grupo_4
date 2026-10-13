@@ -7,7 +7,8 @@ const colaboracionSchema = new Schema({
     colaborador: { type: Schema.Types.ObjectId, ref: 'Colaborador', required: true },
     proyecto: { type: Schema.Types.ObjectId, ref: 'Proyecto', required: true },
     inicio: { type: Date, required: true },
-    fin: { type: Date, default: null }
+    fin: { type: Date, default: null },
+    esAnonima: { type: Boolean, default: false }
 }, {
     timestamps: true,
     versionKey: false,
