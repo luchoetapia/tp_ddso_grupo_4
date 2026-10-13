@@ -11,8 +11,6 @@ class ColaboracionService {
         this.colaboradorService = colaboradorService;
     }
 
-    
-
     obtenerTodas = () => {
         return colaboracionRepository.findAll();
     }

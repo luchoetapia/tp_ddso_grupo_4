@@ -6,20 +6,20 @@ class ColaboradorRepository {
         this.model = ColaboradorModel;
     }
 
-    async findAll() {
-        return await this.model.find();
+    findAll() {
+        return this.model.find();
     }
 
-    async findByID(idBuscado) {
-        return await this.model.findById(idBuscado);
+    findByID(idBuscado) {
+        return this.model.findById(idBuscado);
     }
 
-    async findByCuentaGit(cuentaGit) {
-        return await this.model.findOne({ cuentaGit: cuentaGit });
+    findByCuentaGit(cuentaGit) {
+        return this.model.findOne({ cuentaGit: cuentaGit });
     }
 
-    async save(colaborador) {
-        return await this.model.create(colaborador);
+    save(colaborador) {
+        return this.model.create(colaborador);
     }
   
 }

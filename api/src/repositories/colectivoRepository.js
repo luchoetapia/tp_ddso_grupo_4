@@ -5,20 +5,20 @@ class ColectivoRepository {
         this.model = ColectivoModel;
     }
 
-    async findAll() {
-        return await this.model.find();
+    findAll() {
+        return this.model.find();
     }
 
-    async findByNombre(nombre) {
-        return await this.model.findOne({ nombre: nombre });
+    findByNombre(nombre) {
+        return this.model.findOne({ nombre: nombre });
     }
 
-    async findById(id) {
-        return await this.model.findById(id);
+    findById(id) {
+        return this.model.findById(id);
     }
 
-    async save(colectivo) {
-        return await this.model.create(colectivo);
+    save(colectivo) {
+        return this.model.create(colectivo);
     }
 }
 
