@@ -1,23 +1,16 @@
-const ColaboracionModel = require('../database/schemas/colaboracionSchema.js');
-
-const POPULATE = [
-    { path: 'colaborador', select: 'nombre apellido nombreFantasia cuentaGit' },
-    { path: 'proyecto', select: 'titulo finalizado' }
-];
+const ColaboracionModel = require('../database/schemas/colaboracionSchema');
 
 class ColaboracionRepository {
+    constructor() {
+        this.model = ColaboracionModel;
+    }
+
     async findAll() {
-        return await ColaboracionModel.find().populate(POPULATE);
+        return await this.model.find();
     }
 
-    async findActiva(idColaborador, idProyecto) {
-        return await ColaboracionModel.findOne({ colaborador: idColaborador, proyecto: idProyecto, fin: null });
-    }
-
-    async save(datos) {
-        const colaboracion = new ColaboracionModel(datos);
-        await colaboracion.save();
-        return await colaboracion.populate(POPULATE);
+    async save(colaboracion) {
+        return await this.model.create(colaboracion);
     }
 }
 
