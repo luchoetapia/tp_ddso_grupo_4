@@ -37,6 +37,14 @@ class PerfilService {
         return await this.perfilRepository.save(datos);
     }
 
+    crearVarios = async (listaDatos) => {
+        const creados = [];
+        for (const datos of listaDatos) {
+            creados.push(await this.crear(datos));
+        }
+        return creados;
+    }
+
     actualizar = async (id, datos) => {
         await this.obtenerPorId(id); 
         return await this.perfilRepository.update(id, datos);
