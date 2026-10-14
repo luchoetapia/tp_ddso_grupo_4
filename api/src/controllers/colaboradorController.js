@@ -3,6 +3,8 @@ const colaboradorService = require('../services/colaboradorService.js');
 const colaboracionService = require('../services/colaboracionService.js');
 const habilidadService = require('../services/habilidadService.js');
 const proyectoService = require('../services/proyectoService.js');
+const notificacionService = require('../services/notificacionService.js');
+const MedioDeContacto = require('../models/Contacto/MedioDeContacto.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
@@ -13,6 +15,11 @@ const colaboradorSchema = z.object({
     habilidades: z.array(z.string()).default([]),
     pronombres: z.string().optional(),
     presentacion: z.string().max(300).optional(),
+    deseaSerContactado: z.boolean().default(false),
+    contactos: z.array(z.object({
+        medio: z.enum(Object.values(MedioDeContacto)),
+        valor: z.string().min(1)
+    })).default([])
 }).strict()
 
 class ColaboradorController {
@@ -21,6 +28,7 @@ class ColaboradorController {
         this.colaboracionService = colaboracionService;
         this.habilidadService = habilidadService;
         this.proyectoService = proyectoService;
+        this.notificacionService = notificacionService;
     }
 
     obtenerColaboradores = async (req, res) => {
@@ -95,6 +103,11 @@ class ColaboradorController {
     buscarPotencialesProyectos = async (req, res) => {
         const proyectos = await this.proyectoService.buscarPotencialesProyectos(req.params.cuentaGit);
         res.status(200).json(proyectos);
+    }
+
+    obtenerNotificaciones = async (req, res) => {
+        const notificaciones = await this.notificacionService.obtenerPorColaborador(req.params.cuentaGit);
+        res.status(200).json(notificaciones);
     }
 }
 

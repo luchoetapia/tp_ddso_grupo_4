@@ -2,6 +2,7 @@ const { z } = require('zod');
 const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
 const perfilService = require('../services/perfilService.js');
+const notificacionService = require('../services/notificacionService.js');
 const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
@@ -13,11 +14,17 @@ const proyectoSchema = z.object({
     enlaceCodigoFuente: z.string().url().nullable().optional()
 }).strict();
 
+const contactoSchema = z.object({
+    cuentaGit: z.string().min(1),
+    mensaje: z.string().min(1)
+}).strict();
+
 class ProyectoController {
     constructor() {
         this.proyectoService = proyectoService;
         this.colectivoService = colectivoService
         this.perfilService = perfilService;
+        this.notificacionService = notificacionService;
     }
 
     obtenerProyectos = async (req, res) => {
@@ -86,6 +93,18 @@ class ProyectoController {
 
         const potencialesColaboradores = await this.proyectoService.buscarPotencialesColaboradores(id, idPerfil);
         res.status(200).json(potencialesColaboradores);
+    }
+
+    contactarColaborador = async (req, res) => {
+        const resultado = contactoSchema.safeParse(req.body)
+        if (resultado.error) {
+            throw new BadRequestError("Datos inválidos", resultado.error.issues)
+        }
+
+        const { id, idPerfil } = req.params;
+        const { cuentaGit, mensaje } = resultado.data;
+        const notificacion = await this.notificacionService.contactarColaborador(id, idPerfil, cuentaGit, mensaje);
+        res.status(201).json({ message: 'Colaborador contactado exitosamente', data: notificacion });
     }
 }
 

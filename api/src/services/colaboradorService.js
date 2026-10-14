@@ -18,7 +18,8 @@ class ColaboradorService {
             cuentaGit: colaborador.cuentaGit,
             habilidades: colaborador.habilidades ? colaborador.habilidades.map(h => (typeof h === 'object' && h.toDTO ? h.toDTO() : h)) : [],
             pronombres: colaborador.pronombres,
-            presentacion: colaborador.presentacion
+            presentacion: colaborador.presentacion,
+            deseaSerContactado: colaborador.deseaSerContactado ?? false
         };
     }
 
@@ -42,7 +43,9 @@ class ColaboradorService {
             cuentaGit: datos.cuentaGit,
             habilidades: habilidades.map(h => h.id),
             pronombres: datos.pronombres,
-            presentacion: datos.presentacion
+            presentacion: datos.presentacion,
+            deseaSerContactado: datos.deseaSerContactado ?? false,
+            contactos: datos.contactos ?? []
         })
         return this.toDTO(creado);
     }

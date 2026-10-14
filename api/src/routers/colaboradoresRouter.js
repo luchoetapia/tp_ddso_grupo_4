@@ -20,4 +20,7 @@ router.route('/llenarDatosPrueba')
 router.route('/:cuentaGit/buscarPotencialesProyectos')
     .get((req, res) => colaboradorController.buscarPotencialesProyectos(req, res))
 
+router.route('/:cuentaGit/notificaciones')
+    .get((req, res) => colaboradorController.obtenerNotificaciones(req, res))
+
 module.exports = router

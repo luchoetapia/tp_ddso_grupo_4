@@ -213,6 +213,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /proyectos/{id}/perfiles/{idPerfil}/contactarColaborador:
+    post:
+      summary: Contacta a una colaboradora por un perfil del proyecto
+      description: >
+        Envía un mensaje interno (notificación) a la colaboradora indicada, sólo si
+        aceptó ser contactada (deseaSerContactado). La notificación queda registrada
+        en la plataforma y además se replica por cada uno de sus medios de contacto
+        (Email, WhatsApp, SMS).
+      tags: [Proyectos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+        - in: path
+          name: idPerfil
+          required: true
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactoInput"
+      responses:
+        "201":
+          description: Colaboradora contactada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colaborador contactado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Notificacion"
+        "400":
+          description: Datos inválidos o id de proyecto inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto o colaboradora no encontrados, o el perfil no pertenece al proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El proyecto está finalizado o la colaboradora no acepta ser contactada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos:
     get:
       summary: Obtiene todos los colectivos
@@ -583,6 +637,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colaboradores/{cuentaGit}/notificaciones:
+    get:
+      summary: Lista los mensajes internos recibidos por una colaboradora
+      description: Devuelve las notificaciones de la colaboradora, de la más reciente a la más antigua.
+      tags: [Colaboradores]
+      parameters:
+        - in: path
+          name: cuentaGit
+          required: true
+          schema:
+            type: string
+            example: noeaversa
+      responses:
+        "200":
+          description: Lista de notificaciones (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notificacion"
+        "404":
+          description: Colaboradora no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colaboraciones:
     get:
       summary: Obtiene todas las colaboraciones
@@ -941,6 +1023,24 @@ components:
         presentacion:
           type: string
           maxLength: 300
+        deseaSerContactado:
+          type: boolean
+          default: false
+          description: Si acepta recibir mensajes internos de los colectivos
+        contactos:
+          type: array
+          description: Medios de contacto internos (no se muestran públicamente)
+          default: []
+          items:
+            type: object
+            properties:
+              medio:
+                type: string
+                enum: [Email, WhatsApp, SMS]
+              valor:
+                type: string
+                example: noe@mail.com
+            required: [medio, valor]
       required:
         - nombre
         - apellido
@@ -1026,6 +1126,48 @@ components:
               format: date-time
               nullable: true
         - $ref: "#/components/schemas/Timestamps"
+
+    ContactoInput:
+      type: object
+      description: Body esperado por POST /proyectos/{id}/perfiles/{idPerfil}/contactarColaborador.
+      properties:
+        cuentaGit:
+          type: string
+          description: Cuenta de Git de la colaboradora a contactar
+          example: noeaversa
+        mensaje:
+          type: string
+          example: Hola! Tu perfil encaja con lo que buscamos, ¿te interesa sumarte?
+      required:
+        - cuentaGit
+        - mensaje
+
+    Notificacion:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        destinatario:
+          $ref: "#/components/schemas/ObjectId"
+        proyecto:
+          type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+        perfil:
+          type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/ObjectId"
+            descripcion:
+              type: string
+        mensaje:
+          type: string
+        fecha:
+          type: string
+          format: date-time
 
     Error:
       type: object
