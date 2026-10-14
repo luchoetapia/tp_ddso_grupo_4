@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 const perfilRepository = require('../repositories/perfilRepository.js');
 const habilidadService = require('./habilidadService.js');
+const colaboradorService = require('./colaboradorService.js');
 const { BadRequestError, NotFoundError } = require('../errors/AppError.js');
 
 class PerfilService {
     constructor() {
         this.perfilRepository = perfilRepository;
         this.habilidadService = habilidadService;
+        this.colaboradorService = colaboradorService;
     }
 
     obtenerTodos = async () => {
@@ -48,6 +50,11 @@ class PerfilService {
     actualizar = async (id, datos) => {
         await this.obtenerPorId(id); 
         return await this.perfilRepository.update(id, datos);
+    }
+
+    buscarColaboradoras = async (id) => {
+        const perfil = await this.obtenerPorId(id);
+        return await this.colaboradorService.buscarPorPerfil(perfil);
     }
 
     eliminar = async (id) => {

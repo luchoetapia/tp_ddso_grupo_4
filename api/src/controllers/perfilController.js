@@ -50,6 +50,11 @@ class PerfilController {
         res.status(200).json({ message: 'Perfil actualizado exitosamente', data: perfilActualizado });
     }
 
+    buscarColaboradoras = async (req, res) => {
+        const colaboradoras = await this.perfilService.buscarColaboradoras(req.params.id);
+        res.status(200).json(colaboradoras);
+    }
+
     eliminarPerfil = async (req, res) => {
         await this.perfilService.eliminar(req.params.id);
         res.status(200).json({ message: 'Perfil eliminado exitosamente' });
