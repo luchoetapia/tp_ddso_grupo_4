@@ -177,6 +177,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /proyectos/{id}/perfiles/{idPerfil}/buscarPotencialesColaboradores:
+    get:
+      summary: Busca potenciales colaboradoras/es para un perfil del proyecto
+      description: >
+        Devuelve las colaboradoras que tienen todas las habilidades requeridas
+        por el perfil indicado. No incluye los medios de contacto.
+      tags: [Proyectos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+        - in: path
+          name: idPerfil
+          required: true
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+      responses:
+        "200":
+          description: Lista de colaboradoras compatibles (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colaborador"
+        "400":
+          description: Id de proyecto inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto no encontrado, o el perfil no pertenece al proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos:
     get:
       summary: Obtiene todos los colectivos

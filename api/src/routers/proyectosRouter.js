@@ -17,7 +17,7 @@ router.route('/:id/finalizar')
 router.route('/llenarDatosPrueba')
     .post((req, res) => proyectoController.llenarDatosPrueba(req, res));
 
-router.route('/:id/buscarPotencialesColaboradores')
+router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')
     .get((req, res) => proyectoController.buscarPotencialesColaboradores(req, res));
 
 module.exports = router

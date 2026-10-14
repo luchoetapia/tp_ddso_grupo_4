@@ -73,11 +73,6 @@ class PerfilService {
         const perfiles = await this.perfilRepository.findAll();
         return perfiles.filter(perfil => perfil.cumpleHabilidadesRequeridas(habilidades));
     }
-
-    encontrarHabilidadesRequeridas = async (perfilId) => {
-        const perfil = await this.obtenerPorId(perfilId);
-        return perfil.habilidadesRequeridas;
-    }
 }
 
 module.exports = new PerfilService();

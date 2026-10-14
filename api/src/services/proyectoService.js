@@ -104,17 +104,17 @@ class ProyectoService {
         );
     }
 
-    buscarPotencialesColaboradores = async (idProyecto) => {
+    buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
         const proyecto = await this.obtenerPorId(idProyecto);
-        const perfilesRequeridos = proyecto.perfiles.map(p => p.id);
-        perfilesRequeridos.forEach(async (perfilId) => {
-            const habilidadesRequeridas = await this.perfilService.encontrarHabilidadesRequeridas(perfilId);
-            const potencialesColaboradores = await this.colaboradorService.obtenerTodos();
-            const colaboradoresQueCumplen = potencialesColaboradores.filter(colaborador =>
-                habilidadesRequeridas.every(habilidad => colaborador.habilidades.some(h => h.id === habilidad))
-            );
-            return colaboradoresQueCumplen;
-        })
+        const perfil = proyecto.perfiles.find(p => p.id === idPerfil);
+        if (!perfil) {
+            throw new NotFoundError("El perfil no pertenece al proyecto");
+        }
+
+        const colaboradores = await this.colaboradorService.obtenerTodos();
+        return colaboradores.filter(colaborador =>
+            perfil.cumpleHabilidadesRequeridas(colaborador.habilidades.map(h => (h._id ?? h).toString()))
+        );
     }
 }
 
