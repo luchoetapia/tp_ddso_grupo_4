@@ -2,15 +2,11 @@ const mongoose = require('mongoose');
 const colaboradorRepository = require('../repositories/colaboradorRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const habilidadService = require("./habilidadService.js");
-const perfilService = require("./perfilService.js");
-const proyectoService = require("./proyectoService.js");
 
 class ColaboradorService {
     constructor() {
         this.colaboradorRepository = colaboradorRepository;
         this.habilidadService = habilidadService;
-        this.perfilService = perfilService;
-        this.proyectoService = proyectoService;
     }
 
     toDTO = (colaborador) => {
@@ -82,20 +78,6 @@ class ColaboradorService {
             throw new NotFoundError("Colaborador no encontrado")
         }
         return this.toDTO(colaborador);
-    }
-
-    buscarPotencialesProyectos = async (idColaborador) => {
-        const colaborador = await this.obtenerPorId(idColaborador);
-        const habilidadesColaborador = colaborador.habilidades.map(h => h._id ?? h);
-       
-        const perfiles = await this.perfilService.perfilesQueCumplenHabilidadesRequeridas(idColaborador);
-       
-        const proyectosActivos = await this.proyectoService.proyectosActivos();
-
-        const proyectos = proyectosActivos.filter(proyecto => {
-            return proyecto.perfiles.some(perfil => perfiles.some(p => p.id === perfil));
-        });
-        return proyectos;
     }
 }
 

@@ -2,6 +2,7 @@ const { z } = require('zod');
 const colaboradorService = require('../services/colaboradorService.js');
 const colaboracionService = require('../services/colaboracionService.js');
 const habilidadService = require('../services/habilidadService.js');
+const proyectoService = require('../services/proyectoService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
@@ -19,6 +20,7 @@ class ColaboradorController {
         this.colaboradorService = colaboradorService;
         this.colaboracionService = colaboracionService;
         this.habilidadService = habilidadService;
+        this.proyectoService = proyectoService;
     }
 
     obtenerColaboradores = async (req, res) => {
@@ -91,9 +93,7 @@ class ColaboradorController {
     }
 
     buscarPotencialesProyectos = async (req, res) => {
-        const { cuentaGit } = req.params;
-        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit);
-        const proyectos = await this.colaboradorService.buscarPotencialesProyectos(colaborador._id.toString());
+        const proyectos = await this.proyectoService.buscarPotencialesProyectos(req.params.cuentaGit);
         res.status(200).json(proyectos);
     }
 }
