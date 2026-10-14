@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 const proyectoRepository = require('../repositories/proyectoRepository.js');
 const perfilService = require('./perfilService.js');
+const perfilService = require('./perfilService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
     constructor() {
         this.proyectoRepository = proyectoRepository;
+        this.perfilService = perfilService;
         this.perfilService = perfilService;
     }
 
@@ -34,6 +36,11 @@ class ProyectoService {
             throw new ConflictError("Ya existe un proyecto con ese título")
         }
 
+        if (datos.perfiles && datos.perfiles.length > 0) {
+            for (const perfilId of datos.perfiles) {
+                await this.perfilService.obtenerPorId(perfilId);
+            }
+        }
         if (datos.perfiles && datos.perfiles.length > 0) {
             for (const perfilId of datos.perfiles) {
                 await this.perfilService.obtenerPorId(perfilId);
