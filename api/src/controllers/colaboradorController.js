@@ -89,6 +89,13 @@ class ColaboradorController {
 
         return res.status(201).json({ status: "success", data: creados });
     }
+
+    buscarPotencialesProyectos = async (req, res) => {
+        const { cuentaGit } = req.params;
+        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit);
+        const proyectos = await this.colaboradorService.buscarPotencialesProyectos(colaborador._id.toString());
+        res.status(200).json(proyectos);
+    }
 }
 
 module.exports = { ColaboradorController };

@@ -83,6 +83,11 @@ class ProyectoService {
         const actualizado = await this.proyectoRepository.update(id, { finalizado: true });
         return this.toDTO(actualizado);
     }
+
+    proyectosActivos = async () => {
+        const proyectos = await this.proyectoRepository.findAll();
+        return proyectos.filter(p => !p.finalizado).map(this.toDTO);
+    }
 }
 
 module.exports = new ProyectoService();

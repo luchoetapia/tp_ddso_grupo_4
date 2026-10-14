@@ -75,6 +75,11 @@ class PerfilService {
         await this.obtenerPorId(id); 
         return await this.perfilRepository.delete(id);
     }
+
+    perfilesQueCumplenHabilidadesRequeridas = async (habilidades) => {
+        const perfiles = await this.perfilRepository.findAll();
+        return perfiles.filter(perfil => perfil.cumpleHabilidadesRequeridas(habilidades));
+    }
 }
 
 module.exports = new PerfilService();

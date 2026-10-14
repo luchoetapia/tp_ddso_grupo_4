@@ -517,6 +517,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colaboradores/{cuentaGit}/buscarPotencialesProyectos:
+    get:
+      summary: Busca potenciales proyectos para una colaboradora/colaborador
+      description: >
+        Devuelve los proyectos no finalizados que tienen al menos un perfil
+        cuyas habilidades requeridas posee en su totalidad la colaboradora.
+      tags: [Colaboradores]
+      parameters:
+        - in: path
+          name: cuentaGit
+          required: true
+          schema:
+            type: string
+            example: noeaversa
+      responses:
+        "200":
+          description: Lista de proyectos compatibles (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proyecto"
+        "404":
+          description: Colaboradora no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colaboraciones:
     get:
       summary: Obtiene todas las colaboraciones
