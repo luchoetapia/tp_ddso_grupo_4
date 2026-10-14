@@ -14,6 +14,7 @@ class Proyecto {
 id : Int 
 titulo : String
 descripcion : String
+perfiles: List<Perfil>
 finalizado: boolean
 porcentajeFinalizado: Float
 enlaceSistema : String
