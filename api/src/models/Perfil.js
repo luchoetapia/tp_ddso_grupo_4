@@ -9,7 +9,8 @@ class Perfil {
     }
 
     cumpleHabilidadesRequeridas(habilidades) {
-        return this.habilidadesRequeridas.map(habilidad => habilidad.id.toString()).every(id => habilidades.includes(id.toString()));
+        // Las habilidades requeridas pueden venir populadas (documentos) o como ObjectId
+        return this.habilidadesRequeridas.map(habilidad => (habilidad._id ?? habilidad).toString()).every(id => habilidades.includes(id));
     }
 }
 

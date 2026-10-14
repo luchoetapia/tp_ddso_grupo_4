@@ -47,7 +47,7 @@ class ColaboradorController {
         const { cuentaGit, idProyecto } = req.params;
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
         const colaboracion = await this.colaboracionService.crear({
-            idColaborador: colaborador._id.toString(),
+            idColaborador: colaborador.id,
             idProyecto
         })
         res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })

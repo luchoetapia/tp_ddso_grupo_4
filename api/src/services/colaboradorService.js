@@ -59,19 +59,6 @@ class ColaboradorService {
         return this.toDTO(colaborador);
     }
 
-    buscarPorPerfil = async (perfil) => {
-        const idsRequeridas = perfil.habilidadesRequeridas.map(h => h._id ?? h)
-        const candidatas = await this.colaboradorRepository.findByHabilidades(idsRequeridas)
-
-        return candidatas
-            .filter(c => perfil.cumpleHabilidadesRequeridas(c))
-            .map(c => ({
-                ...c.toObject(),
-                cantHabilidadesOpcionales: perfil.contarHabilidadesOpcionales(c)
-            }))
-            .sort((a, b) => b.cantHabilidadesOpcionales - a.cantHabilidadesOpcionales)
-    }
-
     obtenerPorCuentaGit = async (cuentaGit) => {
         const colaborador = await this.colaboradorRepository.findByCuentaGit(cuentaGit)
         if (!colaborador) {

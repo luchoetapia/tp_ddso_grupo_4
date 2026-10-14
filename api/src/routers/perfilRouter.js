@@ -16,7 +16,4 @@ router.route('/:id')
     .put(perfilController.actualizarPerfil)
     .delete(perfilController.eliminarPerfil);
 
-router.route('/:id/buscarColaboradoras')
-    .get(perfilController.buscarColaboradoras);
-
 module.exports = router;

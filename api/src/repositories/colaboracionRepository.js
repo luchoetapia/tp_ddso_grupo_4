@@ -9,6 +9,10 @@ class ColaboracionRepository {
         return await ColaboracionModel.find();
     }
 
+    async findActiva(idColaborador, idProyecto) {
+        return await ColaboracionModel.findOne({ colaborador: idColaborador, proyecto: idProyecto, fin: null });
+    }
+
     async save(colaboracion) {
         return await ColaboracionModel.create(colaboracion);
     }

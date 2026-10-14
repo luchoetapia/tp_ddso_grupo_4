@@ -33,22 +33,21 @@ class ColaboracionService {
         if (proyecto.finalizado)
             throw new ConflictError("El proyecto ya fue finalizado y no admite nuevas personas colaboradoras")
 
-        const idsHabilidadesProyecto = proyecto.habilidades.map(h => h._id.toString());
-        const tieneHabilidadRequerida = colaborador.habilidades.some(h =>
-            idsHabilidadesProyecto.includes(h._id.toString())
+        const habilidadesColaborador = colaborador.habilidades.map(h => (h._id ?? h).toString());
+        const cumpleAlgunPerfil = proyecto.perfiles.some(perfil =>
+            perfil.cumpleHabilidadesRequeridas(habilidadesColaborador)
         );
 
-        if (!tieneHabilidadRequerida)
-            throw new ConflictError("La persona colaboradora no cuenta con ninguna de las habilidades requeridas por el proyecto")
+        if (!cumpleAlgunPerfil)
+            throw new ConflictError("La persona colaboradora no cumple con las habilidades requeridas de ningún perfil del proyecto")
 
-
-        const yaAnotada = await this.colaboracionRepository.findActiva(colaborador._id, proyecto._id);
+        const yaAnotada = await this.colaboracionRepository.findActiva(colaborador.id, proyecto.id);
         if (yaAnotada)
             throw new ConflictError("La persona colaboradora ya está anotada en este proyecto")
 
         const creada = await this.colaboracionRepository.save({
-            colaborador: colaborador._id,
-            proyecto: proyecto._id,
+            colaborador: colaborador.id,
+            proyecto: proyecto.id,
             inicio: new Date()
         });
         return this.toDTO(creada);

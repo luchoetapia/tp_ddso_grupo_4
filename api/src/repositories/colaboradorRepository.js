@@ -13,11 +13,6 @@ class ColaboradorRepository {
         return await ColaboradorModel.findOne({ cuentaGit }).populate('habilidades');
     }
 
-    async findByHabilidades(idsHabilidades) {
-        const filtro = idsHabilidades.length > 0 ? { habilidades: { $all: idsHabilidades } } : {};
-        return await ColaboradorModel.find(filtro).select('-contactos').populate('habilidades');
-    }
-
     async save(datos) {
         const colaborador = new ColaboradorModel(datos);
         await colaborador.save();

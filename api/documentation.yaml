@@ -469,9 +469,9 @@ paths:
     post:
       summary: Anota a una colaboradora/colaborador a un proyecto
       description: >
-        Crea una colaboración. La colaboradora debe tener al menos una
-        habilidad en común con las requeridas por el proyecto, el proyecto no
-        debe estar finalizado y no puede estar ya anotada en él.
+        Crea una colaboración. La colaboradora debe tener todas las habilidades
+        requeridas de al menos un perfil del proyecto, el proyecto no debe
+        estar finalizado y no puede estar ya anotada en él.
       tags: [Colaboradores]
       parameters:
         - in: path
@@ -499,7 +499,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: Id de proyecto inválido, o la colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          description: Id de proyecto inválido
           content:
             application/json:
               schema:
@@ -511,7 +511,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: El proyecto ya fue finalizado, o la colaboradora ya está anotada en él
+          description: El proyecto ya fue finalizado, la colaboradora ya está anotada en él, o no cumple las habilidades requeridas de ningún perfil
           content:
             application/json:
               schema:
@@ -594,7 +594,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: Datos inválidos, o la colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          description: Datos inválidos
           content:
             application/json:
               schema:
@@ -606,7 +606,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: El proyecto ya fue finalizado, o la colaboradora ya está anotada en él
+          description: El proyecto ya fue finalizado, la colaboradora ya está anotada en él, o no cumple las habilidades requeridas de ningún perfil
           content:
             application/json:
               schema:
@@ -664,44 +664,6 @@ paths:
           description: Perfiles creados
         "400":
           description: Datos inválidos o alguna habilidad no existe
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /perfiles/{id}/buscarColaboradoras:
-    get:
-      summary: Busca potenciales colaboradoras/es para un perfil
-      description: >
-        Devuelve las colaboradoras que tienen todas las habilidades requeridas
-        por el perfil, ordenadas de mayor a menor según cuántas habilidades
-        opcionales del perfil tienen. No incluye los medios de contacto.
-      tags: [Perfiles]
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      responses:
-        "200":
-          description: Lista de colaboradoras compatibles (puede ser vacía)
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/Colaborador"
-                    - type: object
-                      properties:
-                        cantHabilidadesOpcionales:
-                          type: integer
-                          example: 1
-        "400":
-          description: Id de perfil inválido
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Perfil no encontrado
           content:
             application/json:
               schema:
