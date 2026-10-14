@@ -9,8 +9,22 @@ class ColaboradorService {
         this.habilidadService = habilidadService;
     }
 
+    toDTO = (colaborador) => {
+        return {
+            id: colaborador.id || colaborador._id?.toString(),
+            nombre: colaborador.nombre,
+            apellido: colaborador.apellido,
+            nombreFantasia: colaborador.nombreFantasia,
+            cuentaGit: colaborador.cuentaGit,
+            habilidades: colaborador.habilidades ? colaborador.habilidades.map(h => (typeof h === 'object' && h.toDTO ? h.toDTO() : h)) : [],
+            pronombres: colaborador.pronombres,
+            presentacion: colaborador.presentacion
+        };
+    }
+
     obtenerTodos = async () => {
-        return await this.colaboradorRepository.findAll()
+        const colaboradores = await this.colaboradorRepository.findAll();
+        return colaboradores.map(this.toDTO);
     }
 
     crear = async (datos) => {
@@ -21,7 +35,7 @@ class ColaboradorService {
 
         const habilidades = await this.habilidadService.obtenerPorListaId(datos.habilidades ?? [])
 
-        return await this.colaboradorRepository.save({
+        const creado = await this.colaboradorRepository.save({
             nombre: datos.nombre,
             apellido: datos.apellido,
             nombreFantasia: datos.nombreFantasia,
@@ -30,6 +44,7 @@ class ColaboradorService {
             pronombres: datos.pronombres,
             presentacion: datos.presentacion
         })
+        return this.toDTO(creado);
     }
 
     obtenerPorId = async (id) => {
@@ -41,7 +56,7 @@ class ColaboradorService {
         if (!colaborador) {
             throw new NotFoundError("Colaborador no encontrado")
         }
-        return colaborador;
+        return this.toDTO(colaborador);
     }
 
     buscarPorPerfil = async (perfil) => {
@@ -62,7 +77,7 @@ class ColaboradorService {
         if (!colaborador) {
             throw new NotFoundError("Colaborador no encontrado")
         }
-        return colaborador
+        return this.toDTO(colaborador);
     }
 }
 

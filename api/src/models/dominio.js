@@ -10,16 +10,15 @@ class Colectivo {
 }
 
 class Proyecto {
-    constructor(id, titulo, descripcion, perfiles, tipoCompromiso, modalidadColaboracion, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = []) {
+    constructor(id, titulo, descripcion, perfiles, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = []) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
         this.perfiles = perfiles
-        this.tipoCompromiso = tipoCompromiso
-        this.modalidadColaboracion = modalidadColaboracion
-        this.porcentajeFinalizado = porcentajeFinalizado,
-        this.enlaceSistema = enlaceSistema,
-        this.enlaceCodigoFuente = enlaceCodigoFuente,
+        this.finalizado = finalizado
+        this.porcentajeFinalizado = porcentajeFinalizado
+        this.enlaceSistema = enlaceSistema
+        this.enlaceCodigoFuente = enlaceCodigoFuente
         this.logros = logros
     }
 }

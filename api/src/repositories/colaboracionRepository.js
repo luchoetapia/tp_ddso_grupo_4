@@ -6,11 +6,11 @@ class ColaboracionRepository {
     }
 
     async findAll() {
-        return await this.model.find();
+        return await ColaboracionModel.find();
     }
 
     async save(colaboracion) {
-        return await this.model.create(colaboracion);
+        return await ColaboracionModel.create(colaboracion);
     }
 }
 
