@@ -10,8 +10,20 @@ class ColaboracionService {
         this.colaboradorService = colaboradorService;
     }
 
+    toDTO = (colaboracion) => {
+        return {
+            id: colaboracion.id || colaboracion._id?.toString(),
+            colaborador: colaboracion.colaborador ? (colaboracion.colaborador.toDTO ? colaboracion.colaborador.toDTO() : colaboracion.colaborador) : null,
+            proyecto: colaboracion.proyecto ? (colaboracion.proyecto.toDTO ? colaboracion.proyecto.toDTO() : colaboracion.proyecto) : null,
+            inicio: colaboracion.inicio,
+            fin: colaboracion.fin,
+            esAnonima: colaboracion.esAnonima
+        };
+    }
+
     obtenerTodas = async () => {
-        return await this.colaboracionRepository.findAll();
+        const colaboraciones = await this.colaboracionRepository.findAll();
+        return colaboraciones.map(this.toDTO);
     }
 
     crear = async (colaboracionData) => {
@@ -34,11 +46,12 @@ class ColaboracionService {
         if (yaAnotada)
             throw new ConflictError("La persona colaboradora ya está anotada en este proyecto")
 
-        return await this.colaboracionRepository.save({
+        const creada = await this.colaboracionRepository.save({
             colaborador: colaborador._id,
             proyecto: proyecto._id,
             inicio: new Date()
-        })
+        });
+        return this.toDTO(creada);
     }
 }
 

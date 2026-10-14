@@ -9,8 +9,23 @@ class ProyectoService {
         this.perfilService = perfilService;
     }
 
+    toDTO = (proyecto) => {
+        return {
+            id: proyecto.id || proyecto._id?.toString(),
+            titulo: proyecto.titulo,
+            descripcion: proyecto.descripcion,
+            perfiles: proyecto.perfiles ? proyecto.perfiles.map(p => (typeof p === 'object' && p.toDTO ? p.toDTO() : p)) : [],
+            finalizado: proyecto.finalizado ?? false,
+            porcentajeFinalizado: proyecto.porcentajeFinalizado ?? 0,
+            enlaceSistema: proyecto.enlaceSistema,
+            enlaceCodigoFuente: proyecto.enlaceCodigoFuente,
+            logros: proyecto.logros ? proyecto.logros.map(l => (typeof l === 'object' && l.toDTO ? l.toDTO() : l)) : []
+        };
+    }
+
     obtenerTodos = async () => {
-        return await this.proyectoRepository.findAll()
+        const proyectos = await this.proyectoRepository.findAll();
+        return proyectos.map(this.toDTO);
     }
 
     crear = async (datos) => {
@@ -25,13 +40,15 @@ class ProyectoService {
             }
         }
 
-        return await this.proyectoRepository.save({
+        const creado = await this.proyectoRepository.save({
             titulo: datos.titulo,
             descripcion: datos.descripcion,
             perfiles: datos.perfiles ?? [],
             enlaceSistema: datos.enlaceSistema ?? null,
             enlaceCodigoFuente: datos.enlaceCodigoFuente ?? null
         });
+
+        return this.toDTO(creado);
     }
 
     obtenerPorId = async (id) => {
@@ -43,7 +60,7 @@ class ProyectoService {
         if (!proyecto) {
             throw new NotFoundError("Proyecto no encontrado")
         }
-        return proyecto
+        return this.toDTO(proyecto)
     }
 
     obtenerPorListaId = async (listaDeIDs) => {
@@ -58,12 +75,13 @@ class ProyectoService {
         if (faltantes.length > 0) {
             throw new NotFoundError("Proyectos no encontrados", faltantes)
         }
-        return proyectos
+        return proyectos.map(this.toDTO)
     }
 
     finalizar = async (id) => {
         await this.obtenerPorId(id)
-        return await this.proyectoRepository.update(id, { finalizado: true })
+        const actualizado = await this.proyectoRepository.update(id, { finalizado: true });
+        return this.toDTO(actualizado);
     }
 }
 

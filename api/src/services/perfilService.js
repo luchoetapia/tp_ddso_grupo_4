@@ -9,8 +9,20 @@ class PerfilService {
         this.habilidadService = habilidadService;
     }
 
+    toDTO = (perfil) => {
+        return {
+            id: perfil.id || perfil._id?.toString(),
+            descripcion: perfil.descripcion,
+            habilidadesRequeridas: perfil.habilidadesRequeridas ? perfil.habilidadesRequeridas.map(h => (typeof h === 'object' && h.toDTO ? h.toDTO() : h)) : [],
+            habilidadesOpcionales: perfil.habilidadesOpcionales ? perfil.habilidadesOpcionales.map(h => (typeof h === 'object' && h.toDTO ? h.toDTO() : h)) : [],
+            tipoCompromiso: perfil.tipoCompromiso,
+            modalidadColaboracion: perfil.modalidadColaboracion
+        };
+    }
+
     obtenerTodos = async () => {
-        return await this.perfilRepository.findAll();
+        const perfiles = await this.perfilRepository.findAll();
+        return perfiles.map(this.toDTO);
     }
 
     obtenerPorId = async (id) => {
@@ -21,7 +33,7 @@ class PerfilService {
         if (!perfil) {
             throw new NotFoundError("Perfil no encontrado");
         }
-        return perfil;
+        return this.toDTO(perfil);
     }
 
     crear = async (datos) => {
@@ -34,7 +46,8 @@ class PerfilService {
             await this.habilidadService.obtenerPorListaId(datos.habilidadesOpcionales);
         }
 
-        return await this.perfilRepository.save(datos);
+        const creado = await this.perfilRepository.save(datos);
+        return this.toDTO(creado);
     }
 
     crearVarios = async (listaDatos) => {
@@ -47,7 +60,8 @@ class PerfilService {
 
     actualizar = async (id, datos) => {
         await this.obtenerPorId(id); 
-        return await this.perfilRepository.update(id, datos);
+        const actualizado = await this.perfilRepository.update(id, datos);
+        return this.toDTO(actualizado);
     }
 
     eliminar = async (id) => {
