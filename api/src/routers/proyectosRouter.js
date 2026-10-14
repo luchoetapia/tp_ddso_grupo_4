@@ -17,10 +17,6 @@ router.route('/llenarDatosPrueba')
     .post((req, res) => proyectoController.llenarDatosPrueba(req, res));
 
 
-router.route('/llenarDatosPrueba')
-    .post((req, res) => proyectoController.llenarDatosPrueba(req, res));
-
-
 router.route('/:id')
     .get((req, res) => proyectoController.obtenerProyectoPorId(req, res));
 
