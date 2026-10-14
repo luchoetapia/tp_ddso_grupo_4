@@ -80,6 +80,13 @@ class ProyectoController {
 
         return res.status(201).json({ status: "success", data: creados });
     }
+
+    buscarPotencialesColaboradores = async (req, res) => {
+        const { id } = req.params;
+
+        const potencialesColaboradores = await this.proyectoService.buscarPotencialesColaboradores(id);
+        res.status(200).json(potencialesColaboradores);
+    }
 }
 
 module.exports = { ProyectoController };

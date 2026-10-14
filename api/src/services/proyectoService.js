@@ -103,6 +103,19 @@ class ProyectoService {
             proyecto.perfiles.some(perfil => idsPerfiles.includes(perfil.id))
         );
     }
+
+    buscarPotencialesColaboradores = async (idProyecto) => {
+        const proyecto = await this.obtenerPorId(idProyecto);
+        const perfilesRequeridos = proyecto.perfiles.map(p => p.id);
+        perfilesRequeridos.forEach(async (perfilId) => {
+            const habilidadesRequeridas = await this.perfilService.encontrarHabilidadesRequeridas(perfilId);
+            const potencialesColaboradores = await this.colaboradorService.obtenerTodos();
+            const colaboradoresQueCumplen = potencialesColaboradores.filter(colaborador =>
+                habilidadesRequeridas.every(habilidad => colaborador.habilidades.some(h => h.id === habilidad))
+            );
+            return colaboradoresQueCumplen;
+        })
+    }
 }
 
 module.exports = new ProyectoService();
