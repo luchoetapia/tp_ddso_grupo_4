@@ -1,29 +1,23 @@
 const { z } = require('zod');
 const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
-const habilidadService = require('../services/habilidadService.js');
+const perfilService = require('../services/perfilService.js');
 const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
 const proyectoSchema = z.object({
     titulo: z.string().min(1),
     descripcion: z.string().optional(),
-    habilidades: z.array(z.string()).optional(),
-    tipoCompromiso: z.object({
-        cantHoras: z.number().positive(),
-        periodo: z.enum(Object.values(Periodo))
-    }),
-    modalidadColaboracion: z.object({
-        incentivoEconomico: z.float32(),
-        posibleContratacion: z.boolean()
-    })
+    perfiles: z.array(z.string()).default([]),
+    enlaceSistema: z.string().url().nullable().optional(),
+    enlaceCodigoFuente: z.string().url().nullable().optional()
 }).strict();
 
 class ProyectoController {
     constructor() {
         this.proyectoService = proyectoService;
         this.colectivoService = colectivoService
-        this.habilidadService = habilidadService
+        this.perfilService = perfilService;
     }
 
     obtenerProyectos = async (req, res) => {
@@ -65,20 +59,12 @@ class ProyectoController {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
-            const habilidades = await this.habilidadService.obtenerTodas();
+            const perfiles  = await this.perfilService.obtenerTodas();
             lista = [
                 {
                     titulo: "Plataforma Educativa",
                     descripcion: "Desarrollo de aula virtual accesible",
-                    habilidades: habilidades.slice(0, 2).map(h => h._id.toString()),
-                    tipoCompromiso: {
-                        cantHoras: 10,
-                        periodo: Periodo.SEMANAL
-                    },
-                    modalidadColaboracion: {
-                        incentivoEconomico: 0,
-                        posibleContratacion: false
-                    }
+                    perfiles: perfiles.slice(0, 2).map(p => p._id.toString()),
                 }
             ];
         }
