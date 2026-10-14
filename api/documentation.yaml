@@ -17,6 +17,8 @@ tags:
     description: Gestión de colaboradoras/es
   - name: Colaboraciones
     description: Participación de colaboradoras/es en proyectos
+  - name: Perfiles
+    description: Perfiles requeridos por los proyectos
 
 paths:
   /proyectos:
@@ -170,6 +172,42 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           description: Colectivo o proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /proyectos/{id}/perfiles/{idPerfil}/buscarPotencialesColaboradores:
+    get:
+      summary: Busca potenciales colaboradoras/es para un perfil del proyecto
+      description: >
+        Devuelve las colaboradoras que tienen todas las habilidades requeridas
+        por el perfil indicado. No incluye los medios de contacto.
+      tags: [Proyectos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+        - in: path
+          name: idPerfil
+          required: true
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+      responses:
+        "200":
+          description: Lista de colaboradoras compatibles (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colaborador"
+        "400":
+          description: Id de proyecto inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto no encontrado, o el perfil no pertenece al proyecto
           content:
             application/json:
               schema:
@@ -467,9 +505,9 @@ paths:
     post:
       summary: Anota a una colaboradora/colaborador a un proyecto
       description: >
-        Crea una colaboración. La colaboradora debe tener al menos una
-        habilidad en común con las requeridas por el proyecto, el proyecto no
-        debe estar finalizado y no puede estar ya anotada en él.
+        Crea una colaboración. La colaboradora debe tener todas las habilidades
+        requeridas de al menos un perfil del proyecto, el proyecto no debe
+        estar finalizado y no puede estar ya anotada en él.
       tags: [Colaboradores]
       parameters:
         - in: path
@@ -497,7 +535,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: Id de proyecto inválido, o la colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          description: Id de proyecto inválido
           content:
             application/json:
               schema:
@@ -509,7 +547,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: El proyecto ya fue finalizado, o la colaboradora ya está anotada en él
+          description: El proyecto ya fue finalizado, la colaboradora ya está anotada en él, o no cumple las habilidades requeridas de ningún perfil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colaboradores/{cuentaGit}/buscarPotencialesProyectos:
+    get:
+      summary: Busca potenciales proyectos para una colaboradora/colaborador
+      description: >
+        Devuelve los proyectos no finalizados que tienen al menos un perfil
+        cuyas habilidades requeridas posee en su totalidad la colaboradora.
+      tags: [Colaboradores]
+      parameters:
+        - in: path
+          name: cuentaGit
+          required: true
+          schema:
+            type: string
+            example: noeaversa
+      responses:
+        "200":
+          description: Lista de proyectos compatibles (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proyecto"
+        "404":
+          description: Colaboradora no encontrada
           content:
             application/json:
               schema:
@@ -562,7 +630,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: Datos inválidos, o la colaboradora no cuenta con ninguna habilidad requerida por el proyecto
+          description: Datos inválidos
           content:
             application/json:
               schema:
@@ -574,7 +642,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: El proyecto ya fue finalizado, o la colaboradora ya está anotada en él
+          description: El proyecto ya fue finalizado, la colaboradora ya está anotada en él, o no cumple las habilidades requeridas de ningún perfil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /perfiles/llenarDatosPrueba:
+    post:
+      summary: Carga perfiles iniciales
+      description: >
+        Sin body, crea dos perfiles de ejemplo (Backend Node.js y Diseño UX/UI)
+        sin habilidades. También acepta un array de perfiles con el mismo
+        formato que POST /perfiles.
+      tags: [Perfiles]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  descripcion:
+                    type: string
+                    example: Desarrollador Backend Node.js
+                  habilidadesRequeridas:
+                    type: array
+                    items:
+                      type: string
+                      example: 665f1c2e8b3a4d0012345678
+                  habilidadesOpcionales:
+                    type: array
+                    items:
+                      type: string
+                  tipoCompromiso:
+                    type: object
+                    properties:
+                      cantHoras:
+                        type: number
+                        example: 10
+                      periodo:
+                        type: string
+                        enum: [semanal, mensual, total]
+                  modalidadColaboracion:
+                    type: object
+                    properties:
+                      incentivoEconomico:
+                        type: number
+                        example: 0
+                      posibleContratacion:
+                        type: boolean
+                        example: true
+      responses:
+        "201":
+          description: Perfiles creados
+        "400":
+          description: Datos inválidos o alguna habilidad no existe
           content:
             application/json:
               schema:

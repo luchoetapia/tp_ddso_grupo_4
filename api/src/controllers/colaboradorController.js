@@ -2,6 +2,7 @@ const { z } = require('zod');
 const colaboradorService = require('../services/colaboradorService.js');
 const colaboracionService = require('../services/colaboracionService.js');
 const habilidadService = require('../services/habilidadService.js');
+const proyectoService = require('../services/proyectoService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 
 const colaboradorSchema = z.object({
@@ -19,6 +20,7 @@ class ColaboradorController {
         this.colaboradorService = colaboradorService;
         this.colaboracionService = colaboracionService;
         this.habilidadService = habilidadService;
+        this.proyectoService = proyectoService;
     }
 
     obtenerColaboradores = async (req, res) => {
@@ -45,7 +47,7 @@ class ColaboradorController {
         const { cuentaGit, idProyecto } = req.params;
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit)
         const colaboracion = await this.colaboracionService.crear({
-            idColaborador: colaborador._id.toString(),
+            idColaborador: colaborador.id,
             idProyecto
         })
         res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
@@ -55,7 +57,7 @@ class ColaboradorController {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
-            const ids = (await this.habilidadService.obtenerTodas()).map(h => h._id.toString());
+            const ids = (await this.habilidadService.obtenerTodas()).map(h => h.id);
             lista = [
                 {
                     nombre: "Juan",
@@ -88,6 +90,11 @@ class ColaboradorController {
         }
 
         return res.status(201).json({ status: "success", data: creados });
+    }
+
+    buscarPotencialesProyectos = async (req, res) => {
+        const proyectos = await this.proyectoService.buscarPotencialesProyectos(req.params.cuentaGit);
+        res.status(200).json(proyectos);
     }
 }
 

@@ -7,6 +7,11 @@ class Perfil {
         this.tipoCompromiso = tipoCompromiso,
         this.modalidadColaboracion = modalidadColaboracion
     }
+
+    cumpleHabilidadesRequeridas(habilidades) {
+        // Las habilidades requeridas pueden venir populadas (documentos) o como ObjectId
+        return this.habilidadesRequeridas.map(habilidad => (habilidad._id ?? habilidad).toString()).every(id => habilidades.includes(id));
+    }
 }
 
 module.exports = Perfil;
