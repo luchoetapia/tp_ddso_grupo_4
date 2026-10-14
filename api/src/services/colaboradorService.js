@@ -40,7 +40,7 @@ class ColaboradorService {
             apellido: datos.apellido,
             nombreFantasia: datos.nombreFantasia,
             cuentaGit: datos.cuentaGit,
-            habilidades: habilidades.map(h => h._id),
+            habilidades: habilidades.map(h => h.id),
             pronombres: datos.pronombres,
             presentacion: datos.presentacion
         })

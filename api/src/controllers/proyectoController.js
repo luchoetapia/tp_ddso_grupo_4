@@ -59,12 +59,12 @@ class ProyectoController {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
-            const perfiles  = await this.perfilService.obtenerTodas();
+            const perfiles = await this.perfilService.obtenerTodos();
             lista = [
                 {
                     titulo: "Plataforma Educativa",
                     descripcion: "Desarrollo de aula virtual accesible",
-                    perfiles: perfiles.slice(0, 2).map(p => p._id.toString()),
+                    perfiles: perfiles.slice(0, 2).map(p => p.id),
                 }
             ];
         }

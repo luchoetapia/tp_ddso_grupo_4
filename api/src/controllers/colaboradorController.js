@@ -57,7 +57,7 @@ class ColaboradorController {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
-            const ids = (await this.habilidadService.obtenerTodas()).map(h => h._id.toString());
+            const ids = (await this.habilidadService.obtenerTodas()).map(h => h.id);
             lista = [
                 {
                     nombre: "Juan",
