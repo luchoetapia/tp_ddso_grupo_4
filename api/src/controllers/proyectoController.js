@@ -3,7 +3,7 @@ const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
 const habilidadService = require('../services/habilidadService.js');
 const logroService = require('../services/logroService.js');
-const {Periodo} = require("../models/dominio.js");
+const { Periodo } = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
 const proyectoSchema = z.object({
