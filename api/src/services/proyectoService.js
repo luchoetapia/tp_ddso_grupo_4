@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const proyectoRepository = require('../repositories/proyectoRepository.js');
-const habilidadService = require("./habilidadService.js");
+const perfilService = require('./perfilService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
     constructor() {
         this.proyectoRepository = proyectoRepository;
-        this.habilidadService = habilidadService;
+        this.perfilService = perfilService;
     }
 
     obtenerTodos = async () => {
@@ -19,15 +19,19 @@ class ProyectoService {
             throw new ConflictError("Ya existe un proyecto con ese título")
         }
 
-        const habilidades = await this.habilidadService.obtenerPorListaId(datos.habilidades ?? [])
+        if (datos.perfiles && datos.perfiles.length > 0) {
+            for (const perfilId of datos.perfiles) {
+                await this.perfilService.obtenerPorId(perfilId);
+            }
+        }
 
         return await this.proyectoRepository.save({
             titulo: datos.titulo,
             descripcion: datos.descripcion,
-            habilidades: habilidades.map(h => h._id),
-            tipoCompromiso: datos.tipoCompromiso,
-            modalidadColaboracion: datos.modalidadColaboracion
-        })
+            perfiles: datos.perfiles ?? [],
+            enlaceSistema: datos.enlaceSistema ?? null,
+            enlaceCodigoFuente: datos.enlaceCodigoFuente ?? null
+        });
     }
 
     obtenerPorId = async (id) => {
