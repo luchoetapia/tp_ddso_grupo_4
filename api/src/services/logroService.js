@@ -7,6 +7,14 @@ class LogroService{
         this.logroRepository = logroRepository;
     }
 
+    toDTO = (logro) => {
+        return {
+            id: logro.id || logro._id?.toString(),
+            titulo: logro.titulo,
+            descripcion: logro.descripcion
+        };
+    }
+
     obtenerTodos = async (idProyecto) => {  
         if (!mongoose.isValidObjectId(idProyecto)) {
             throw new BadRequestError("Id de proyecto inválido");
@@ -16,7 +24,7 @@ class LogroService{
         if (logros === null) {
             throw new NotFoundError("Proyecto no encontrado");
         }
-        return logros;
+        return logros.map(l => this.toDTO(l));
     }
 
     obtenerPorId = async (idLogro, idProyecto) => {
@@ -33,7 +41,7 @@ class LogroService{
         if (logro === null) {
             throw new NotFoundError("Logro no encontrado");
         }
-        return logro;
+        return this.toDTO(logro);
     }
 
     crear = async (idProyecto, datos) => { 
@@ -46,20 +54,21 @@ class LogroService{
             throw new NotFoundError("Proyecto no encontrado");
         }
 
-        return await this.logroRepository.save(idProyecto, datos);
+        const creado = await this.logroRepository.save(idProyecto, datos);
+        return this.toDTO(creado);
 
     }
 
     actualizar = async (idLogro, idProyecto, cambios) => {
         await this.obtenerPorId(idLogro, idProyecto); 
         const logro = await this.logroRepository.update(idLogro, idProyecto, cambios);
-        return logro;
+        return this.toDTO(logro);
     }
 
     eliminar = async (idLogro, idProyecto) => {
         await this.obtenerPorId(idLogro, idProyecto); 
         await this.logroRepository.delete(idLogro, idProyecto);
-        return {mensaje: "Logro eliminado correctamente"};
+        return this.toDTO({mensaje: "Logro eliminado correctamente"});
     }
 }
 

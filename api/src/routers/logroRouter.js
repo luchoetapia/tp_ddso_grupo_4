@@ -13,4 +13,7 @@ router.route('/:idLogro')
     .put((req, res) => logroController.actualizarLogro(req, res))
     .delete((req, res) => logroController.eliminarLogro(req, res))
 
+router.route('/llenarDatosPrueba')
+    .post((req, res) => logroController.llenarDatosPrueba(req, res));
+
 module.exports = router

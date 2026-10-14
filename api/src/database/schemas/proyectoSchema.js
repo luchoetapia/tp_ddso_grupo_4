@@ -23,10 +23,8 @@ logroSchema.loadClass(Logro);
 
 const proyectoSchema = new Schema({
     titulo: { type: String, required: true },
-    descripcion: { type: String, default: "" },
-    habilidades: [{ type: Schema.Types.ObjectId, ref: 'Habilidad' }],
-    tipoCompromiso: { type: tipoCompromisoSchema, required: true },
-    modalidadColaboracion: { type: modalidadColaboracionSchema, required: true },
+    descripcion: { type: String, required: true },
+    perfiles: [{ type: Schema.Types.ObjectId, ref: 'Perfil' }],
     finalizado: { type: Boolean, default: false },
     porcentajeFinalizado: { type: Number, default: 0 },
     enlaceSistema: { type: String, default: null },

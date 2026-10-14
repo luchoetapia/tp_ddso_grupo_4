@@ -2,7 +2,7 @@ const ProyectoModel = require('../database/schemas/proyectoSchema.js');
 
 class ProyectoRepository {
     async findAll() {
-        return await ProyectoModel.find().populate('habilidades');
+        return await ProyectoModel.find().populate('perfiles');
     }
 
     async findByTitulo(titulo) {
@@ -10,7 +10,7 @@ class ProyectoRepository {
     }
 
     async findById(id) {
-        return await ProyectoModel.findById(id).populate('habilidades');
+        return await ProyectoModel.findById(id).populate('perfiles');
     }
 
     async findByIds(ids) {
@@ -20,11 +20,11 @@ class ProyectoRepository {
     async save(datos) {
         const proyecto = new ProyectoModel(datos);
         await proyecto.save();
-        return await proyecto.populate('habilidades');
+        return await proyecto.populate('perfiles');
     }
 
     async update(id, cambios) {
-        return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('habilidades');
+        return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('perfiles');
     }
 }
 

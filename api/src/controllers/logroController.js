@@ -44,6 +44,32 @@ class LogroController {
         const resultado= await this.logroService.eliminar(req.params.idLogro, req.params.idProyecto);
         res.status(200).json(resultado);
     }
+
+    llenarDatosPrueba = async (req, res) => {
+        const LOGROS_INICIALES = [
+            {
+                titulo: "Lanzamiento de versión Beta",
+                descripcion: "Se desplegó la primera versión funcional del sistema para pruebas con usuarios finales."
+            },
+            {
+                titulo: "Primeros 100 usuarios registrados",
+                descripcion: "La plataforma alcanzó el hito de 100 colaboradores registrados activos."
+            }
+        ];
+
+        const lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : LOGROS_INICIALES;
+
+        const creados = [];
+        for (const datos of lista) {
+            const resultado = logroSchema.safeParse(datos);
+            if (resultado.error) {
+                throw new BadRequestError("Datos inválidos en seed de logro", resultado.error.issues);
+            }
+            creados.push(await this.logroService.crear(resultado.data));
+        }
+
+        return res.status(201).json({ status: "success", data: creados });
+    }
 }
 
 module.exports = {LogroController};
