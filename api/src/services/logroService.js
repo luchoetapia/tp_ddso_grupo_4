@@ -7,6 +7,22 @@ class LogroService{
         this.proyectoRepository = proyectoRepository;
     }
 
+    toDTO = (logro) => {
+        return {
+            id: logro.id || logro._id?.toString(),
+            titulo: logro.titulo,
+            descripcion: logro.descripcion
+        };
+    }
+
+    toDTO = (logro) => {
+        return {
+            id: logro.id || logro._id?.toString(),
+            titulo: logro.titulo,
+            descripcion: logro.descripcion
+        };
+    }
+
     obtenerTodos = async (idProyecto) => {  
         if (!mongoose.isValidObjectId(idProyecto)) 
             throw new BadRequestError("Id de proyecto inválido");
@@ -15,7 +31,8 @@ class LogroService{
 
         if (logros === null) 
             throw new NotFoundError("Proyecto no encontrado");
-        return logros;
+        }
+        return logros.map(l => this.toDTO(l));
     }
 
     obtenerPorId = async (idLogro, idProyecto) => {
@@ -29,7 +46,8 @@ class LogroService{
         const logro = logros.id(idLogro);
         if (!logro)
             throw new NotFoundError("Logro no encontrado");
-        return logro;
+        }
+        return this.toDTO(logro);
     }
 
     crear = async (idProyecto, datos) => {
@@ -41,29 +59,21 @@ class LogroService{
         if (proyecto === null)
             throw new NotFoundError("Proyecto no encontrado");
 
-        return proyecto.logros.at(-1);
+        const creado = await this.logroRepository.save(idProyecto, datos);
+        return this.toDTO(creado);
+
     }
 
     actualizar = async (idLogro, idProyecto, cambios) => {
-        if (!mongoose.isValidObjectId(idLogro) || !mongoose.isValidObjectId(idProyecto))
-            throw new BadRequestError("Id de logro o proyecto inválido");
-
-        const proyecto = await this.proyectoRepository.modificarLogro(idProyecto, idLogro, cambios);
-        if (!proyecto)
-            throw new NotFoundError("Logro o proyecto no encontrado");
-
-        return proyecto.logros.id(idLogro);
+        await this.obtenerPorId(idLogro, idProyecto); 
+        const logro = await this.logroRepository.update(idLogro, idProyecto, cambios);
+        return this.toDTO(logro);
     }
 
     eliminar = async (idLogro, idProyecto) => {
-        if (!mongoose.isValidObjectId(idLogro) || !mongoose.isValidObjectId(idProyecto))
-            throw new BadRequestError("Id de logro o proyecto inválido");
-
-        const proyecto = await this.proyectoRepository.eliminarLogro(idProyecto, idLogro);
-        if (!proyecto) 
-            throw new NotFoundError("Logro o proyecto no encontrado");
-
-        return {mensaje: "Logro eliminado correctamente"};
+        await this.obtenerPorId(idLogro, idProyecto); 
+        await this.logroRepository.delete(idLogro, idProyecto);
+        return this.toDTO({mensaje: "Logro eliminado correctamente"});
     }
 }
 

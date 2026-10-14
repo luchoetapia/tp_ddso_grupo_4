@@ -9,8 +9,20 @@ class ColectivoService {
         this.proyectoService = proyectoService;
     }
 
+    toDTO = (colectivo) => {
+        return {
+            id: colectivo.id || colectivo._id?.toString(),
+            nombre: colectivo.nombre,
+            descripcion: colectivo.descripcion,
+            ubicacion: colectivo.ubicacion,
+            tipo: colectivo.tipo,
+            proyectos: colectivo.proyectos ? colectivo.proyectos.map(p => (typeof p === 'object' && p.toDTO ? p.toDTO() : p)) : []
+        };
+    }
+
     obtenerTodos = async () => {
-        return await this.colectivoRepository.findAll()
+        const colectivos = await this.colectivoRepository.findAll();
+        return colectivos.map(this.toDTO);
     }
 
     crear = async (datos) => {
@@ -21,13 +33,14 @@ class ColectivoService {
 
         const proyectos = await this.proyectoService.obtenerPorListaId(datos.proyectos ?? [])
 
-        return await this.colectivoRepository.save({
+        const creado = await this.colectivoRepository.save({
             nombre: datos.nombre,
             descripcion: datos.descripcion,
             ubicacion: datos.ubicacion,
             tipo: datos.tipo,
             proyectos: proyectos.map(p => p._id)
         })
+        return this.toDTO(creado);
     }
 
     obtenerPorId = async (id) => {
@@ -39,7 +52,7 @@ class ColectivoService {
         if (!colectivo) {
             throw new NotFoundError("Colectivo no encontrado")
         }
-        return colectivo
+        return this.toDTO(colectivo)
     }
 
     finalizarProyecto = async (idColectivo, idProyecto) => {
