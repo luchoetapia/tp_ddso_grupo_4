@@ -25,6 +25,20 @@ class ProyectoService {
         };
     }
 
+    toDTO = (proyecto) => {
+        return {
+            id: proyecto.id || proyecto._id?.toString(),
+            titulo: proyecto.titulo,
+            descripcion: proyecto.descripcion,
+            perfiles: proyecto.perfiles ? proyecto.perfiles.map(p => (typeof p === 'object' && p.toDTO ? p.toDTO() : p)) : [],
+            finalizado: proyecto.finalizado ?? false,
+            porcentajeFinalizado: proyecto.porcentajeFinalizado ?? 0,
+            enlaceSistema: proyecto.enlaceSistema,
+            enlaceCodigoFuente: proyecto.enlaceCodigoFuente,
+            logros: proyecto.logros ? proyecto.logros.map(l => (typeof l === 'object' && l.toDTO ? l.toDTO() : l)) : []
+        };
+    }
+
     obtenerTodos = async () => {
         const proyectos = await this.proyectoRepository.findAll();
         return proyectos.map(this.toDTO);
