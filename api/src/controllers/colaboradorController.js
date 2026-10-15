@@ -1,26 +1,10 @@
-const { z } = require('zod');
 const colaboradorService = require('../services/colaboradorService.js');
 const colaboracionService = require('../services/colaboracionService.js');
 const habilidadService = require('../services/habilidadService.js');
 const proyectoService = require('../services/proyectoService.js');
 const notificacionService = require('../services/notificacionService.js');
-const MedioDeContacto = require('../models/Contacto/MedioDeContacto.js');
 const { BadRequestError } = require('../errors/AppError.js');
-
-const colaboradorSchema = z.object({
-    nombre: z.string().min(1),
-    apellido: z.string().min(1),
-    nombreFantasia: z.string().optional(),
-    cuentaGit: z.string().min(1),
-    habilidades: z.array(z.string()).default([]),
-    pronombres: z.string().optional(),
-    presentacion: z.string().max(300).optional(),
-    deseaSerContactado: z.boolean().default(false),
-    contactos: z.array(z.object({
-        medio: z.enum(Object.values(MedioDeContacto)),
-        valor: z.string().min(1)
-    })).default([])
-}).strict()
+const { validarCreacionColaborador } = require('../validators/colaboradoresValidator.js');
 
 class ColaboradorController {
     constructor() {
@@ -37,12 +21,7 @@ class ColaboradorController {
     }
 
     crearColaborador = async (req, res) => {
-        const resultado = colaboradorSchema.safeParse(req.body)
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues)
-        }
-
-        const colaboradoraNueva = await this.colaboradorService.crear(resultado.data)
+        const colaboradoraNueva = await this.colaboradorService.crear(req.body)
         res.status(201).json({ message: 'Colaboradora creada exitosamente', data: colaboradoraNueva })
     }
 
@@ -90,7 +69,7 @@ class ColaboradorController {
 
         const creados = [];
         for (const datos of lista) {
-            const resultado = colaboradorSchema.safeParse(datos)
+            const resultado = validarCreacionColaborador.safeParse(datos)
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos", resultado.error.issues)
             }

@@ -1,15 +1,7 @@
-const { z } = require('zod');
 const colectivoService = require('../services/colectivoService.js');
 const { TipoColectivo } = require('../models/dominio.js');
 const { BadRequestError } = require('../errors/AppError.js');
-
-const colectivoSchema = z.object({
-    nombre: z.string().min(1),
-    descripcion: z.string().optional(),
-    ubicacion: z.string().optional(),
-    tipo: z.enum(Object.values(TipoColectivo)),
-    proyectos: z.array(z.string()).default([]),
-}).strict()
+const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
 
 class ColectivoController {
     constructor() {
@@ -22,12 +14,7 @@ class ColectivoController {
     }
 
     crearColectivo = async (req, res) => {
-        const resultado = colectivoSchema.safeParse(req.body)
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues)
-        }
-
-        const colectivoNuevo = await this.colectivoService.crear(resultado.data)
+        const colectivoNuevo = await this.colectivoService.crear(req.body)
         res.status(201).json({ message: 'Colectivo creado exitosamente', data: colectivoNuevo })
     }
 
@@ -58,7 +45,7 @@ class ColectivoController {
 
         const creados = [];
         for (const datos of lista) {
-            const resultado = colectivoSchema.safeParse(datos)
+            const resultado = validarCreacionColectivo.safeParse(datos)
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos", resultado.error.issues)
             }

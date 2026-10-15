@@ -1,13 +1,7 @@
-const { z } = require('zod');
 const habilidadService = require('../services/habilidadService.js');
 const { TipoHabilidad } = require('../models/dominio.js');
 const { BadRequestError } = require('../errors/AppError.js');
-
-const habilidadSchema = z.object({
-    titulo: z.string().min(1),
-    tipoHabilidad: z.enum(Object.values(TipoHabilidad)),
-    descripcion: z.string().min(1),
-}).strict()
+const { validarCreacionHabilidad } = require('../validators/habilidadesValidator.js');
 
 class HabilidadController {
     constructor() {
@@ -20,12 +14,7 @@ class HabilidadController {
     }
 
     crearHabilidad = async (req, res) => {
-        const resultado = habilidadSchema.safeParse(req.body)
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues)
-        }
-
-        const habilidadNueva = await this.habilidadService.crear(resultado.data)
+        const habilidadNueva = await this.habilidadService.crear(req.body)
         res.status(201).json({ message: 'Habilidad creada exitosamente', data: habilidadNueva })
     }
 
@@ -52,7 +41,7 @@ class HabilidadController {
 
         const creadas = [];
         for (const datos of lista) {
-            const resultado = habilidadSchema.safeParse(datos)
+            const resultado = validarCreacionHabilidad.safeParse(datos)
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos", resultado.error.issues)
             }
