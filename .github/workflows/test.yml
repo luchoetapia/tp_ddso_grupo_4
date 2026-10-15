@@ -1,0 +1,35 @@
+name: Testear la API
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: api
+        run: npm ci
+
+      - name: Ejecutar tests
+        working-directory: api
+        env:
+          MONGO_URI: mongodb://localhost:27017
+          MONGO_DB_NAME: test
+        run: npm test
