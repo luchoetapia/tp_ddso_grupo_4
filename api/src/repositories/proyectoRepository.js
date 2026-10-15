@@ -27,6 +27,10 @@ class ProyectoRepository {
         return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('perfiles');
     }
 
+    async updateMultiple(ids, cambios) {
+        return await ProyectoModel.updateMany({ _id: { $in: ids } }, cambios);
+    }
+
     async logrosDelProyecto(idProyecto) {
         const proyecto = await ProyectoModel.findById(idProyecto);
         return proyecto ? proyecto.logros : null;

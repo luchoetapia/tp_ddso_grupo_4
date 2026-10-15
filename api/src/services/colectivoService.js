@@ -13,6 +13,7 @@ class ColectivoService {
         return {
             id: colectivo.id || colectivo._id?.toString(),
             nombre: colectivo.nombre,
+            active: colectivo.active ?? true,
             descripcion: colectivo.descripcion,
             ubicacion: colectivo.ubicacion,
             tipo: colectivo.tipo,
@@ -60,6 +61,17 @@ class ColectivoService {
         return this.toDTO(colectivo)
     }
 
+    finalizarTodosLosProyectos = async (colectivo) => {
+        const proyectos = colectivo.proyectos || [];
+
+        if (proyectos.length === 0) return 0;
+
+        const paraFinalizar = proyectos.map(proyecto => proyecto.id);
+
+        const finalizados = await this.proyectoService.finalizarVariosProyectos(paraFinalizar);
+        return finalizados;
+    }
+
     finalizarProyecto = async (idColectivo, idProyecto) => {
         await this.obtenerPorId(idColectivo)
         return await this.proyectoService.finalizar(idProyecto)
@@ -71,8 +83,13 @@ class ColectivoService {
         if (!colectivo.active) 
             throw new BadRequestError("El colectivo ya se encuentra desactivado");
 
+        // Si se desactiva el colectivo, se finalizan todos los proyectos asociados
+        const finalizados = await this.finalizarTodosLosProyectos(colectivo);
+
         const desactivado = await this.colectivoRepository.update(id, { active: false });
-        return { mensaje: `Colectivo ${desactivado.nombre} desactivado correctamente` };
+        return { 
+            mensaje: `Colectivo ${desactivado.nombre} desactivado correctamente, ${finalizados} proyectos finalizados.` 
+        };
     }
 }
 

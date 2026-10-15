@@ -121,6 +121,13 @@ class ProyectoService {
             perfil.cumpleHabilidadesRequeridas(colaborador.habilidades.map(h => (h._id ?? h).toString()))
         );
     }
+
+    finalizarVariosProyectos = async (idsProyectos) => {
+        const setQuery = { finalizado: true };
+        const resultado = await this.proyectoRepository.updateMultiple(idsProyectos, setQuery);
+
+        return resultado.modifiedCount;
+    }
 }
 
 module.exports = new ProyectoService();
