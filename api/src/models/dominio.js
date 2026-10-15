@@ -10,7 +10,7 @@ class Colectivo {
 }
 
 class Proyecto {
-    constructor(id, titulo, descripcion, perfiles, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = []) {
+    constructor(id, titulo, descripcion, perfiles, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = [], limite, estrategiaAceptacion) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
@@ -20,9 +20,12 @@ class Proyecto {
         this.enlaceSistema = enlaceSistema
         this.enlaceCodigoFuente = enlaceCodigoFuente
         this.logros = logros
+        this.limiteColaboradores = limite
+        this.estrategiaAceptacion = estrategiaAceptacion
     }
 }
 
+//TODO: Agregar Estrategia Aceptacion y Manager
 class TipoCompromiso {
     constructor(cantHoras, periodo) {
         this.cantHoras = cantHoras

@@ -18,7 +18,8 @@ porcentajeFinalizado: Float
 enlaceSistema : String
 enlaceCodigoFuente : String
 logros: List<Logros>
-modoAceptacion : EstrategiaAceptacion
+limiteColaboradores :Int
+estrategiaAceptacion : EstrategiaAceptacion
 }
 
 class EstrategiaAceptacion {

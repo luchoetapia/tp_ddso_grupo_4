@@ -42,6 +42,8 @@ class ProyectoService {
             }
         }
 
+        //TODO buscar nombreEstrategia en EstrategiaManager
+
         const creado = await this.proyectoRepository.save({
             titulo: datos.titulo,
             descripcion: datos.descripcion,

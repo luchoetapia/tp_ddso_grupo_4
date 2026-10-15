@@ -21,6 +21,8 @@ const logroSchema = new Schema({
 }, { timestamps: true, versionKey: false })
 logroSchema.loadClass(Logro);
 
+//TODO: Agregar estrategia Schema.
+
 const proyectoSchema = new Schema({
     titulo: { type: String, required: true },
     descripcion: { type: String, required: true },
