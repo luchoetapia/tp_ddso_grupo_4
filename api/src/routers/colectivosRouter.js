@@ -20,6 +20,10 @@ router.route('/:id')
         validar(validarIdsColectivo, 'params'),
         (req, res) => colectivoController.obtenerColectivoPorId(req, res)
     )
+    .delete(
+        validar(validarIdsColectivo, 'params'),
+        (req, res) => colectivoController.desactivarColectivo(req, res)
+    )
 
 router.route('/llenarDatosPrueba')
     .post((req, res) => colectivoController.llenarDatosPrueba(req, res));

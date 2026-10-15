@@ -59,6 +59,16 @@ class ColectivoService {
         await this.obtenerPorId(idColectivo)
         return await this.proyectoService.finalizar(idProyecto)
     }
+
+    desactivarColectivo = async (id) => {
+        const colectivo = await this.obtenerPorId(id);
+
+        if (!colectivo.active) 
+            throw new BadRequestError("El colectivo ya se encuentra desactivado");
+
+        const desactivado = await this.colectivoRepository.update(id, { active: false });
+        return { mensaje: `Colectivo ${desactivado.nombre} desactivado correctamente` };
+    }
 }
 
 module.exports = new ColectivoService();

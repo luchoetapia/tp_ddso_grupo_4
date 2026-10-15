@@ -23,6 +23,13 @@ class ColectivoController {
         res.status(200).json(colectivo)
     }
 
+    desactivarColectivo = async (req, res) => {
+        const { id } = req.params;
+        const resultado = await this.colectivoService.desactivarColectivo(id);
+        
+        res.status(200).json(resultado);
+    }
+
     llenarDatosPrueba = async (req, res) => {
         const COLECTIVOS_INICIALES = [
             {

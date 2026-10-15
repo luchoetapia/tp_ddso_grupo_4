@@ -7,6 +7,7 @@ const valuesTipoColectivo = Object.values(TipoColectivo);
 
 const colectivoSchema = new Schema({
     nombre: { type: String, required: true },
+    active: { type: Boolean, default: true },
     descripcion: { type: String, default: "" },
     ubicacion: { type: String, default: null },
     tipo: { type: String, enum: valuesTipoColectivo, required: true },
