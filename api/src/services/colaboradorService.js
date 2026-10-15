@@ -69,6 +69,14 @@ class ColaboradorService {
         }
         return this.toDTO(colaborador);
     }
+
+    obtenerContactos = async (cuentaGit) => {
+        const colaborador = await this.colaboradorRepository.findByCuentaGit(cuentaGit)
+        if (!colaborador) {
+            throw new NotFoundError("Colaborador no encontrado")
+        }
+        return colaborador.contactos.map(c => ({ medio: c.medio, valor: c.valor }));
+    }
 }
 
 module.exports = new ColaboradorService();

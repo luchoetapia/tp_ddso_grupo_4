@@ -114,8 +114,7 @@ class ProyectoService {
     }
 
     buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
-        const proyecto = await this.obtenerPorId(idProyecto);
-        const perfil = this.perfilPerteneceAProyecto(idProyecto, idPerfil);
+        const perfil = await this.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
         const colaboradores = await this.colaboradorService.obtenerTodos();
         return colaboradores.filter(colaborador =>
