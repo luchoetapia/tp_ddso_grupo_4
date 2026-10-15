@@ -9,17 +9,26 @@ tipo: TipoColectivo
 proyectos : List<Proyecto>
 }
 
-'(Fran): Aca sacaría el finalizado y le dejearía el porcentaje solo.
 class Proyecto {
 id : Int 
 titulo : String
 descripcion : String
 perfiles: List<Perfil>
-finalizado: boolean
 porcentajeFinalizado: Float
 enlaceSistema : String
 enlaceCodigoFuente : String
 logros: List<Logros>
+modoAceptacion : EstrategiaAceptacion
+}
+
+class EstrategiaAceptacion {
+    nombre : String
+
+    Boolean evaluarColaborador(Colaborador)
+}
+
+class EstrategiaAceptacionManager {
+    estrategiasAceptacion : List<EstrategiaAceptacion>
 }
 
 '(Fran): No estoy seguro que mas agregarle a los logros, consultar.
@@ -117,7 +126,7 @@ Colectivo -d-> " * " Proyecto
 Colectivo -l-> TipoColectivo
 
 Proyecto -d-> " * " Perfil
-Proyecto -> " * " Logro
+Proyecto -d-> " * " Logro
 
 Perfil -r-> TipoCompromiso
 Perfil -l-> ModalidadColaboracion
@@ -135,4 +144,8 @@ Contacto -u-> MedioDeContacto
 TipoCompromiso -r-> Periodo
 
 Habilidad -l-> TipoHabilidad
+
+Proyecto -> EstrategiaAceptacion
+
+EstrategiaAceptacionManager -d-> " * " EstrategiaAceptacion
 @enduml
