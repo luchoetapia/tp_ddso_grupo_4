@@ -3,6 +3,7 @@ const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
 const perfilService = require('../services/perfilService.js');
 const notificacionService = require('../services/notificacionService.js');
+const logroService = require('../services/logroService.js');
 const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
 
@@ -25,6 +26,7 @@ class ProyectoController {
         this.colectivoService = colectivoService
         this.perfilService = perfilService;
         this.notificacionService = notificacionService;
+        this.logroService = logroService;
     }
 
     obtenerProyectos = async (req, res) => {
@@ -105,6 +107,43 @@ class ProyectoController {
         const { cuentaGit, mensaje } = resultado.data;
         const notificacion = await this.notificacionService.contactarColaborador(id, idPerfil, cuentaGit, mensaje);
         res.status(201).json({ message: 'Colaborador contactado exitosamente', data: notificacion });
+    }
+    
+    obtenerLogrosDeUnProyecto = async (req, res) => {
+        const { id } = req.params;
+
+        const logros = await this.logroService.obtenerTodos(id);
+        res.status(200).json(logros);
+    }
+
+    obtenerLogroPorId = async (req, res) => {
+        const { id, idLogro } = req.params;
+
+        const logro = await this.logroService.obtenerPorId(idLogro, id);
+        res.status(200).json(logro);
+    }
+
+    crearLogro = async (req, res) => {
+        const { id } = req.params;
+        const datos = req.body;
+
+        const logroCreado = await this.logroService.crear(id, datos);
+        res.status(201).json({ message: 'Logro creado exitosamente', data: logroCreado });
+    }
+
+    actualizarLogro = async (req, res) => {
+        const { id, idLogro } = req.params;
+        const cambios = req.body;
+
+        const logroActualizado = await this.logroService.actualizar(idLogro, id, cambios);
+        res.status(200).json({ message: 'Logro actualizado exitosamente', data: logroActualizado });
+    }
+
+    eliminarLogro = async (req, res) => {
+        const { id, idLogro } = req.params;
+
+        const resultado = await this.logroService.eliminar(idLogro, id);
+        res.status(200).json(resultado);
     }
 }
 

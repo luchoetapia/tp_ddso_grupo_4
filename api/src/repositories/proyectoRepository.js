@@ -26,6 +26,40 @@ class ProyectoRepository {
     async update(id, cambios) {
         return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('perfiles');
     }
+
+    async logrosDelProyecto(idProyecto) {
+        const proyecto = await ProyectoModel.findById(idProyecto);
+        return proyecto ? proyecto.logros : null;
+    }
+
+    async agregarLogro(idProyecto, datosLogro) {
+        return await ProyectoModel.findByIdAndUpdate(
+            idProyecto,
+            { $push: { logros: datosLogro } },
+            { new: true }
+        );
+    }
+
+    async modificarLogro(idProyecto, idLogro, cambios) {
+        const set = {};
+        for (const [campo, valor] of Object.entries(cambios)) {
+            set[`logros.$.${campo}`] = valor;
+        }
+
+        return await ProyectoModel.findOneAndUpdate(
+            { _id: idProyecto, 'logros._id': idLogro },
+            { $set: set },
+            { new: true }
+        );
+    }
+
+    async eliminarLogro(idProyecto, idLogro) {
+        return await ProyectoModel.findOneAndUpdate(
+            { _id: idProyecto, 'logros._id': idLogro },
+            { $pull: { logros: { _id: idLogro } } },
+            { new: true }
+        );
+    }
 }
 
 module.exports = new ProyectoRepository();
