@@ -16,12 +16,8 @@ class NotificacionService {
         return {
             id: notificacion.id || notificacion._id?.toString(),
             destinatario: (notificacion.destinatario?._id ?? notificacion.destinatario)?.toString(),
-            proyecto: notificacion.proyecto?.titulo
-                ? { id: notificacion.proyecto._id.toString(), titulo: notificacion.proyecto.titulo }
-                : notificacion.proyecto,
-            perfil: notificacion.perfil?.descripcion
-                ? { id: notificacion.perfil._id.toString(), descripcion: notificacion.perfil.descripcion }
-                : notificacion.perfil,
+            proyecto: { id: notificacion.proyecto.id.toString(), titulo: notificacion.proyecto.titulo },
+            perfil: { id: notificacion.perfil.id.toString(), descripcion: notificacion.perfil.descripcion },
             mensaje: notificacion.mensaje,
             fecha: notificacion.fecha
         };
@@ -37,7 +33,7 @@ class NotificacionService {
             throw new ConflictError("El proyecto está finalizado");
         }
 
-        await this.proyectoService.perfilPerteneceAProyecto(idProyecto, idPerfil);
+        const perfil = await this.proyectoService.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
         const colaborador = await this.obtenerColaborador(cuentaGit);
         if (!colaborador.deseaSerContactado) {
@@ -46,8 +42,8 @@ class NotificacionService {
 
         const notificacion = await this.notificacionRepository.save({
             destinatario: colaborador.id,
-            proyecto: proyecto.id,
-            perfil: idPerfil,
+            proyecto: { id: proyecto.id, titulo: proyecto.titulo },
+            perfil: { id: perfil.id, descripcion: perfil.descripcion },
             mensaje
         });
 

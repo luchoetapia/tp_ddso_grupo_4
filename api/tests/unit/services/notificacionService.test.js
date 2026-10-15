@@ -28,21 +28,23 @@ const ID_NOTIF = '507f1f77bcf86cd799439081';
 
 const objectId = (id) => ({ toString: () => id });
 
+const notificacionGuardada = (extra = {}) => ({
+    id: ID_NOTIF,
+    destinatario: ID_COLAB,
+    proyecto: { id: objectId(ID_PROY), titulo: 'Aula' },
+    perfil: { id: objectId(ID_PERFIL), descripcion: 'Backend' },
+    mensaje: 'Hola',
+    ...extra,
+});
+
 describe('NotificacionService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('toDTO', () => {
-        test('resume proyecto y perfil si están populados', () => {
+        test('expone la copia de proyecto y perfil guardada en la notificación', () => {
             const fecha = new Date();
 
-            const dto = notificacionService.toDTO({
-                id: ID_NOTIF,
-                destinatario: objectId(ID_COLAB),
-                proyecto: { _id: objectId(ID_PROY), titulo: 'Aula', descripcion: 'no se expone' },
-                perfil: { _id: objectId(ID_PERFIL), descripcion: 'Backend' },
-                mensaje: 'Hola',
-                fecha,
-            });
+            const dto = notificacionService.toDTO(notificacionGuardada({ destinatario: objectId(ID_COLAB), fecha }));
 
             expect(dto).toEqual({
                 id: ID_NOTIF,
@@ -54,18 +56,17 @@ describe('NotificacionService', () => {
             });
         });
 
-        test('deja los ids tal cual si no están populados', () => {
-            const dto = notificacionService.toDTO({
-                _id: ID_NOTIF,
+        test('usa _id si no hay id y resuelve el destinatario populado', () => {
+            const dto = notificacionService.toDTO(notificacionGuardada({
+                id: undefined,
+                _id: objectId(ID_NOTIF),
                 destinatario: { _id: objectId(ID_COLAB) },
-                proyecto: ID_PROY,
-                perfil: ID_PERFIL,
-            });
+            }));
 
             expect(dto.id).toBe(ID_NOTIF);
             expect(dto.destinatario).toBe(ID_COLAB);
-            expect(dto.proyecto).toBe(ID_PROY);
-            expect(dto.perfil).toBe(ID_PERFIL);
+            expect(dto.proyecto).toEqual({ id: ID_PROY, titulo: 'Aula' });
+            expect(dto.perfil).toEqual({ id: ID_PERFIL, descripcion: 'Backend' });
         });
     });
 
@@ -80,14 +81,14 @@ describe('NotificacionService', () => {
 
     describe('contactarColaborador', () => {
         const prepararEscenario = ({ finalizado = false, deseaSerContactado = true } = {}) => {
-            proyectoService.obtenerPorId.mockResolvedValue({ id: ID_PROY, finalizado });
-            proyectoService.perfilPerteneceAProyecto.mockResolvedValue({ id: ID_PERFIL });
+            proyectoService.obtenerPorId.mockResolvedValue({ id: ID_PROY, titulo: 'Aula', finalizado });
+            proyectoService.perfilPerteneceAProyecto.mockResolvedValue({ id: ID_PERFIL, descripcion: 'Backend' });
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ id: ID_COLAB, deseaSerContactado });
         };
 
-        test('guarda la notificación y la replica por los medios de contacto', async () => {
+        test('guarda la notificación con la copia de proyecto y perfil y la replica por los medios de contacto', async () => {
             prepararEscenario();
-            const guardada = { id: ID_NOTIF, destinatario: ID_COLAB, proyecto: ID_PROY, perfil: ID_PERFIL, mensaje: 'Hola' };
+            const guardada = notificacionGuardada();
             const contactos = [{ medio: 'Email', valor: 'a@b.com' }];
             const notificador = { enviar: jest.fn() };
             notificacionRepository.save.mockResolvedValue(guardada);
@@ -97,10 +98,18 @@ describe('NotificacionService', () => {
             const resultado = await notificacionService.contactarColaborador(ID_PROY, ID_PERFIL, 'juanp', 'Hola');
 
             expect(notificacionRepository.save).toHaveBeenCalledWith({
-                destinatario: ID_COLAB, proyecto: ID_PROY, perfil: ID_PERFIL, mensaje: 'Hola',
+                destinatario: ID_COLAB,
+                proyecto: { id: ID_PROY, titulo: 'Aula' },
+                perfil: { id: ID_PERFIL, descripcion: 'Backend' },
+                mensaje: 'Hola',
             });
             expect(notificador.enviar).toHaveBeenCalledWith(contactos[0], guardada);
-            expect(resultado).toMatchObject({ id: ID_NOTIF, mensaje: 'Hola' });
+            expect(resultado).toMatchObject({
+                id: ID_NOTIF,
+                proyecto: { id: ID_PROY, titulo: 'Aula' },
+                perfil: { id: ID_PERFIL, descripcion: 'Backend' },
+                mensaje: 'Hola',
+            });
         });
 
         test('lanza ConflictError si el proyecto está finalizado', async () => {
@@ -151,7 +160,7 @@ describe('NotificacionService', () => {
     describe('obtenerPorColaborador', () => {
         test('devuelve las notificaciones del colaborador', async () => {
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ id: ID_COLAB });
-            notificacionRepository.findByDestinatario.mockResolvedValue([{ id: ID_NOTIF, mensaje: 'Hola' }]);
+            notificacionRepository.findByDestinatario.mockResolvedValue([notificacionGuardada()]);
 
             const resultado = await notificacionService.obtenerPorColaborador('juanp');
 
