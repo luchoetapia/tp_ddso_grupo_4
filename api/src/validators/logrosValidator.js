@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { objectId } = require('./comunes.js');
 
 const validarCreacionLogro = z.object({
     titulo: z.string({ error: "El título del logro es obligatorio" }).min(1, "El título del logro no puede estar vacío"),
@@ -8,8 +9,8 @@ const validarCreacionLogro = z.object({
 const validarActualizacionLogro = validarCreacionLogro.partial();
 
 const validarIdsLogro = z.object({
-    id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Id de proyecto inválido"),
-    idLogro: z.string().regex(/^[0-9a-fA-F]{24}$/, "Id de logro inválido"),
+    id: objectId("Id de proyecto inválido"),
+    idLogro: objectId("Id de logro inválido"),
 });
 
 module.exports = {
