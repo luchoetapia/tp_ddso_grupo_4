@@ -4,8 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:unit": "jest tests/unit",
+    "test:endpoints": "jest tests/endpoints",
+    "test:coverage": "jest --coverage",
     "start": "node index.js"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/database/mongoose.js",
+      "!src/swagger.js"
+    ]
   },
   "repository": {
     "type": "git",
@@ -22,8 +36,10 @@
   "dependencies": {
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
+    "jest": "^30.5.2",
     "js-yaml": "^5.4.1",
     "mongoose": "^9.11.1",
+    "supertest": "^7.3.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.5.4"
