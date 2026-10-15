@@ -1,5 +1,6 @@
 const estrategiaAceptacionInterfaz = require('../EstrategiaAceptacion.js');
 const {BadRequestError} = require("../../../../errors/AppError.js");
+const colaboracionService = require('../../../../services/colaboracionService.js');
 
 class HastaLlenarVacantes extends estrategiaAceptacionInterfaz {
     constructor(proyecto) {
@@ -7,9 +8,10 @@ class HastaLlenarVacantes extends estrategiaAceptacionInterfaz {
     }
 
     evaluarColaborador(colaborador) {
-        const cantidadColaboradores = 0; //TODO: Solicitar la cantidad de colaboradores a ColaboracionService.
-        if(cantidadColaboradores < this.proyecto.limite - 1) {
-            throw BadRequestError(`${this.nombre} requiere que el proyecto no tenga limite, pero el proyecto tiene limite ${this.limite}.` )
+        const colaboraciones = colaboracionService.obtenerPorProyectoId(this.proyecto.id);
+        const cantidadColaboradores = colaboraciones.length;
+        if(cantidadColaboradores >= this.proyecto.limite) {
+            return false;
         }
         return true;
     }

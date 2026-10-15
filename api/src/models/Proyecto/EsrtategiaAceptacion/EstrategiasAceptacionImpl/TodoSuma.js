@@ -7,9 +7,11 @@ class TodoSuma extends estrategiaAceptacionInterfaz {
     }
 
     evaluarColaborador(colaborador) {
+        /* TODO: Agregar esta validacion a la hora de asignar la estrategia al proyecto, no aca.
         if(this.proyecto.limiteColaboradores != null) {
             throw BadRequestError(`${this.nombre} requiere que el proyecto no tenga limite, pero el proyecto tiene limite ${this. proyecto.limiteColaboradores}.` )
         }
+        */
         return true;
     }
 }
