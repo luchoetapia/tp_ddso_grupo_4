@@ -5,6 +5,7 @@ jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
     findByIds: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
+    updateMultiple: jest.fn(),
 }));
 jest.mock('../../../src/services/perfilService.js', () => ({
     obtenerPorId: jest.fn(),
@@ -189,6 +190,17 @@ describe('ProyectoService', () => {
 
             await expect(proyectoService.finalizar(ID_PROY)).rejects.toThrow(NotFoundError);
             expect(proyectoRepository.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('finalizarVariosProyectos', () => {
+        test('marca los proyectos como finalizados y devuelve la cantidad modificada', async () => {
+            proyectoRepository.updateMultiple.mockResolvedValue({ modifiedCount: 2 });
+
+            const resultado = await proyectoService.finalizarVariosProyectos([ID_PROY, ID_PROY_2]);
+
+            expect(proyectoRepository.updateMultiple).toHaveBeenCalledWith([ID_PROY, ID_PROY_2], { finalizado: true });
+            expect(resultado).toBe(2);
         });
     });
 

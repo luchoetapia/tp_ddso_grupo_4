@@ -9,6 +9,14 @@ class ColectivoController {
     }
 
     obtenerColectivos = async (req, res) => {
+        const { activos } = req.query;
+
+        if (activos === 'true') {
+            const colectivosActivos = await this.colectivoService.obtenerActivos();
+            return res.status(200).json(colectivosActivos);
+        }
+
+        // Default: obtener todos los colectivos
         const colectivos = await this.colectivoService.obtenerTodos();
         res.status(200).json(colectivos)
     }
@@ -21,6 +29,13 @@ class ColectivoController {
     obtenerColectivoPorId = async (req, res) => {
         const colectivo = await this.colectivoService.obtenerPorId(req.params.id)
         res.status(200).json(colectivo)
+    }
+
+    desactivarColectivo = async (req, res) => {
+        const { id } = req.params;
+        const resultado = await this.colectivoService.desactivarColectivo(id);
+        
+        res.status(200).json(resultado);
     }
 
     llenarDatosPrueba = async (req, res) => {

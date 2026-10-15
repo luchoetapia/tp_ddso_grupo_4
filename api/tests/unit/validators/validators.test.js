@@ -3,7 +3,7 @@ const { validarCreacionColaboracion, validarActualizacionColaboracion } = requir
 const {
     validarCreacionColaborador, validarActualizacionColaborador, validarCuentaGitColaborador, validarAnotacionAProyecto,
 } = require('../../../src/validators/colaboradoresValidator.js');
-const { validarCreacionColectivo, validarActualizacionColectivo } = require('../../../src/validators/colectivosValidator.js');
+const { validarCreacionColectivo, validarActualizacionColectivo, validarFiltrosColectivo } = require('../../../src/validators/colectivosValidator.js');
 const { validarCreacionHabilidad, validarActualizacionHabilidad } = require('../../../src/validators/habilidadesValidator.js');
 const { validarCreacionLogro, validarActualizacionLogro, validarIdsLogro } = require('../../../src/validators/logrosValidator.js');
 const { validarCreacionPerfil, validarActualizacionPerfil } = require('../../../src/validators/perfilesValidator.js');
@@ -110,6 +110,13 @@ describe('Validadores', () => {
         test('actualización exige al menos un campo', () => {
             expect(esValido(validarActualizacionColectivo, {})).toBe(false);
             expect(esValido(validarActualizacionColectivo, { ubicacion: 'CABA' })).toBe(true);
+        });
+
+        test('filtros aceptan activos true/false u omitido', () => {
+            expect(esValido(validarFiltrosColectivo, {})).toBe(true);
+            expect(esValido(validarFiltrosColectivo, { activos: 'true' })).toBe(true);
+            expect(esValido(validarFiltrosColectivo, { activos: 'false' })).toBe(true);
+            expect(esValido(validarFiltrosColectivo, { activos: 'si' })).toBe(false);
         });
     });
 
