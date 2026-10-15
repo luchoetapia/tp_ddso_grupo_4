@@ -22,6 +22,10 @@ class ColectivoRepository {
         await colectivo.save();
         return await colectivo.populate('proyectos');
     }
+
+    async update(id, cambios) {
+        return await ColectivoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('proyectos');
+    }
 }
 
 module.exports = new ColectivoRepository();
