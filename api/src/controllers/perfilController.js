@@ -1,21 +1,7 @@
-const { z } = require('zod');
 const perfilService = require('../services/perfilService.js');
 const { Periodo } = require('../models/dominio.js');
 const { BadRequestError } = require('../errors/AppError.js');
-
-const perfilSchema = z.object({
-    descripcion: z.string().min(1),
-    habilidadesRequeridas: z.array(z.string()).default([]),
-    habilidadesOpcionales: z.array(z.string()).default([]),
-    tipoCompromiso: z.object({
-        cantHoras: z.number().positive(),
-        periodo: z.enum(Object.values(Periodo))
-    }),
-    modalidadColaboracion: z.object({
-        incentivoEconomico: z.number().min(0).default(0),
-        posibleContratacion: z.boolean().default(false)
-    })
-}).strict();
+const { validarCreacionPerfil } = require('../validators/perfilesValidator.js');
 
 class PerfilController {
     constructor() {
@@ -33,20 +19,12 @@ class PerfilController {
     }
 
     crearPerfil = async (req, res) => {
-        const resultado = perfilSchema.safeParse(req.body);
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues);
-        }
-        const perfilNuevo = await this.perfilService.crear(resultado.data);
+        const perfilNuevo = await this.perfilService.crear(req.body);
         res.status(201).json({ message: 'Perfil creado exitosamente', data: perfilNuevo });
     }
 
     actualizarPerfil = async (req, res) => {
-        const resultado = perfilSchema.partial().safeParse(req.body);
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues);
-        }
-        const perfilActualizado = await this.perfilService.actualizar(req.params.id, resultado.data);
+        const perfilActualizado = await this.perfilService.actualizar(req.params.id, req.body);
         res.status(200).json({ message: 'Perfil actualizado exitosamente', data: perfilActualizado });
     }
 
@@ -89,7 +67,7 @@ class PerfilController {
 
         const creados = [];
         for (const datos of lista) {
-            const resultado = perfilSchema.safeParse(datos);
+            const resultado = validarCreacionPerfil.safeParse(datos);
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos en seed de perfil", resultado.error.issues);
             }

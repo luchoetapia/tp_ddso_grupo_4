@@ -1,4 +1,3 @@
-const { z } = require('zod');
 const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
 const perfilService = require('../services/perfilService.js');
@@ -6,19 +5,7 @@ const notificacionService = require('../services/notificacionService.js');
 const logroService = require('../services/logroService.js');
 const {Periodo} = require("../models/dominio.js");
 const { BadRequestError } = require('../errors/AppError.js');
-
-const proyectoSchema = z.object({
-    titulo: z.string().min(1),
-    descripcion: z.string().optional(),
-    perfiles: z.array(z.string()).default([]),
-    enlaceSistema: z.string().url().nullable().optional(),
-    enlaceCodigoFuente: z.string().url().nullable().optional()
-}).strict();
-
-const contactoSchema = z.object({
-    cuentaGit: z.string().min(1),
-    mensaje: z.string().min(1)
-}).strict();
+const { validarCreacionProyecto } = require('../validators/proyectosValidator.js');
 
 class ProyectoController {
     constructor() {
@@ -35,11 +22,7 @@ class ProyectoController {
     }
 
     crearProyecto = async (req, res) => {
-        const resultado = proyectoSchema.safeParse(req.body)
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues)
-        }
-        const proyectoNuevo = await this.proyectoService.crear(resultado.data)
+        const proyectoNuevo = await this.proyectoService.crear(req.body)
         res.status(201).json({ message: 'Proyecto creado exitosamente', data: proyectoNuevo })
     }
 
@@ -50,11 +33,7 @@ class ProyectoController {
 
     finalizarProyecto = async (req, res) => {
         const { id } = req.params;
-        const { idColectivo } = req.body ?? {};
-
-        if (!idColectivo) {
-            throw new BadRequestError("Se requiere idColectivo para finalizar el proyecto");
-        }
+        const { idColectivo } = req.body;
 
         const proyecto = await this.colectivoService.finalizarProyecto(idColectivo, id);
 
@@ -80,7 +59,7 @@ class ProyectoController {
 
         const creados = [];
         for (const datos of lista) {
-            const resultado = proyectoSchema.safeParse(datos)
+            const resultado = validarCreacionProyecto.safeParse(datos)
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos", resultado.error.issues)
             }
@@ -98,13 +77,8 @@ class ProyectoController {
     }
 
     contactarColaborador = async (req, res) => {
-        const resultado = contactoSchema.safeParse(req.body)
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues)
-        }
-
         const { id, idPerfil } = req.params;
-        const { cuentaGit, mensaje } = resultado.data;
+        const { cuentaGit, mensaje } = req.body;
         const notificacion = await this.notificacionService.contactarColaborador(id, idPerfil, cuentaGit, mensaje);
         res.status(201).json({ message: 'Colaborador contactado exitosamente', data: notificacion });
     }

@@ -1,11 +1,4 @@
-const { z } = require('zod');
 const colaboracionService = require('../services/colaboracionService.js');
-const { BadRequestError } = require('../errors/AppError.js');
-
-const colaboracionSchema = z.object({
-    idProyecto: z.string().min(1),
-    idColaborador: z.string().min(1)
-}).strict()
 
 class ColaboracionController {
     constructor() {
@@ -18,12 +11,7 @@ class ColaboracionController {
     }
 
     crearColaboracion = async (req, res) => {
-        const resultado = colaboracionSchema.safeParse(req.body)
-        if (resultado.error) {
-            throw new BadRequestError("Datos inválidos", resultado.error.issues)
-        }
-
-        const colaboracionNueva = await this.colaboracionService.crear(resultado.data)
+        const colaboracionNueva = await this.colaboracionService.crear(req.body)
         res.status(201).json({ message: 'Colaboracion creada exitosamente', data: colaboracionNueva })
     }
 }
