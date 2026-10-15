@@ -2,12 +2,14 @@ jest.mock('../../src/services/colectivoService.js', () => ({
     obtenerTodos: jest.fn(),
     crear: jest.fn(),
     obtenerPorId: jest.fn(),
+    obtenerActivos: jest.fn(),
+    desactivarColectivo: jest.fn(),
 }));
 
 const request = require('supertest');
 const app = require('../../src/app.js');
 const colectivoService = require('../../src/services/colectivoService.js');
-const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
+const { BadRequestError, ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
 
 const ID = '507f1f77bcf86cd799439051';
 const colectivo = { id: ID, nombre: 'Tech For Good', descripcion: 'desc', ubicacion: 'Córdoba', tipo: 'fundacion', proyectos: [] };
@@ -28,6 +30,35 @@ describe('Endpoints /colectivos', () => {
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual([colectivo]);
+        });
+
+        test('con activos=true devuelve solo los activos', async () => {
+            colectivoService.obtenerActivos.mockResolvedValue([colectivo]);
+
+            const res = await request(app).get('/colectivos?activos=true');
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([colectivo]);
+            expect(colectivoService.obtenerActivos).toHaveBeenCalled();
+            expect(colectivoService.obtenerTodos).not.toHaveBeenCalled();
+        });
+
+        test('con activos=false devuelve todos', async () => {
+            colectivoService.obtenerTodos.mockResolvedValue([colectivo]);
+
+            const res = await request(app).get('/colectivos?activos=false');
+
+            expect(res.status).toBe(200);
+            expect(colectivoService.obtenerTodos).toHaveBeenCalled();
+            expect(colectivoService.obtenerActivos).not.toHaveBeenCalled();
+        });
+
+        test('responde 400 con un valor de activos inválido', async () => {
+            const res = await request(app).get('/colectivos?activos=si');
+
+            expect(res.status).toBe(400);
+            expect(colectivoService.obtenerTodos).not.toHaveBeenCalled();
+            expect(colectivoService.obtenerActivos).not.toHaveBeenCalled();
         });
     });
 
@@ -87,6 +118,44 @@ describe('Endpoints /colectivos', () => {
             const res = await request(app).get(`/colectivos/${ID}`);
 
             expect(res.status).toBe(404);
+        });
+    });
+
+    describe('DELETE /colectivos/:id', () => {
+        test('desactiva el colectivo', async () => {
+            const resultado = { mensaje: 'Colectivo Tech For Good desactivado correctamente, 2 proyectos finalizados.' };
+            colectivoService.desactivarColectivo.mockResolvedValue(resultado);
+
+            const res = await request(app).delete(`/colectivos/${ID}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual(resultado);
+            expect(colectivoService.desactivarColectivo).toHaveBeenCalledWith(ID);
+        });
+
+        test('responde 400 con un id inválido', async () => {
+            const res = await request(app).delete('/colectivos/abc');
+
+            expect(res.status).toBe(400);
+            expect(res.body.message).toBe('Id de colectivo inválido');
+            expect(colectivoService.desactivarColectivo).not.toHaveBeenCalled();
+        });
+
+        test('responde 404 si no existe', async () => {
+            colectivoService.desactivarColectivo.mockRejectedValue(new NotFoundError('Colectivo no encontrado'));
+
+            const res = await request(app).delete(`/colectivos/${ID}`);
+
+            expect(res.status).toBe(404);
+        });
+
+        test('responde 400 si ya estaba desactivado', async () => {
+            colectivoService.desactivarColectivo.mockRejectedValue(new BadRequestError('El colectivo ya se encuentra desactivado'));
+
+            const res = await request(app).delete(`/colectivos/${ID}`);
+
+            expect(res.status).toBe(400);
+            expect(res.body.message).toBe('El colectivo ya se encuentra desactivado');
         });
     });
 
