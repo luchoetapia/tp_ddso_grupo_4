@@ -25,6 +25,11 @@ class ColectivoService {
         return colectivos.map(this.toDTO);
     }
 
+    obtenerActivos = async () => {
+        const colectivos = await this.colectivoRepository.findBy({ active: true });
+        return colectivos.map(this.toDTO);
+    }
+
     crear = async (datos) => {
         const existente = await this.colectivoRepository.findByNombre(datos.nombre)
         if (existente) {
