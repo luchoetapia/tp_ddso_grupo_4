@@ -25,8 +25,13 @@ const validarIdsColectivo = z.object({
     id: objectId("Id de colectivo inválido"),
 });
 
+const validarFiltrosColectivo = z.object({
+    activos: z.enum(['true', 'false'], { error: "El filtro 'activos' debe ser 'true' o 'false'" }).optional(),
+});
+
 module.exports = {
     validarCreacionColectivo,
     validarActualizacionColectivo,
     validarIdsColectivo,
+    validarFiltrosColectivo
 };
