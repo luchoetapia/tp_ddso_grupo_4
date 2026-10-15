@@ -1,14 +1,28 @@
 openapi: 3.0.4
 info:
   title: DOCUMENTACION API - TP DDSO Grupo 4
-  description: Documentación de la API de proyectos, colectivos, habilidades y colaboradores
+  version: "2.0.0"
+  description: >
+    Documentación de la API de Código a Voluntad: colectivos, proyectos,
+    perfiles, habilidades, colaboradoras/es, colaboraciones, logros y
+    notificaciones.
+
+
+    Para cargar datos de prueba, llamar a los endpoints llenarDatosPrueba en
+    este orden: habilidades → perfiles → proyectos → colectivos → colaboradores.
 
 servers:
   - url: http://localhost:3000
 
 tags:
+  - name: Health
+    description: Estado del servidor
   - name: Proyectos
     description: Gestión de proyectos
+  - name: Logros
+    description: Logros/hitos de un proyecto
+  - name: Perfiles
+    description: Perfiles requeridos por los proyectos
   - name: Colectivos
     description: Gestión de colectivos
   - name: Habilidades
@@ -17,17 +31,34 @@ tags:
     description: Gestión de colaboradoras/es
   - name: Colaboraciones
     description: Participación de colaboradoras/es en proyectos
-  - name: Perfiles
-    description: Perfiles requeridos por los proyectos
 
 paths:
+  /healthcheck:
+    get:
+      summary: Verifica que el servidor esté funcionando
+      tags: [Health]
+      responses:
+        "200":
+          description: Servidor funcionando
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
   /proyectos:
     get:
       summary: Obtiene todos los proyectos
       tags: [Proyectos]
       responses:
         "200":
-          description: Lista de proyectos
+          description: Lista de proyectos (con sus perfiles completos)
           content:
             application/json:
               schema:
@@ -37,10 +68,9 @@ paths:
     post:
       summary: Crea un nuevo proyecto
       description: >
-        Las habilidades se referencian por id y deben existir previamente
-        (crealas primero con POST /habilidades: ver ejemplos "backend" e
-        "diseño"). No se permiten campos adicionales a los declarados en el
-        schema.
+        Los perfiles se referencian por id y deben existir previamente
+        (crealos primero con POST /perfiles). No se permiten campos
+        adicionales a los declarados en el schema.
       tags: [Proyectos]
       requestBody:
         required: true
@@ -50,27 +80,18 @@ paths:
               $ref: "#/components/schemas/ProyectoInput"
             examples:
               completo:
-                summary: Proyecto que requiere dos habilidades
+                summary: Proyecto con dos perfiles y enlaces
                 value:
                   titulo: Huerta comunitaria
-                  descripcion: Espacio verde barrial mantenido por vecinas y vecinos. Requiere quien programe el sitio de inscripciones y quien diseñe la cartelería.
-                  habilidades: ["665f1c2b3a4d5e6f7a8b9c01", "665f1c2b3a4d5e6f7a8b9c02"]
-                  tipoCompromiso:
-                    cantHoras: 4
-                    periodo: semanal
-                  modalidadColaboracion:
-                    incentivoEconomico: 0
-                    posibleContratacion: false
+                  descripcion: Sitio de inscripciones y cartelería para la huerta del barrio.
+                  perfiles: ["665f1c2b3a4d5e6f7a8b9c11", "665f1c2b3a4d5e6f7a8b9c12"]
+                  enlaceSistema: https://huerta.example.org
+                  enlaceCodigoFuente: https://github.com/colectivo/huerta
               minimo:
-                summary: Proyecto sin descripción ni habilidades (solo campos obligatorios)
+                summary: Proyecto sin perfiles ni enlaces
                 value:
                   titulo: Reciclado de residuos electrónicos
-                  tipoCompromiso:
-                    cantHoras: 10
-                    periodo: mensual
-                  modalidadColaboracion:
-                    incentivoEconomico: 0
-                    posibleContratacion: true
+                  descripcion: Registro de puntos de reciclado en la ciudad.
       responses:
         "201":
           description: Proyecto creado exitosamente
@@ -85,9 +106,13 @@ paths:
                   data:
                     $ref: "#/components/schemas/Proyecto"
         "400":
-          $ref: "#/components/responses/DatosInvalidos"
+          description: Datos inválidos o algún id de perfil inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
-          description: Alguna de las habilidades no existe
+          description: Alguno de los perfiles no existe
           content:
             application/json:
               schema:
@@ -103,15 +128,33 @@ paths:
     post:
       summary: Carga proyectos iniciales
       description: >
-        Sin body, crea un proyecto de ejemplo con las primeras dos habilidades
-        existentes (correr antes POST /habilidades/llenarDatosPrueba). También acepta un
-        array de proyectos con el mismo formato que POST /proyectos.
+        Sin body, crea un proyecto de ejemplo con los primeros dos perfiles
+        existentes (correr antes POST /perfiles/llenarDatosPrueba). También
+        acepta un array de proyectos con el mismo formato que POST /proyectos.
       tags: [Proyectos]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProyectoInput"
       responses:
         "201":
           description: Proyectos creados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaDatosPrueba"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
         "409":
           description: Alguno de los proyectos ya existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /proyectos/{id}:
     get:
@@ -130,13 +173,17 @@ paths:
           $ref: "#/components/responses/IdInvalido"
         "404":
           description: Proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /proyectos/{id}/finalizar:
     post:
       summary: Finaliza un proyecto
       description: >
         Un colectivo marca el proyecto como finalizado. Un proyecto finalizado
-        no admite nuevas personas colaboradoras.
+        no admite nuevas personas colaboradoras ni contactos.
       tags: [Proyectos]
       parameters:
         - $ref: "#/components/parameters/IdPath"
@@ -186,11 +233,7 @@ paths:
       tags: [Proyectos]
       parameters:
         - $ref: "#/components/parameters/IdPath"
-        - in: path
-          name: idPerfil
-          required: true
-          schema:
-            $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/parameters/IdPerfilPath"
       responses:
         "200":
           description: Lista de colaboradoras compatibles (puede ser vacía)
@@ -201,11 +244,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Colaborador"
         "400":
-          description: Id de proyecto inválido
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/IdInvalido"
         "404":
           description: Proyecto no encontrado, o el perfil no pertenece al proyecto
           content:
@@ -224,11 +263,7 @@ paths:
       tags: [Proyectos]
       parameters:
         - $ref: "#/components/parameters/IdPath"
-        - in: path
-          name: idPerfil
-          required: true
-          schema:
-            $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/parameters/IdPerfilPath"
       requestBody:
         required: true
         content:
@@ -267,6 +302,353 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /proyectos/{id}/logros:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      summary: Obtiene los logros de un proyecto
+      tags: [Logros]
+      responses:
+        "200":
+          description: Lista de logros del proyecto (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Logro"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "404":
+          description: Proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Agrega un logro a un proyecto
+      description: No se permiten campos adicionales a los declarados en el schema.
+      tags: [Logros]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogroInput"
+      responses:
+        "201":
+          description: Logro creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logro creado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Logro"
+        "400":
+          description: Datos inválidos o id de proyecto inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /proyectos/{id}/logros/{idLogro}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+      - $ref: "#/components/parameters/IdLogroPath"
+    get:
+      summary: Obtiene un logro de un proyecto
+      tags: [Logros]
+      responses:
+        "200":
+          description: Logro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Logro"
+        "400":
+          description: Id de proyecto o de logro inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto o logro no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      summary: Actualiza un logro de un proyecto
+      description: >
+        Actualización parcial: se pueden enviar sólo los campos a modificar.
+        No se permiten campos adicionales a los declarados en el schema.
+      tags: [Logros]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogroActualizacion"
+      responses:
+        "200":
+          description: Logro actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logro actualizado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Logro"
+        "400":
+          description: Datos inválidos o algún id inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto o logro no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Elimina un logro de un proyecto
+      tags: [Logros]
+      responses:
+        "200":
+          description: Logro eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: Logro eliminado correctamente
+        "400":
+          description: Id de proyecto o de logro inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto o logro no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /perfiles:
+    get:
+      summary: Obtiene todos los perfiles
+      tags: [Perfiles]
+      responses:
+        "200":
+          description: Lista de perfiles (con sus habilidades completas)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Perfil"
+    post:
+      summary: Crea un nuevo perfil
+      description: >
+        Las habilidades se referencian por id y deben existir previamente
+        (ver GET /habilidades). No se permiten campos adicionales a los
+        declarados en el schema.
+      tags: [Perfiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerfilInput"
+            examples:
+              tester:
+                summary: Tester sin incentivo económico
+                value:
+                  descripcion: Tester
+                  habilidadesRequeridas: ["665f1c2b3a4d5e6f7a8b9c01"]
+                  habilidadesOpcionales: ["665f1c2b3a4d5e6f7a8b9c02"]
+                  tipoCompromiso:
+                    cantHoras: 5
+                    periodo: mensual
+                  modalidadColaboracion:
+                    incentivoEconomico: 0
+                    posibleContratacion: false
+              analista:
+                summary: Analista de datos con incentivo económico
+                value:
+                  descripcion: Analista de Datos
+                  habilidadesRequeridas: ["665f1c2b3a4d5e6f7a8b9c01"]
+                  tipoCompromiso:
+                    cantHoras: 15
+                    periodo: mensual
+                  modalidadColaboracion:
+                    incentivoEconomico: 20000
+                    posibleContratacion: true
+      responses:
+        "201":
+          description: Perfil creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Perfil creado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Perfil"
+        "400":
+          description: Datos inválidos o algún id de habilidad inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Alguna de las habilidades no existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /perfiles/llenarDatosPrueba:
+    post:
+      summary: Carga perfiles iniciales
+      description: >
+        Sin body, crea dos perfiles de ejemplo (Backend Node.js y Diseño UX/UI)
+        sin habilidades. También acepta un array de perfiles con el mismo
+        formato que POST /perfiles.
+      tags: [Perfiles]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/PerfilInput"
+      responses:
+        "201":
+          description: Perfiles creados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaDatosPrueba"
+        "400":
+          description: Datos inválidos o algún id de habilidad inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Alguna de las habilidades no existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /perfiles/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      summary: Obtiene un perfil por id
+      tags: [Perfiles]
+      responses:
+        "200":
+          description: Perfil encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Perfil"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "404":
+          description: Perfil no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      summary: Actualiza un perfil
+      description: >
+        Actualización parcial: se pueden enviar sólo los campos a modificar.
+        No se permiten campos adicionales a los declarados en el schema.
+      tags: [Perfiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerfilActualizacion"
+            example:
+              descripcion: Tester E2E
+              tipoCompromiso:
+                cantHoras: 8
+                periodo: mensual
+      responses:
+        "200":
+          description: Perfil actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Perfil actualizado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Perfil"
+        "400":
+          description: Datos inválidos o id inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Perfil no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Elimina un perfil
+      tags: [Perfiles]
+      responses:
+        "200":
+          description: Perfil eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Perfil eliminado exitosamente
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "404":
+          description: Perfil no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos:
     get:
       summary: Obtiene todos los colectivos
@@ -284,7 +666,8 @@ paths:
       summary: Crea un nuevo colectivo
       description: >
         Los proyectos se referencian por id y deben existir previamente
-        (ver GET /proyectos).
+        (ver GET /proyectos). No se permiten campos adicionales a los
+        declarados en el schema.
       tags: [Colectivos]
       requestBody:
         required: true
@@ -312,7 +695,11 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colectivo"
         "400":
-          $ref: "#/components/responses/DatosInvalidos"
+          description: Datos inválidos o algún id de proyecto inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Alguno de los proyectos no existe
           content:
@@ -333,11 +720,29 @@ paths:
         Sin body, crea dos colectivos de ejemplo sin proyectos. También acepta
         un array de colectivos con el mismo formato que POST /colectivos.
       tags: [Colectivos]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ColectivoInput"
       responses:
         "201":
           description: Colectivos creados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaDatosPrueba"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
         "409":
           description: Alguno de los colectivos ya existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /colectivos/{id}:
     get:
@@ -356,6 +761,10 @@ paths:
           $ref: "#/components/responses/IdInvalido"
         "404":
           description: Colectivo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /habilidades:
     get:
@@ -372,6 +781,7 @@ paths:
                   $ref: "#/components/schemas/Habilidad"
     post:
       summary: Crea una nueva habilidad
+      description: No se permiten campos adicionales a los declarados en el schema.
       tags: [Habilidades]
       requestBody:
         required: true
@@ -422,11 +832,29 @@ paths:
         También acepta un array de habilidades con el mismo formato que
         POST /habilidades.
       tags: [Habilidades]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/HabilidadInput"
       responses:
         "201":
           description: Habilidades creadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaDatosPrueba"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
         "409":
           description: Alguna de las habilidades ya existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /habilidades/{id}:
     get:
@@ -445,10 +873,15 @@ paths:
           $ref: "#/components/responses/IdInvalido"
         "404":
           description: Habilidad no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /colaboradores:
     get:
       summary: Obtiene todas las colaboradoras/es
+      description: No incluye los medios de contacto (son internos).
       tags: [Colaboradores]
       responses:
         "200":
@@ -463,7 +896,9 @@ paths:
       summary: Crea una nueva colaboradora/colaborador
       description: >
         Las habilidades se referencian por id y deben existir previamente
-        (ver GET /habilidades).
+        (ver GET /habilidades). Los medios de contacto se registran
+        internamente y no se devuelven en las respuestas. No se permiten
+        campos adicionales a los declarados en el schema.
       tags: [Colaboradores]
       requestBody:
         required: true
@@ -472,8 +907,8 @@ paths:
             schema:
               $ref: "#/components/schemas/ColaboradorInput"
             examples:
-              backend:
-                summary: Colaboradora con habilidad de programación
+              contactable:
+                summary: Colaboradora que acepta ser contactada
                 value:
                   nombre: Noelia
                   apellido: Aversa
@@ -482,16 +917,19 @@ paths:
                   habilidades: ["665f1c2b3a4d5e6f7a8b9c01"]
                   pronombres: ella
                   presentacion: Desarrolladora full stack con ganas de sumar a proyectos comunitarios.
-              diseño:
-                summary: Colaborador con habilidad de diseño
+                  deseaSerContactado: true
+                  contactos:
+                    - medio: Email
+                      valor: noe@mail.com
+                    - medio: WhatsApp
+                      valor: "+5491112345678"
+              minimo:
+                summary: Colaborador sin contactos (no acepta ser contactado)
                 value:
                   nombre: Facundo
                   apellido: Martínez
-                  nombreFantasia: facumartinez
                   cuentaGit: facumartinez
                   habilidades: ["665f1c2b3a4d5e6f7a8b9c02"]
-                  pronombres: él
-                  presentacion: Diseñador gráfico, disponible fines de semana.
       responses:
         "201":
           description: Colaboradora creada exitosamente
@@ -506,7 +944,11 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaborador"
         "400":
-          $ref: "#/components/responses/DatosInvalidos"
+          description: Datos inválidos o algún id de habilidad inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Alguna de las habilidades no existe
           content:
@@ -528,23 +970,36 @@ paths:
         las habilidades existentes (correr antes POST /habilidades/llenarDatosPrueba).
         También acepta un array con el mismo formato que POST /colaboradores.
       tags: [Colaboradores]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ColaboradorInput"
       responses:
         "201":
           description: Colaboradoras/es creadas/os
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaDatosPrueba"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
         "409":
           description: Alguna cuenta de Git ya existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /colaboradores/{cuentaGit}:
     get:
       summary: Obtiene una colaboradora/colaborador por cuenta de Git
       tags: [Colaboradores]
       parameters:
-        - in: path
-          name: cuentaGit
-          required: true
-          schema:
-            type: string
-            example: noeaversa
+        - $ref: "#/components/parameters/CuentaGitPath"
       responses:
         "200":
           description: Colaboradora encontrada
@@ -554,6 +1009,10 @@ paths:
                 $ref: "#/components/schemas/Colaborador"
         "404":
           description: Colaboradora no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /colaboradores/{cuentaGit}/anotarProyecto/{idProyecto}:
     post:
@@ -564,12 +1023,7 @@ paths:
         estar finalizado y no puede estar ya anotada en él.
       tags: [Colaboradores]
       parameters:
-        - in: path
-          name: cuentaGit
-          required: true
-          schema:
-            type: string
-            example: noeaversa
+        - $ref: "#/components/parameters/CuentaGitPath"
         - in: path
           name: idProyecto
           required: true
@@ -589,11 +1043,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: Id de proyecto inválido
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/IdInvalido"
         "404":
           description: Colaboradora o proyecto no encontrado
           content:
@@ -615,12 +1065,7 @@ paths:
         cuyas habilidades requeridas posee en su totalidad la colaboradora.
       tags: [Colaboradores]
       parameters:
-        - in: path
-          name: cuentaGit
-          required: true
-          schema:
-            type: string
-            example: noeaversa
+        - $ref: "#/components/parameters/CuentaGitPath"
       responses:
         "200":
           description: Lista de proyectos compatibles (puede ser vacía)
@@ -643,12 +1088,7 @@ paths:
       description: Devuelve las notificaciones de la colaboradora, de la más reciente a la más antigua.
       tags: [Colaboradores]
       parameters:
-        - in: path
-          name: cuentaGit
-          required: true
-          schema:
-            type: string
-            example: noeaversa
+        - $ref: "#/components/parameters/CuentaGitPath"
       responses:
         "200":
           description: Lista de notificaciones (puede ser vacía)
@@ -690,6 +1130,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
                 idProyecto:
                   $ref: "#/components/schemas/ObjectId"
@@ -712,7 +1153,7 @@ paths:
                   data:
                     $ref: "#/components/schemas/Colaboracion"
         "400":
-          description: Datos inválidos
+          description: Datos inválidos o algún id inválido
           content:
             application/json:
               schema:
@@ -730,63 +1171,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /perfiles/llenarDatosPrueba:
-    post:
-      summary: Carga perfiles iniciales
-      description: >
-        Sin body, crea dos perfiles de ejemplo (Backend Node.js y Diseño UX/UI)
-        sin habilidades. También acepta un array de perfiles con el mismo
-        formato que POST /perfiles.
-      tags: [Perfiles]
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  descripcion:
-                    type: string
-                    example: Desarrollador Backend Node.js
-                  habilidadesRequeridas:
-                    type: array
-                    items:
-                      type: string
-                      example: 665f1c2e8b3a4d0012345678
-                  habilidadesOpcionales:
-                    type: array
-                    items:
-                      type: string
-                  tipoCompromiso:
-                    type: object
-                    properties:
-                      cantHoras:
-                        type: number
-                        example: 10
-                      periodo:
-                        type: string
-                        enum: [semanal, mensual, total]
-                  modalidadColaboracion:
-                    type: object
-                    properties:
-                      incentivoEconomico:
-                        type: number
-                        example: 0
-                      posibleContratacion:
-                        type: boolean
-                        example: true
-      responses:
-        "201":
-          description: Perfiles creados
-        "400":
-          description: Datos inválidos o alguna habilidad no existe
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
 components:
   parameters:
     IdPath:
@@ -795,6 +1179,25 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/ObjectId"
+    IdPerfilPath:
+      in: path
+      name: idPerfil
+      required: true
+      schema:
+        $ref: "#/components/schemas/ObjectId"
+    IdLogroPath:
+      in: path
+      name: idLogro
+      required: true
+      schema:
+        $ref: "#/components/schemas/ObjectId"
+    CuentaGitPath:
+      in: path
+      name: cuentaGit
+      required: true
+      schema:
+        type: string
+        example: noeaversa
 
   responses:
     DatosInvalidos:
@@ -826,16 +1229,39 @@ components:
           type: string
           format: date-time
 
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        details:
+          type: array
+          items: {}
+
+    RespuestaDatosPrueba:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          description: Entidades creadas
+          items:
+            type: object
+
     TipoCompromiso:
       type: object
       properties:
         cantHoras:
           type: number
-          example: 4
+          exclusiveMinimum: true
+          minimum: 0
+          example: 5
         periodo:
           type: string
           enum: [semanal, mensual, total]
-          example: semanal
+          example: mensual
       required:
         - cantHoras
         - periodo
@@ -845,142 +1271,51 @@ components:
       properties:
         incentivoEconomico:
           type: number
+          minimum: 0
+          default: 0
           example: 0
         posibleContratacion:
           type: boolean
+          default: false
           example: false
-      required:
-        - incentivoEconomico
-        - posibleContratacion
 
-    ProyectoInput:
-      type: object
-      description: Body esperado por POST /proyectos. No admite campos adicionales.
-      properties:
-        titulo:
-          type: string
-          example: Huerta comunitaria
-        descripcion:
-          type: string
-          example: Espacio verde barrial mantenido por vecinas y vecinos
-        habilidades:
-          type: array
-          description: Ids de habilidades existentes (ver GET /habilidades)
-          items:
-            $ref: "#/components/schemas/ObjectId"
-        tipoCompromiso:
-          $ref: "#/components/schemas/TipoCompromiso"
-        modalidadColaboracion:
-          $ref: "#/components/schemas/ModalidadColaboracion"
-      required:
-        - titulo
-        - tipoCompromiso
-        - modalidadColaboracion
-
-    Proyecto:
-      allOf:
-        - type: object
-          properties:
-            _id:
-              $ref: "#/components/schemas/ObjectId"
-            titulo:
-              type: string
-              example: Huerta comunitaria
-            descripcion:
-              type: string
-            habilidades:
-              type: array
-              items:
-                $ref: "#/components/schemas/Habilidad"
-            tipoCompromiso:
-              $ref: "#/components/schemas/TipoCompromiso"
-            modalidadColaboracion:
-              $ref: "#/components/schemas/ModalidadColaboracion"
-            finalizado:
-              type: boolean
-              default: false
-            porcentajeFinalizado:
-              type: number
-              default: 0
-            enlaceSistema:
-              type: string
-              nullable: true
-            enlaceCodigoFuente:
-              type: string
-              nullable: true
-            logros:
-              type: array
-              items:
-                type: object
-                properties:
-                  titulo:
-                    type: string
-                  descripcion:
-                    type: string
-        - $ref: "#/components/schemas/Timestamps"
-
-    ColectivoInput:
-      type: object
-      description: Body esperado por POST /colectivos. No admite campos adicionales.
-      properties:
-        nombre:
-          type: string
-        descripcion:
-          type: string
-        ubicacion:
-          type: string
-        tipo:
-          type: string
-          enum: [fundacion, asociacion_barrial, ong, asamblea]
-        proyectos:
-          type: array
-          description: Ids de proyectos existentes (ver GET /proyectos)
-          items:
-            $ref: "#/components/schemas/ObjectId"
-          default: []
-      required:
-        - nombre
-        - tipo
-
-    Colectivo:
-      allOf:
-        - type: object
-          properties:
-            _id:
-              $ref: "#/components/schemas/ObjectId"
-            nombre:
-              type: string
-            descripcion:
-              type: string
-            ubicacion:
-              type: string
-              nullable: true
-            tipo:
-              type: string
-              enum: [fundacion, asociacion_barrial, ong, asamblea]
-            proyectos:
-              type: array
-              items:
-                $ref: "#/components/schemas/Proyecto"
-        - $ref: "#/components/schemas/Timestamps"
+    # ---------- Habilidades ----------
 
     HabilidadInput:
       type: object
       description: Body esperado por POST /habilidades. No admite campos adicionales.
+      additionalProperties: false
       properties:
         titulo:
           type: string
+          minLength: 1
         tipoHabilidad:
           type: string
           enum: [programacion, diseño, marketing, comunicacion, gestion_proyectos, colaboracion]
         descripcion:
           type: string
+          minLength: 1
       required:
         - titulo
         - tipoHabilidad
         - descripcion
 
     Habilidad:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        titulo:
+          type: string
+          example: Desarrollo backend
+        tipoHabilidad:
+          type: string
+          enum: [programacion, diseño, marketing, comunicacion, gestion_proyectos, colaboracion]
+        descripcion:
+          type: string
+
+    HabilidadAnidada:
+      description: Habilidad tal como aparece dentro de otra entidad (documento de MongoDB)
       allOf:
         - type: object
           properties:
@@ -995,21 +1330,338 @@ components:
               type: string
         - $ref: "#/components/schemas/Timestamps"
 
-    ColaboradorInput:
+    # ---------- Perfiles ----------
+
+    PerfilInput:
       type: object
-      description: Body esperado por POST /colaboradores. No admite campos adicionales.
+      description: Body esperado por POST /perfiles. No admite campos adicionales.
+      additionalProperties: false
+      properties:
+        descripcion:
+          type: string
+          minLength: 1
+          example: Tester
+        habilidadesRequeridas:
+          type: array
+          description: Ids de habilidades existentes (ver GET /habilidades)
+          items:
+            $ref: "#/components/schemas/ObjectId"
+          default: []
+        habilidadesOpcionales:
+          type: array
+          description: Ids de habilidades existentes (ver GET /habilidades)
+          items:
+            $ref: "#/components/schemas/ObjectId"
+          default: []
+        tipoCompromiso:
+          $ref: "#/components/schemas/TipoCompromiso"
+        modalidadColaboracion:
+          $ref: "#/components/schemas/ModalidadColaboracion"
+      required:
+        - descripcion
+        - tipoCompromiso
+        - modalidadColaboracion
+
+    PerfilActualizacion:
+      type: object
+      description: Body esperado por PUT /perfiles/{id}. Mismos campos que PerfilInput, todos opcionales.
+      additionalProperties: false
+      properties:
+        descripcion:
+          type: string
+          minLength: 1
+        habilidadesRequeridas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObjectId"
+        habilidadesOpcionales:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObjectId"
+        tipoCompromiso:
+          $ref: "#/components/schemas/TipoCompromiso"
+        modalidadColaboracion:
+          $ref: "#/components/schemas/ModalidadColaboracion"
+
+    Perfil:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        descripcion:
+          type: string
+          example: Tester
+        habilidadesRequeridas:
+          type: array
+          items:
+            $ref: "#/components/schemas/HabilidadAnidada"
+        habilidadesOpcionales:
+          type: array
+          items:
+            $ref: "#/components/schemas/HabilidadAnidada"
+        tipoCompromiso:
+          $ref: "#/components/schemas/TipoCompromiso"
+        modalidadColaboracion:
+          $ref: "#/components/schemas/ModalidadColaboracion"
+
+    PerfilAnidado:
+      description: Perfil tal como aparece dentro de un proyecto (las habilidades vienen como ids)
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            descripcion:
+              type: string
+            habilidadesRequeridas:
+              type: array
+              items:
+                $ref: "#/components/schemas/ObjectId"
+            habilidadesOpcionales:
+              type: array
+              items:
+                $ref: "#/components/schemas/ObjectId"
+            tipoCompromiso:
+              $ref: "#/components/schemas/TipoCompromiso"
+            modalidadColaboracion:
+              $ref: "#/components/schemas/ModalidadColaboracion"
+        - $ref: "#/components/schemas/Timestamps"
+
+    # ---------- Logros ----------
+
+    LogroInput:
+      type: object
+      description: Body esperado por POST /proyectos/{id}/logros. No admite campos adicionales.
+      additionalProperties: false
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          example: Primera versión publicada
+        descripcion:
+          type: string
+          minLength: 1
+          example: Se publicó el formulario de inscripción en producción
+      required:
+        - titulo
+        - descripcion
+
+    LogroActualizacion:
+      type: object
+      description: Body esperado por PUT /proyectos/{id}/logros/{idLogro}. Todos los campos son opcionales.
+      additionalProperties: false
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+        descripcion:
+          type: string
+          minLength: 1
+
+    Logro:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        titulo:
+          type: string
+          example: Primera versión publicada
+        descripcion:
+          type: string
+          example: Se publicó el formulario de inscripción en producción
+
+    LogroAnidado:
+      description: Logro tal como aparece dentro de un proyecto
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+            descripcion:
+              type: string
+        - $ref: "#/components/schemas/Timestamps"
+
+    # ---------- Proyectos ----------
+
+    ProyectoInput:
+      type: object
+      description: Body esperado por POST /proyectos. No admite campos adicionales.
+      additionalProperties: false
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          example: Huerta comunitaria
+        descripcion:
+          type: string
+          example: Sitio de inscripciones y cartelería para la huerta del barrio.
+        perfiles:
+          type: array
+          description: Ids de perfiles existentes (ver GET /perfiles)
+          items:
+            $ref: "#/components/schemas/ObjectId"
+          default: []
+        enlaceSistema:
+          type: string
+          format: uri
+          nullable: true
+          description: Enlace al sistema en funcionamiento
+          example: https://huerta.example.org
+        enlaceCodigoFuente:
+          type: string
+          format: uri
+          nullable: true
+          description: Enlace al código fuente público
+          example: https://github.com/colectivo/huerta
+      required:
+        - titulo
+        - descripcion
+
+    Proyecto:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        titulo:
+          type: string
+          example: Huerta comunitaria
+        descripcion:
+          type: string
+        perfiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerfilAnidado"
+        finalizado:
+          type: boolean
+          default: false
+        porcentajeFinalizado:
+          type: number
+          default: 0
+        enlaceSistema:
+          type: string
+          nullable: true
+        enlaceCodigoFuente:
+          type: string
+          nullable: true
+        logros:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogroAnidado"
+
+    ProyectoAnidado:
+      description: Proyecto tal como aparece dentro de un colectivo (los perfiles vienen como ids)
+      allOf:
+        - type: object
+          properties:
+            _id:
+              $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+            descripcion:
+              type: string
+            perfiles:
+              type: array
+              items:
+                $ref: "#/components/schemas/ObjectId"
+            finalizado:
+              type: boolean
+            porcentajeFinalizado:
+              type: number
+            enlaceSistema:
+              type: string
+              nullable: true
+            enlaceCodigoFuente:
+              type: string
+              nullable: true
+            logros:
+              type: array
+              items:
+                $ref: "#/components/schemas/LogroAnidado"
+        - $ref: "#/components/schemas/Timestamps"
+
+    # ---------- Colectivos ----------
+
+    ColectivoInput:
+      type: object
+      description: Body esperado por POST /colectivos. No admite campos adicionales.
+      additionalProperties: false
       properties:
         nombre:
           type: string
+          minLength: 1
+        descripcion:
+          type: string
+        ubicacion:
+          type: string
+          description: '"Argentina", una provincia, CABA o una ciudad/barrio en texto libre'
+        tipo:
+          type: string
+          enum: [fundacion, asociacion_barrial, ong, asamblea]
+        proyectos:
+          type: array
+          description: Ids de proyectos existentes (ver GET /proyectos)
+          items:
+            $ref: "#/components/schemas/ObjectId"
+          default: []
+      required:
+        - nombre
+        - tipo
+
+    Colectivo:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        ubicacion:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+          enum: [fundacion, asociacion_barrial, ong, asamblea]
+        proyectos:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProyectoAnidado"
+
+    # ---------- Colaboradores ----------
+
+    Contacto:
+      type: object
+      properties:
+        medio:
+          type: string
+          enum: [Email, WhatsApp, SMS]
+        valor:
+          type: string
+          minLength: 1
+          example: noe@mail.com
+      required: [medio, valor]
+
+    ColaboradorInput:
+      type: object
+      description: Body esperado por POST /colaboradores. No admite campos adicionales.
+      additionalProperties: false
+      properties:
+        nombre:
+          type: string
+          minLength: 1
           example: Noelia
         apellido:
           type: string
+          minLength: 1
           example: Aversa
         nombreFantasia:
           type: string
           example: noeaversa
         cuentaGit:
           type: string
+          minLength: 1
           example: noeaversa
         habilidades:
           type: array
@@ -1032,111 +1684,80 @@ components:
           description: Medios de contacto internos (no se muestran públicamente)
           default: []
           items:
-            type: object
-            properties:
-              medio:
-                type: string
-                enum: [Email, WhatsApp, SMS]
-              valor:
-                type: string
-                example: noe@mail.com
-            required: [medio, valor]
+            $ref: "#/components/schemas/Contacto"
       required:
         - nombre
         - apellido
         - cuentaGit
 
     Colaborador:
-      allOf:
-        - type: object
-          properties:
-            _id:
-              $ref: "#/components/schemas/ObjectId"
-            nombre:
-              type: string
-            apellido:
-              type: string
-            nombreFantasia:
-              type: string
-              nullable: true
-            cuentaGit:
-              type: string
-              example: noeaversa
-            habilidades:
-              type: array
-              items:
-                $ref: "#/components/schemas/Habilidad"
-            pronombres:
-              type: string
-              nullable: true
-            presentacion:
-              type: string
-              maxLength: 300
-              nullable: true
-            deseaSerContactado:
-              type: boolean
-            contactos:
-              type: array
-              items:
-                type: object
-                properties:
-                  medio:
-                    type: string
-                    enum: [Email, WhatsApp, SMS]
-                  valor:
-                    type: string
-        - $ref: "#/components/schemas/Timestamps"
+      type: object
+      description: Datos públicos de la colaboradora. Los medios de contacto no se exponen.
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        nombre:
+          type: string
+        apellido:
+          type: string
+        nombreFantasia:
+          type: string
+          nullable: true
+        cuentaGit:
+          type: string
+          example: noeaversa
+        habilidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/HabilidadAnidada"
+        pronombres:
+          type: string
+          nullable: true
+        presentacion:
+          type: string
+          maxLength: 300
+          nullable: true
+        deseaSerContactado:
+          type: boolean
+
+    # ---------- Colaboraciones ----------
 
     Colaboracion:
-      allOf:
-        - type: object
-          properties:
-            _id:
-              $ref: "#/components/schemas/ObjectId"
-            colaborador:
-              type: object
-              description: Datos básicos de la colaboradora
-              properties:
-                _id:
-                  $ref: "#/components/schemas/ObjectId"
-                nombre:
-                  type: string
-                apellido:
-                  type: string
-                nombreFantasia:
-                  type: string
-                  nullable: true
-                cuentaGit:
-                  type: string
-            proyecto:
-              type: object
-              description: Datos básicos del proyecto
-              properties:
-                _id:
-                  $ref: "#/components/schemas/ObjectId"
-                titulo:
-                  type: string
-                finalizado:
-                  type: boolean
-            inicio:
-              type: string
-              format: date-time
-            fin:
-              type: string
-              format: date-time
-              nullable: true
-        - $ref: "#/components/schemas/Timestamps"
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        colaborador:
+          $ref: "#/components/schemas/ObjectId"
+        proyecto:
+          $ref: "#/components/schemas/ObjectId"
+        inicio:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+          nullable: true
+        esAnonima:
+          type: boolean
+          default: false
+          description: Si la contribución figura sin indicar quién la realizó
+
+    # ---------- Notificaciones ----------
 
     ContactoInput:
       type: object
-      description: Body esperado por POST /proyectos/{id}/perfiles/{idPerfil}/contactarColaborador.
+      description: Body esperado por POST /proyectos/{id}/perfiles/{idPerfil}/contactarColaborador. No admite campos adicionales.
+      additionalProperties: false
       properties:
         cuentaGit:
           type: string
+          minLength: 1
           description: Cuenta de Git de la colaboradora a contactar
           example: noeaversa
         mensaje:
           type: string
+          minLength: 1
           example: Hola! Tu perfil encaja con lo que buscamos, ¿te interesa sumarte?
       required:
         - cuentaGit
@@ -1168,12 +1789,3 @@ components:
         fecha:
           type: string
           format: date-time
-
-    Error:
-      type: object
-      properties:
-        message:
-          type: string
-        details:
-          type: array
-          items: {}
