@@ -25,6 +25,8 @@ router.route('/:id/finalizar')
 router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')
     .get((req, res) => proyectoController.buscarPotencialesColaboradores(req, res));
 
+router.route('/:id/perfiles/:idPerfil/contactarColaborador')
+    .post((req, res) => proyectoController.contactarColaborador(req, res));
 router.route('/:id/logros')
     .get(
         validar(validarIdsProyecto, 'params'),

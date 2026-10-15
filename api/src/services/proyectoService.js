@@ -104,12 +104,17 @@ class ProyectoService {
         );
     }
 
-    buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
-        const proyecto = await this.obtenerPorId(idProyecto);
+    perfilPerteneceAProyecto = async (idProyecto, idPerfil) => {
+        const proyecto = await this.obtenerPorId(idProyecto); 
         const perfil = proyecto.perfiles.find(p => p.id === idPerfil);
         if (!perfil) {
             throw new NotFoundError("El perfil no pertenece al proyecto");
         }
+        return perfil;
+    }
+
+    buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
+        const perfil = await this.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
         const colaboradores = await this.colaboradorService.obtenerTodos();
         return colaboradores.filter(colaborador =>
