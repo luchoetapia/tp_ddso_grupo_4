@@ -17,6 +17,11 @@ const colectivoSchema = new Schema({
     versionKey: false,
 })
 
+// findByNombre
+colectivoSchema.index({ nombre: 1 });
+// Listado de colectivos activos
+colectivoSchema.index({ active: 1 });
+
 colectivoSchema.loadClass(Colectivo);
 
 module.exports = mongoose.model('Colectivo', colectivoSchema);

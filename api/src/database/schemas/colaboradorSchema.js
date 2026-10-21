@@ -25,6 +25,11 @@ const colaboradorSchema = new Schema({
     versionKey: false
 });
 
+// findByCuentaGit
+colaboradorSchema.index({ cuentaGit: 1 });
+// Búsqueda de colaboradores potenciales por habilidades ($all)
+colaboradorSchema.index({ habilidades: 1 });
+
 colaboradorSchema.loadClass(Colaborador);
 
 module.exports = mongoose.model('Colaborador', colaboradorSchema);

@@ -20,6 +20,9 @@ const notificacionSchema = new Schema({
     versionKey: false
 });
 
+// findByDestinatario ordenado por fecha descendente
+notificacionSchema.index({ destinatario: 1, fecha: -1 });
+
 notificacionSchema.loadClass(Notificacion);
 
 module.exports = mongoose.model('Notificacion', notificacionSchema);

@@ -14,6 +14,9 @@ const colaboracionSchema = new Schema({
     versionKey: false,
 });
 
+// findActiva: colaboración abierta de un colaborador en un proyecto
+colaboracionSchema.index({ colaborador: 1, proyecto: 1, fin: 1 });
+
 colaboracionSchema.loadClass(Colaboracion);
 
 module.exports = mongoose.model('Colaboracion', colaboracionSchema);

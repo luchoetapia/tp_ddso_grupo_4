@@ -13,6 +13,9 @@ const habilidadSchema = new Schema({
     versionKey: false,
 });
 
+// findByTitulo
+habilidadSchema.index({ titulo: 1 });
+
 habilidadSchema.loadClass(Habilidad)
 
 module.exports = mongoose.model('Habilidad', habilidadSchema);

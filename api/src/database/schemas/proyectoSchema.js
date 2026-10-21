@@ -43,6 +43,11 @@ const proyectoSchema = new Schema({
 }, {timestamps: true, versionKey: false});
 
 
+// findByTitulo
+proyectoSchema.index({ titulo: 1 });
+// Proyectos activos (obtenerActivos y búsqueda de potenciales proyectos)
+proyectoSchema.index({ finalizado: 1 });
+
 // Cargar las clases en los esquemas para que los métodos de instancia estén disponibles
 tipoCompromisoSchema.loadClass(TipoCompromiso);
 modalidadColaboracionSchema.loadClass(ModalidadColaboracion);
