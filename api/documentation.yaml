@@ -9,7 +9,7 @@ info:
 
 
     Para cargar datos de prueba, llamar a los endpoints llenarDatosPrueba en
-    este orden: habilidades → perfiles → proyectos → colectivos → colaboradores.
+    este orden: habilidades → proyectos → colectivos → colaboradores.
 
 servers:
   - url: http://localhost:3000
@@ -22,7 +22,7 @@ tags:
   - name: Logros
     description: Logros/hitos de un proyecto
   - name: Perfiles
-    description: Perfiles requeridos por los proyectos
+    description: Perfiles requeridos por un proyecto (embebidos en él)
   - name: Colectivos
     description: Gestión de colectivos
   - name: Habilidades
@@ -68,9 +68,10 @@ paths:
     post:
       summary: Crea un nuevo proyecto
       description: >
-        Los perfiles se referencian por id y deben existir previamente
-        (crealos primero con POST /perfiles). No se permiten campos
-        adicionales a los declarados en el schema.
+        Los perfiles se envían completos y quedan embebidos en el proyecto.
+        Sus habilidades se referencian por id y deben existir previamente
+        (ver GET /habilidades). No se permiten campos adicionales a los
+        declarados en el schema.
       tags: [Proyectos]
       requestBody:
         required: true
@@ -84,7 +85,22 @@ paths:
                 value:
                   titulo: Huerta comunitaria
                   descripcion: Sitio de inscripciones y cartelería para la huerta del barrio.
-                  perfiles: ["665f1c2b3a4d5e6f7a8b9c11", "665f1c2b3a4d5e6f7a8b9c12"]
+                  perfiles:
+                    - titulo: Desarrollador/a web
+                      descripcion: Formulario de inscripción
+                      habilidadesRequeridas: ["665f1c2b3a4d5e6f7a8b9c01"]
+                      tipoCompromiso:
+                        cantHoras: 5
+                        periodo: semanal
+                      modalidadColaboracion:
+                        incentivoEconomico: 0
+                        posibleContratacion: false
+                    - titulo: Diseñador/a gráfico/a
+                      descripcion: Cartelería de la huerta
+                      tipoCompromiso:
+                        cantHoras: 10
+                        periodo: total
+                      modalidadColaboracion: {}
                   enlaceSistema: https://huerta.example.org
                   enlaceCodigoFuente: https://github.com/colectivo/huerta
               minimo:
@@ -106,13 +122,13 @@ paths:
                   data:
                     $ref: "#/components/schemas/Proyecto"
         "400":
-          description: Datos inválidos o algún id de perfil inválido
+          description: Datos inválidos o algún id de habilidad inválido
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Alguno de los perfiles no existe
+          description: Alguna de las habilidades de los perfiles no existe
           content:
             application/json:
               schema:
@@ -128,9 +144,9 @@ paths:
     post:
       summary: Carga proyectos iniciales
       description: >
-        Sin body, crea un proyecto de ejemplo con los primeros dos perfiles
-        existentes (correr antes POST /perfiles/llenarDatosPrueba). También
-        acepta un array de proyectos con el mismo formato que POST /proyectos.
+        Sin body, crea un proyecto de ejemplo con dos perfiles embebidos
+        (Backend Node.js y Diseño UX/UI) sin habilidades. También acepta un
+        array de proyectos con el mismo formato que POST /proyectos.
       tags: [Proyectos]
       requestBody:
         required: false
@@ -451,21 +467,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /perfiles:
+  /proyectos/{id}/perfiles:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
     get:
-      summary: Obtiene todos los perfiles
+      summary: Obtiene los perfiles de un proyecto
       tags: [Perfiles]
       responses:
         "200":
-          description: Lista de perfiles (con sus habilidades completas)
+          description: Lista de perfiles del proyecto (puede ser vacía)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Perfil"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "404":
+          description: Proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
-      summary: Crea un nuevo perfil
+      summary: Agrega un perfil a un proyecto
       description: >
         Las habilidades se referencian por id y deben existir previamente
         (ver GET /habilidades). No se permiten campos adicionales a los
@@ -481,7 +507,8 @@ paths:
               tester:
                 summary: Tester sin incentivo económico
                 value:
-                  descripcion: Tester
+                  titulo: Tester
+                  descripcion: Pruebas manuales del formulario
                   habilidadesRequeridas: ["665f1c2b3a4d5e6f7a8b9c01"]
                   habilidadesOpcionales: ["665f1c2b3a4d5e6f7a8b9c02"]
                   tipoCompromiso:
@@ -493,7 +520,8 @@ paths:
               analista:
                 summary: Analista de datos con incentivo económico
                 value:
-                  descripcion: Analista de Datos
+                  titulo: Analista de Datos
+                  descripcion: Reportes de inscripciones
                   habilidadesRequeridas: ["665f1c2b3a4d5e6f7a8b9c01"]
                   tipoCompromiso:
                     cantHoras: 15
@@ -515,59 +543,24 @@ paths:
                   data:
                     $ref: "#/components/schemas/Perfil"
         "400":
-          description: Datos inválidos o algún id de habilidad inválido
+          description: Datos inválidos, id de proyecto inválido o algún id de habilidad inválido
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Alguna de las habilidades no existe
+          description: Proyecto no encontrado, o alguna de las habilidades no existe
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /perfiles/llenarDatosPrueba:
-    post:
-      summary: Carga perfiles iniciales
-      description: >
-        Sin body, crea dos perfiles de ejemplo (Backend Node.js y Diseño UX/UI)
-        sin habilidades. También acepta un array de perfiles con el mismo
-        formato que POST /perfiles.
-      tags: [Perfiles]
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/PerfilInput"
-      responses:
-        "201":
-          description: Perfiles creados
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RespuestaDatosPrueba"
-        "400":
-          description: Datos inválidos o algún id de habilidad inválido
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Alguna de las habilidades no existe
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /perfiles/{id}:
+  /proyectos/{id}/perfiles/{idPerfil}:
     parameters:
       - $ref: "#/components/parameters/IdPath"
+      - $ref: "#/components/parameters/IdPerfilPath"
     get:
-      summary: Obtiene un perfil por id
+      summary: Obtiene un perfil de un proyecto
       tags: [Perfiles]
       responses:
         "200":
@@ -577,15 +570,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Perfil"
         "400":
-          $ref: "#/components/responses/IdInvalido"
+          description: Id de proyecto o de perfil inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
-          description: Perfil no encontrado
+          description: Proyecto no encontrado, o el perfil no pertenece al proyecto
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
     put:
-      summary: Actualiza un perfil
+      summary: Actualiza un perfil de un proyecto
       description: >
         Actualización parcial: se pueden enviar sólo los campos a modificar.
         No se permiten campos adicionales a los declarados en el schema.
@@ -615,19 +612,19 @@ paths:
                   data:
                     $ref: "#/components/schemas/Perfil"
         "400":
-          description: Datos inválidos o id inválido
+          description: Datos inválidos o algún id inválido
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: Perfil no encontrado
+          description: Proyecto o perfil no encontrado, o alguna de las habilidades no existe
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
     delete:
-      summary: Elimina un perfil
+      summary: Elimina un perfil de un proyecto
       tags: [Perfiles]
       responses:
         "200":
@@ -641,9 +638,13 @@ paths:
                     type: string
                     example: Perfil eliminado exitosamente
         "400":
-          $ref: "#/components/responses/IdInvalido"
+          description: Id de proyecto o de perfil inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
-          description: Perfil no encontrado
+          description: Proyecto o perfil no encontrado
           content:
             application/json:
               schema:
@@ -1334,13 +1335,17 @@ components:
 
     PerfilInput:
       type: object
-      description: Body esperado por POST /perfiles. No admite campos adicionales.
+      description: Body esperado por POST /proyectos/{id}/perfiles (y cada perfil de POST /proyectos). No admite campos adicionales.
       additionalProperties: false
       properties:
-        descripcion:
+        titulo:
           type: string
           minLength: 1
           example: Tester
+        descripcion:
+          type: string
+          minLength: 1
+          example: Pruebas manuales del formulario
         habilidadesRequeridas:
           type: array
           description: Ids de habilidades existentes (ver GET /habilidades)
@@ -1358,15 +1363,19 @@ components:
         modalidadColaboracion:
           $ref: "#/components/schemas/ModalidadColaboracion"
       required:
+        - titulo
         - descripcion
         - tipoCompromiso
         - modalidadColaboracion
 
     PerfilActualizacion:
       type: object
-      description: Body esperado por PUT /perfiles/{id}. Mismos campos que PerfilInput, todos opcionales.
+      description: Body esperado por PUT /proyectos/{id}/perfiles/{idPerfil}. Mismos campos que PerfilInput, todos opcionales.
       additionalProperties: false
       properties:
+        titulo:
+          type: string
+          minLength: 1
         descripcion:
           type: string
           minLength: 1
@@ -1384,35 +1393,18 @@ components:
           $ref: "#/components/schemas/ModalidadColaboracion"
 
     Perfil:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/ObjectId"
-        descripcion:
-          type: string
-          example: Tester
-        habilidadesRequeridas:
-          type: array
-          items:
-            $ref: "#/components/schemas/HabilidadAnidada"
-        habilidadesOpcionales:
-          type: array
-          items:
-            $ref: "#/components/schemas/HabilidadAnidada"
-        tipoCompromiso:
-          $ref: "#/components/schemas/TipoCompromiso"
-        modalidadColaboracion:
-          $ref: "#/components/schemas/ModalidadColaboracion"
-
-    PerfilAnidado:
-      description: Perfil tal como aparece dentro de un proyecto (las habilidades vienen como ids)
+      description: Perfil tal como está embebido en un proyecto (las habilidades vienen como ids)
       allOf:
         - type: object
           properties:
             _id:
               $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+              example: Tester
             descripcion:
               type: string
+              example: Pruebas manuales del formulario
             habilidadesRequeridas:
               type: array
               items:
@@ -1499,9 +1491,9 @@ components:
           example: Sitio de inscripciones y cartelería para la huerta del barrio.
         perfiles:
           type: array
-          description: Ids de perfiles existentes (ver GET /perfiles)
+          description: Perfiles requeridos, se embeben en el proyecto
           items:
-            $ref: "#/components/schemas/ObjectId"
+            $ref: "#/components/schemas/PerfilInput"
           default: []
         enlaceSistema:
           type: string
@@ -1532,7 +1524,7 @@ components:
         perfiles:
           type: array
           items:
-            $ref: "#/components/schemas/PerfilAnidado"
+            $ref: "#/components/schemas/Perfil"
         finalizado:
           type: boolean
           default: false
