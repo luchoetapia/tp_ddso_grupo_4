@@ -3,12 +3,14 @@ jest.mock('../../src/services/proyectoService.js', () => ({
     crear: jest.fn(),
     obtenerPorId: jest.fn(),
     buscarPotencialesColaboradores: jest.fn(),
+    obtenerPerfiles: jest.fn(),
+    perfilPerteneceAProyecto: jest.fn(),
+    agregarPerfil: jest.fn(),
+    modificarPerfil: jest.fn(),
+    eliminarPerfil: jest.fn(),
 }));
 jest.mock('../../src/services/colectivoService.js', () => ({
     finalizarProyecto: jest.fn(),
-}));
-jest.mock('../../src/services/perfilService.js', () => ({
-    obtenerTodos: jest.fn(),
 }));
 jest.mock('../../src/services/notificacionService.js', () => ({
     contactarColaborador: jest.fn(),
@@ -25,7 +27,6 @@ const request = require('supertest');
 const app = require('../../src/app.js');
 const proyectoService = require('../../src/services/proyectoService.js');
 const colectivoService = require('../../src/services/colectivoService.js');
-const perfilService = require('../../src/services/perfilService.js');
 const notificacionService = require('../../src/services/notificacionService.js');
 const logroService = require('../../src/services/logroService.js');
 const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
@@ -40,6 +41,16 @@ const proyecto = {
     porcentajeFinalizado: 0, enlaceSistema: null, enlaceCodigoFuente: null, logros: [],
 };
 const logro = { id: ID_LOGRO, titulo: 'MVP', descripcion: 'Primera versión' };
+const ID_HAB = '507f1f77bcf86cd799439021';
+const perfil = {
+    _id: ID_PERFIL,
+    titulo: 'Backend',
+    descripcion: 'Backend Node.js',
+    habilidadesRequeridas: [],
+    habilidadesOpcionales: [],
+    tipoCompromiso: { cantHoras: 10, periodo: 'semanal' },
+    modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: false },
+};
 
 describe('Endpoints /proyectos', () => {
     beforeAll(() => {
@@ -147,6 +158,159 @@ describe('Endpoints /proyectos', () => {
             const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({ idColectivo: ID_COLECTIVO });
 
             expect(res.status).toBe(404);
+        });
+    });
+
+    describe('perfiles', () => {
+        describe('GET /proyectos/:id/perfiles', () => {
+            test('devuelve los perfiles del proyecto', async () => {
+                proyectoService.obtenerPerfiles.mockResolvedValue([perfil]);
+
+                const res = await request(app).get(`/proyectos/${ID}/perfiles`);
+
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual([perfil]);
+                expect(proyectoService.obtenerPerfiles).toHaveBeenCalledWith(ID);
+            });
+
+            test('responde 400 con id de proyecto inválido', async () => {
+                const res = await request(app).get('/proyectos/abc/perfiles');
+
+                expect(res.status).toBe(400);
+            });
+
+            test('responde 404 si el proyecto no existe', async () => {
+                proyectoService.obtenerPerfiles.mockRejectedValue(new NotFoundError('Proyecto no encontrado'));
+
+                const res = await request(app).get(`/proyectos/${ID}/perfiles`);
+
+                expect(res.status).toBe(404);
+            });
+        });
+
+        describe('POST /proyectos/:id/perfiles', () => {
+            const body = {
+                titulo: 'Backend',
+                descripcion: 'Backend Node.js',
+                habilidadesRequeridas: [ID_HAB],
+                tipoCompromiso: { cantHoras: 10, periodo: 'semanal' },
+                modalidadColaboracion: {},
+            };
+
+            test('crea el perfil aplicando defaults', async () => {
+                proyectoService.agregarPerfil.mockResolvedValue(perfil);
+
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+
+                expect(res.status).toBe(201);
+                expect(res.body).toEqual({ message: 'Perfil creado exitosamente', data: perfil });
+                expect(proyectoService.agregarPerfil).toHaveBeenCalledWith(ID, {
+                    ...body,
+                    habilidadesOpcionales: [],
+                    modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: false },
+                });
+            });
+
+            test('responde 400 sin título', async () => {
+                const { titulo, ...sinTitulo } = body;
+
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(sinTitulo);
+
+                expect(res.status).toBe(400);
+                expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
+            });
+
+            test('responde 400 sin tipo de compromiso', async () => {
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`)
+                    .send({ titulo: 'x', descripcion: 'x', modalidadColaboracion: {} });
+
+                expect(res.status).toBe(400);
+                expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
+            });
+
+            test('responde 404 si alguna habilidad no existe', async () => {
+                proyectoService.agregarPerfil.mockRejectedValue(new NotFoundError('Habilidades no encontradas', [ID_HAB]));
+
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+
+                expect(res.status).toBe(404);
+                expect(res.body.details).toEqual([ID_HAB]);
+            });
+        });
+
+        describe('GET /proyectos/:id/perfiles/:idPerfil', () => {
+            test('devuelve el perfil', async () => {
+                proyectoService.perfilPerteneceAProyecto.mockResolvedValue(perfil);
+
+                const res = await request(app).get(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual(perfil);
+                expect(proyectoService.perfilPerteneceAProyecto).toHaveBeenCalledWith(ID, ID_PERFIL);
+            });
+
+            test('responde 400 con id de perfil inválido', async () => {
+                const res = await request(app).get(`/proyectos/${ID}/perfiles/xyz`);
+
+                expect(res.status).toBe(400);
+                expect(res.body.message).toBe('Id de perfil inválido');
+            });
+
+            test('responde 404 si el perfil no pertenece al proyecto', async () => {
+                proyectoService.perfilPerteneceAProyecto.mockRejectedValue(new NotFoundError('El perfil no pertenece al proyecto especificado'));
+
+                const res = await request(app).get(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+
+                expect(res.status).toBe(404);
+            });
+        });
+
+        describe('PUT /proyectos/:id/perfiles/:idPerfil', () => {
+            test('actualiza solo los campos enviados', async () => {
+                proyectoService.modificarPerfil.mockResolvedValue({ ...perfil, descripcion: 'Nuevo' });
+
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({ descripcion: 'Nuevo' });
+
+                expect(res.status).toBe(200);
+                expect(res.body.message).toBe('Perfil actualizado exitosamente');
+                expect(res.body.data.descripcion).toBe('Nuevo');
+                expect(proyectoService.modificarPerfil).toHaveBeenCalledWith(ID, ID_PERFIL, { descripcion: 'Nuevo' });
+            });
+
+            test('responde 400 con body vacío', async () => {
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({});
+
+                expect(res.status).toBe(400);
+                expect(res.body.message).toBe('Debe enviarse al menos un campo para actualizar');
+            });
+
+            test('responde 404 si no existe', async () => {
+                proyectoService.modificarPerfil.mockRejectedValue(new NotFoundError('Proyecto o perfil no encontrado'));
+
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({ descripcion: 'x' });
+
+                expect(res.status).toBe(404);
+            });
+        });
+
+        describe('DELETE /proyectos/:id/perfiles/:idPerfil', () => {
+            test('elimina el perfil', async () => {
+                proyectoService.eliminarPerfil.mockResolvedValue();
+
+                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual({ message: 'Perfil eliminado exitosamente' });
+                expect(proyectoService.eliminarPerfil).toHaveBeenCalledWith(ID, ID_PERFIL);
+            });
+
+            test('responde 404 si no existe', async () => {
+                proyectoService.eliminarPerfil.mockRejectedValue(new NotFoundError('Proyecto o perfil no encontrado'));
+
+                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+
+                expect(res.status).toBe(404);
+            });
         });
     });
 
@@ -316,15 +480,14 @@ describe('Endpoints /proyectos', () => {
     });
 
     describe('POST /proyectos/llenarDatosPrueba', () => {
-        test('crea un proyecto por defecto con los primeros perfiles', async () => {
-            perfilService.obtenerTodos.mockResolvedValue([{ id: ID_PERFIL }]);
+        test('crea un proyecto por defecto con sus perfiles embebidos', async () => {
             proyectoService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
             const res = await request(app).post('/proyectos/llenarDatosPrueba');
 
             expect(res.status).toBe(201);
             expect(res.body.data).toHaveLength(1);
-            expect(proyectoService.crear).toHaveBeenCalledWith(expect.objectContaining({ perfiles: [ID_PERFIL] }));
+            expect(res.body.data[0].perfiles.map(p => p.titulo)).toEqual(['Desarrollador Backend', 'Diseñador UX/UI']);
         });
 
         test('responde 400 si algún elemento es inválido', async () => {

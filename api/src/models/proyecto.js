@@ -37,8 +37,8 @@ class Perfil {
     }
 
     cantidadHabilidadesCumplidas(idsHabilidades) {
-        const requeridas = this.habilidadesRequeridas.map(habilidad => (habilidad._id ?? '').toString());
-        const opcionales = this.habilidadesOpcionales.map(habilidad => (habilidad._id ?? '').toString());
+        const requeridas = this.habilidadesRequeridas.map(habilidad => (habilidad._id ?? habilidad).toString());
+        const opcionales = this.habilidadesOpcionales.map(habilidad => (habilidad._id ?? habilidad).toString());
         const todas = requeridas.concat(opcionales);
 
         return idsHabilidades.filter(id => todas.includes(id)).length;
@@ -47,7 +47,7 @@ class Perfil {
     cumpleHabilidadesRequeridas(habilidades) {
         // Las habilidades requeridas pueden venir populadas (documentos) o como ObjectId
         return this.habilidadesRequeridas.map(habilidad => 
-            (habilidad._id ?? '')
+            (habilidad._id ?? habilidad)
                 .toString())
                 .every(id => habilidades.includes(id)
         );

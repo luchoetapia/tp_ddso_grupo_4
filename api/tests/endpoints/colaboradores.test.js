@@ -148,22 +148,28 @@ describe('Endpoints /colaboradores', () => {
     });
 
     describe('GET /colaboradores/:cuentaGit/buscarPotencialesProyectos', () => {
-        test('devuelve los proyectos potenciales', async () => {
+        test('busca proyectos con las habilidades del colaborador', async () => {
+            const ID_HAB = '507f1f77bcf86cd799439021';
+            const ID_HAB_2 = '507f1f77bcf86cd799439022';
+            // Las habilidades pueden venir populadas o como ids
+            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ cuentaGit: 'juanp', habilidades: [{ _id: ID_HAB }, ID_HAB_2] });
             proyectoService.buscarPotencialesProyectos.mockResolvedValue([{ id: ID_PROY }]);
 
             const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos');
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual([{ id: ID_PROY }]);
-            expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith('juanp');
+            expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
+            expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
         });
 
         test('responde 404 si el colaborador no existe', async () => {
-            proyectoService.buscarPotencialesProyectos.mockRejectedValue(new NotFoundError('Colaborador no encontrado'));
+            colaboradorService.obtenerPorCuentaGit.mockRejectedValue(new NotFoundError('Colaborador no encontrado'));
 
             const res = await request(app).get('/colaboradores/nadie/buscarPotencialesProyectos');
 
             expect(res.status).toBe(404);
+            expect(proyectoService.buscarPotencialesProyectos).not.toHaveBeenCalled();
         });
     });
 

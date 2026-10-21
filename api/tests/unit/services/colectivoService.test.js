@@ -73,7 +73,7 @@ describe('ColectivoService', () => {
 
         test('crea el colectivo validando los proyectos', async () => {
             colectivoRepository.findByNombre.mockResolvedValue(null);
-            proyectoService.obtenerPorListaId.mockResolvedValue([{ id: ID_PROY }]);
+            proyectoService.obtenerPorListaId.mockResolvedValue([{ _id: ID_PROY }]);
             colectivoRepository.save.mockResolvedValue(colectivoDoc());
 
             const resultado = await colectivoService.crear(datos);
