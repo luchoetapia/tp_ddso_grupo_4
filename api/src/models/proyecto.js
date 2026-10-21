@@ -13,8 +13,9 @@ class Proyecto {
 }
 
 class Perfil {
-    constructor(id, descripcion, habilidadesRequeridas, habilidadesOpcionales, tipoCompromiso, modalidadColaboracion) {
+    constructor(id, titulo, descripcion, habilidadesRequeridas, habilidadesOpcionales, tipoCompromiso, modalidadColaboracion) {
         this.id = id,
+        this.titulo = titulo,
         this.descripcion = descripcion,
         this.habilidadesRequeridas = habilidadesRequeridas,
         this.habilidadesOpcionales = habilidadesOpcionales,
@@ -24,7 +25,11 @@ class Perfil {
 
     cumpleHabilidadesRequeridas(habilidades) {
         // Las habilidades requeridas pueden venir populadas (documentos) o como ObjectId
-        return this.habilidadesRequeridas.map(habilidad => (habilidad._id ?? habilidad).toString()).every(id => habilidades.includes(id));
+        return this.habilidadesRequeridas.map(habilidad => 
+            (habilidad._id ?? '')
+                .toString())
+                .every(id => habilidades.includes(id)
+        );
     }
 }
 
@@ -36,9 +41,9 @@ class TipoCompromiso {
 }
 
 class ModalidadColaboracion {
-    constructor(incentivoEconomico, posibleContractacion) {
+    constructor(incentivoEconomico, posibleContratacion) {
         this.incentivoEconomico = incentivoEconomico
-        this.posibleContractacion = posibleContractacion
+        this.posibleContratacion = posibleContratacion
     } 
 }
 
