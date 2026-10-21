@@ -1,12 +1,18 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo } = require('./comunes.js');
+const { validarCreacionPerfil } = require('./perfilesValidator.js');
 
 const enlace = (mensaje) => z.url({ error: mensaje }).nullable();
+
+// Los perfiles van embebidos en el proyecto, así que se envían completos
+const perfilDeProyecto = validarCreacionPerfil.extend({
+    titulo: z.string({ error: "El título del perfil es obligatorio" }).min(1, "El título del perfil no puede estar vacío"),
+});
 
 const validarCreacionProyecto = z.object({
     titulo: z.string({ error: "El título del proyecto es obligatorio" }).min(1, "El título del proyecto no puede estar vacío"),
     descripcion: z.string({ error: "La descripción del proyecto es obligatoria" }).min(1, "La descripción del proyecto no puede estar vacía"),
-    perfiles: z.array(objectId("Id de perfil inválido"), { error: "Los perfiles deben ser una lista de ids" }).default([]),
+    perfiles: z.array(perfilDeProyecto, { error: "Los perfiles deben ser una lista" }).default([]),
     enlaceSistema: enlace("El enlace al sistema debe ser una URL válida").optional(),
     enlaceCodigoFuente: enlace("El enlace al código fuente debe ser una URL válida").optional(),
 }).strict();

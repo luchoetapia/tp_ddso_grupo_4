@@ -13,6 +13,10 @@ class ColaboradorRepository {
         return await ColaboradorModel.findOne({ cuentaGit }).populate('habilidades');
     }
 
+    async findByCondition(condition) {
+        return await ColaboradorModel.find(condition).populate('habilidades');
+    }
+
     async save(datos) {
         const colaborador = new ColaboradorModel(datos);
         await colaborador.save();

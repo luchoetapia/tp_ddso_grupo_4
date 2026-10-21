@@ -1,6 +1,5 @@
 const proyectoService = require('../services/proyectoService.js');
 const colectivoService = require('../services/colectivoService.js');
-const perfilService = require('../services/perfilService.js');
 const notificacionService = require('../services/notificacionService.js');
 const logroService = require('../services/logroService.js');
 const {Periodo} = require("../models/proyecto.js");
@@ -11,7 +10,6 @@ class ProyectoController {
     constructor() {
         this.proyectoService = proyectoService;
         this.colectivoService = colectivoService
-        this.perfilService = perfilService;
         this.notificacionService = notificacionService;
         this.logroService = logroService;
     }
@@ -47,12 +45,18 @@ class ProyectoController {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
-            const perfiles = await this.perfilService.obtenerTodos();
             lista = [
                 {
                     titulo: "Plataforma Educativa",
                     descripcion: "Desarrollo de aula virtual accesible",
-                    perfiles: perfiles.slice(0, 2).map(p => p.id),
+                    perfiles: [
+                        {
+                            titulo: "Desarrollador Frontend",
+                            descripcion: "Maquetado y accesibilidad del aula virtual",
+                            tipoCompromiso: { cantHoras: 10, periodo: Periodo.SEMANAL },
+                            modalidadColaboracion: {}
+                        }
+                    ],
                 }
             ];
         }

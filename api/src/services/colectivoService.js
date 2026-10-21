@@ -44,7 +44,7 @@ class ColectivoService {
             descripcion: datos.descripcion,
             ubicacion: datos.ubicacion,
             tipo: datos.tipo,
-            proyectos: proyectos.map(p => p.id)
+            proyectos: proyectos.map(p => p._id)
         })
         return this.toDTO(creado);
     }

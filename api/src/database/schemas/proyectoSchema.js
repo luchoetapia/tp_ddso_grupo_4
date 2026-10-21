@@ -34,7 +34,7 @@ const perfilSchema = new Schema({
 const proyectoSchema = new Schema({
     titulo: { type: String, required: true },
     descripcion: { type: String, required: true },
-    perfiles: [{ type: perfilSchema, default: [] }],
+    perfiles: { type: [perfilSchema], default: [] },
     finalizado: { type: Boolean, default: false },
     porcentajeFinalizado: { type: Number, default: 0, min: 0, max: 100 },
     enlaceSistema: { type: String, default: null },

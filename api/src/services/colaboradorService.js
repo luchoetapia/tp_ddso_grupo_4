@@ -77,6 +77,22 @@ class ColaboradorService {
         }
         return colaborador.contactos.map(c => ({ medio: c.medio, valor: c.valor }));
     }
+
+    obtenerColaboradoresPotenciales = (perfiles) => {
+        const habilidadesRequeridas = perfiles
+            .filter(perfil => perfil.habilidadesRequeridas && perfil.habilidadesRequeridas.length > 0)
+            .map(
+                perfil => perfil.habilidadesRequeridas.filter(h => h._id).map(h => (h._id))
+            )
+            .filter(conjunto => conjunto.length > 0);
+
+        // El colaborador debe tener todas las habilidades de al menos un conjunto
+        const condicion = habilidadesRequeridas.length > 0
+            ? { $or: habilidadesRequeridas.map(conjunto => ({ habilidades: { $all: conjunto } })) }
+            : {}
+        
+        return this.colaboradorRepository.findByCondition(condicion)
+    }
 }
 
 module.exports = new ColaboradorService();

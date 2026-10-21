@@ -1,33 +1,19 @@
 const mongoose = require('mongoose');
 const proyectoRepository = require('../repositories/proyectoRepository.js');
-const perfilService = require('./perfilService.js');
+const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
     constructor() {
         this.proyectoRepository = proyectoRepository;
-        this.perfilService = perfilService;
+        this.habilidadService = habilidadService;
         this.colaboradorService = colaboradorService;
-    }
-
-    toDTO = (proyecto) => {
-        return {
-            id: proyecto.id || proyecto._id?.toString(),
-            titulo: proyecto.titulo,
-            descripcion: proyecto.descripcion,
-            perfiles: proyecto.perfiles ? proyecto.perfiles.map(p => (typeof p === 'object' && p.toDTO ? p.toDTO() : p)) : [],
-            finalizado: proyecto.finalizado ?? false,
-            porcentajeFinalizado: proyecto.porcentajeFinalizado ?? 0,
-            enlaceSistema: proyecto.enlaceSistema,
-            enlaceCodigoFuente: proyecto.enlaceCodigoFuente,
-            logros: proyecto.logros ? proyecto.logros.map(l => (typeof l === 'object' && l.toDTO ? l.toDTO() : l)) : []
-        };
     }
 
     obtenerTodos = async () => {
         const proyectos = await this.proyectoRepository.findAll();
-        return proyectos.map(this.toDTO);
+        return proyectos;
     }
 
     crear = async (datos) => {
@@ -36,10 +22,15 @@ class ProyectoService {
             throw new ConflictError("Ya existe un proyecto con ese título")
         }
 
-        if (datos.perfiles && datos.perfiles.length > 0) {
-            for (const perfilId of datos.perfiles) {
-                await this.perfilService.obtenerPorId(perfilId);
-            }
+        // Los perfiles se embeben en el proyecto: solo hay que validar que existan sus habilidades
+        const idsHabilidades = new Set(
+            (datos.perfiles ?? []).flatMap(perfil => [
+                ...(perfil.habilidadesRequeridas ?? []),
+                ...(perfil.habilidadesOpcionales ?? [])
+            ])
+        );
+        if (idsHabilidades.size > 0) {
+            await this.habilidadService.obtenerPorListaId([...idsHabilidades]);
         }
 
         const creado = await this.proyectoRepository.save({
@@ -50,19 +41,19 @@ class ProyectoService {
             enlaceCodigoFuente: datos.enlaceCodigoFuente ?? null
         });
 
-        return this.toDTO(creado);
+        return creado;
     }
 
-    obtenerPorId = async (id) => {
+    obtenerPorId = async (id, proyeccion) => {
         if (!mongoose.isValidObjectId(id)) {
             throw new BadRequestError("Id de proyecto inválido")
         }
 
-        const proyecto = await this.proyectoRepository.findById(id)
+        const proyecto = await this.proyectoRepository.findById(id, proyeccion)
         if (!proyecto) {
             throw new NotFoundError("Proyecto no encontrado")
         }
-        return this.toDTO(proyecto)
+        return proyecto
     }
 
     obtenerPorListaId = async (listaDeIDs) => {
@@ -77,49 +68,80 @@ class ProyectoService {
         if (faltantes.length > 0) {
             throw new NotFoundError("Proyectos no encontrados", faltantes)
         }
-        return proyectos.map(this.toDTO)
+        return proyectos
     }
 
     finalizar = async (id) => {
-        await this.obtenerPorId(id)
+        if (!mongoose.isValidObjectId(id)) {
+            throw new BadRequestError("Id de proyecto inválido")
+        }
+
         const actualizado = await this.proyectoRepository.update(id, { finalizado: true });
-        return this.toDTO(actualizado);
+        if (!actualizado) {
+            throw new NotFoundError("Proyecto no encontrado")
+        }
+        return actualizado;
     }
 
     proyectosActivos = async () => {
-        const proyectos = await this.proyectoRepository.findAll();
-        return proyectos.filter(p => !p.finalizado).map(this.toDTO);
+        return await this.proyectoRepository.obtenerActivos();
     }
 
-    buscarPotencialesProyectos = async (cuentaGit) => {
-        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit);
-        const habilidadesColaborador = colaborador.habilidades.map(h => (h._id ?? h).toString());
+    puedeAplicar = async (idProyecto, idsHabilidades) => {
+        const proyecto = await this.obtenerPorId(idProyecto, { finalizado: 1, perfiles: 1 });
+        if (proyecto.finalizado) return false;
+        
+        const perfiles = proyecto.obtenerPerfilesQueCumplen(idsHabilidades);
+        return perfiles.length > 0;
+    }
 
-        const perfiles = await this.perfilService.perfilesQueCumplenHabilidadesRequeridas(habilidadesColaborador);
-        const idsPerfiles = perfiles.map(p => p.id);
+    ordenarPorCantidadHabilidadesCumplidas = (proyectos, idsHabilidades) => {
+        // Ordena los proyectos por la cantidad de perfiles que cumplen con las habilidades dadas. 
+        // En caso de empate, por la cantidad total de habilidades cumplidas
+        return proyectos.sort((a, b) => {
+            const perfilesA = a.obtenerPerfilesQueCumplen(idsHabilidades);
+            const perfilesB = b.obtenerPerfilesQueCumplen(idsHabilidades);
 
-        const proyectosActivos = await this.proyectosActivos();
-        return proyectosActivos.filter(proyecto =>
-            proyecto.perfiles.some(perfil => idsPerfiles.includes(perfil.id))
-        );
+            if (perfilesA.length !== perfilesB.length) 
+                return perfilesB.length - perfilesA.length; // Orden descendente por cantidad de perfiles que cumplen
+
+            const cantidadA = a.obtenerCantidadHabilidadesCumplidas(idsHabilidades, perfilesA);
+            const cantidadB = b.obtenerCantidadHabilidadesCumplidas(idsHabilidades, perfilesB);
+
+            return cantidadB - cantidadA; // Orden descendente
+        })
+    }
+
+    buscarPotencialesProyectos = async (idsHabilidades) => {
+        // Busco proyectos activos que tengan perfiles que requieran las habilidades dadas
+        const condicion = {
+            finalizado: false,
+            perfiles: { 
+                $elemMatch: {
+                    habilidadesRequeridas: { $not: { $elemMatch: { $nin: idsHabilidades } } }
+                } 
+            } 
+        }
+        
+        const proyectos = await this.proyectoRepository.findByCondition(condicion);
+        return this.ordenarPorCantidadHabilidadesCumplidas(proyectos, idsHabilidades);
     }
 
     perfilPerteneceAProyecto = async (idProyecto, idPerfil) => {
-        const proyecto = await this.obtenerPorId(idProyecto); 
-        const perfil = proyecto.perfiles.find(p => p.id === idPerfil);
-        if (!perfil) {
-            throw new NotFoundError("El perfil no pertenece al proyecto");
-        }
+        const perfil = await this.proyectoRepository.obtenerPerfil(idProyecto, idPerfil);
+        if (!perfil) throw new NotFoundError("El perfil no pertenece al proyecto especificado");
+
         return perfil;
     }
 
-    buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
-        const perfil = await this.perfilPerteneceAProyecto(idProyecto, idPerfil);
+    buscarPotencialesColaboradores = async (idProyecto) => {
+        const perfiles = await this.proyectoRepository.obtenerPerfiles(idProyecto);
 
-        const colaboradores = await this.colaboradorService.obtenerTodos();
-        return colaboradores.filter(colaborador =>
-            perfil.cumpleHabilidadesRequeridas(colaborador.habilidades.map(h => (h._id ?? h).toString()))
-        );
+        if (!perfiles) throw new NotFoundError("Proyecto no encontrado");
+        if (perfiles.length === 0) return [];
+
+        const colaboradores = await this.colaboradorService.obtenerColaboradoresPotenciales(perfiles);
+        return colaboradores;
     }
 
     finalizarVariosProyectos = async (idsProyectos) => {

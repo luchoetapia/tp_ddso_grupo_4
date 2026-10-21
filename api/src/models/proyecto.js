@@ -10,6 +10,19 @@ class Proyecto {
         this.enlaceCodigoFuente = enlaceCodigoFuente
         this.logros = logros
     }
+
+    obtenerPerfilesQueCumplen(idsHabilidades) {
+        return this.perfiles.filter(perfil => perfil.cumpleHabilidadesRequeridas(idsHabilidades));
+    }
+
+    obtenerCantidadHabilidadesCumplidas(idsHabilidades, perfilesQueCumplen = null) {
+        if (!perfilesQueCumplen) 
+            perfilesQueCumplen = this.obtenerPerfilesQueCumplen(idsHabilidades);
+        
+        return perfilesQueCumplen.reduce(
+            (total, perfil) => total + perfil.cantidadHabilidadesCumplidas(idsHabilidades), 0
+        );
+    }
 }
 
 class Perfil {
@@ -21,6 +34,14 @@ class Perfil {
         this.habilidadesOpcionales = habilidadesOpcionales,
         this.tipoCompromiso = tipoCompromiso,
         this.modalidadColaboracion = modalidadColaboracion
+    }
+
+    cantidadHabilidadesCumplidas(idsHabilidades) {
+        const requeridas = this.habilidadesRequeridas.map(habilidad => (habilidad._id ?? '').toString());
+        const opcionales = this.habilidadesOpcionales.map(habilidad => (habilidad._id ?? '').toString());
+        const todas = requeridas.concat(opcionales);
+
+        return idsHabilidades.filter(id => todas.includes(id)).length;
     }
 
     cumpleHabilidadesRequeridas(habilidades) {
