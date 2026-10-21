@@ -23,15 +23,7 @@ class ProyectoService {
         }
 
         // Los perfiles se embeben en el proyecto: solo hay que validar que existan sus habilidades
-        const idsHabilidades = new Set(
-            (datos.perfiles ?? []).flatMap(perfil => [
-                ...(perfil.habilidadesRequeridas ?? []),
-                ...(perfil.habilidadesOpcionales ?? [])
-            ])
-        );
-        if (idsHabilidades.size > 0) {
-            await this.habilidadService.obtenerPorListaId([...idsHabilidades]);
-        }
+        await this.validarHabilidadesDePerfiles(datos.perfiles ?? []);
 
         const creado = await this.proyectoRepository.save({
             titulo: datos.titulo,
@@ -134,14 +126,56 @@ class ProyectoService {
         return perfil;
     }
 
-    buscarPotencialesColaboradores = async (idProyecto) => {
-        const perfiles = await this.proyectoRepository.obtenerPerfiles(idProyecto);
+    buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
+        const perfil = await this.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
-        if (!perfiles) throw new NotFoundError("Proyecto no encontrado");
-        if (perfiles.length === 0) return [];
-
-        const colaboradores = await this.colaboradorService.obtenerColaboradoresPotenciales(perfiles);
+        const colaboradores = await this.colaboradorService.obtenerColaboradoresPotenciales([perfil]);
         return colaboradores;
+    }
+
+    // ---------- Perfiles (subdocumentos del proyecto) ----------
+
+    validarHabilidadesDePerfiles = async (perfiles) => {
+        // Junta las habilidades de todos los perfiles para validarlas en una sola consulta
+        const idsHabilidades = new Set(
+            perfiles.flatMap(perfil => [
+                ...(perfil.habilidadesRequeridas ?? []),
+                ...(perfil.habilidadesOpcionales ?? [])
+            ])
+        );
+        if (idsHabilidades.size > 0) {
+            await this.habilidadService.obtenerPorListaId([...idsHabilidades]);
+        }
+    }
+
+    obtenerPerfiles = async (idProyecto) => {
+        const perfiles = await this.proyectoRepository.obtenerPerfiles(idProyecto);
+        if (!perfiles) throw new NotFoundError("Proyecto no encontrado");
+
+        return perfiles;
+    }
+
+    agregarPerfil = async (idProyecto, datos) => {
+        await this.validarHabilidadesDePerfiles([datos]);
+
+        const proyecto = await this.proyectoRepository.agregarPerfil(idProyecto, datos);
+        if (!proyecto) throw new NotFoundError("Proyecto no encontrado");
+
+        return proyecto.perfiles.at(-1);
+    }
+
+    modificarPerfil = async (idProyecto, idPerfil, cambios) => {
+        await this.validarHabilidadesDePerfiles([cambios]);
+
+        const proyecto = await this.proyectoRepository.modificarPerfil(idProyecto, idPerfil, cambios);
+        if (!proyecto) throw new NotFoundError("Proyecto o perfil no encontrado");
+
+        return proyecto.perfiles.id(idPerfil);
+    }
+
+    eliminarPerfil = async (idProyecto, idPerfil) => {
+        const proyecto = await this.proyectoRepository.eliminarPerfil(idProyecto, idPerfil);
+        if (!proyecto) throw new NotFoundError("Proyecto o perfil no encontrado");
     }
 
     finalizarVariosProyectos = async (idsProyectos) => {

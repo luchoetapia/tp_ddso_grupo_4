@@ -4,7 +4,6 @@ const colectivosRouter = require('./colectivosRouter.js');
 const habilidadesRouter = require('./habilidadesRouter.js');
 const colaboradoresRouter = require('./colaboradoresRouter.js');
 const colaboracionRouter = require("./colaboracionRouter.js");
-const perfilRouter = require('./perfilRouter.js');
 const swaggerUi = require('swagger-ui-express');
 const { swaggerSpec } = require('../swagger.js');
 
@@ -15,7 +14,6 @@ router.use('/colectivos', colectivosRouter);
 router.use('/habilidades', habilidadesRouter);
 router.use('/colaboradores', colaboradoresRouter);
 router.use('/colaboraciones', colaboracionRouter);
-router.use('/perfiles', perfilRouter);
 router.use('/api-documentation', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 module.exports = router
