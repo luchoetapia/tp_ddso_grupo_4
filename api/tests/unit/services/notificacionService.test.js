@@ -10,14 +10,15 @@ jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerPorCuentaGit: jest.fn(),
     obtenerContactos: jest.fn(),
 }));
-jest.mock('../../../src/models/Contacto/Notificadores.js', () => ({
+jest.mock('../../../src/models/Notificacion.js', () => ({
+    ...jest.requireActual('../../../src/models/Notificacion.js'),
     obtenerNotificador: jest.fn(),
 }));
 
 const notificacionRepository = require('../../../src/repositories/notificacionRepository.js');
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
-const { obtenerNotificador } = require('../../../src/models/Contacto/Notificadores.js');
+const { obtenerNotificador } = require('../../../src/models/Notificacion.js');
 const notificacionService = require('../../../src/services/notificacionService.js');
 const { ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Notificacion = require('../../models/Notificacion');
+const { Notificacion } = require('../../models/Notificacion');
 const Schema = mongoose.Schema;
 
 const notificacionSchema = new Schema({

@@ -3,7 +3,7 @@ const colectivoService = require('../services/colectivoService.js');
 const perfilService = require('../services/perfilService.js');
 const notificacionService = require('../services/notificacionService.js');
 const logroService = require('../services/logroService.js');
-const {Periodo} = require("../models/dominio.js");
+const {Periodo} = require("../models/proyecto.js");
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionProyecto } = require('../validators/proyectosValidator.js');
 

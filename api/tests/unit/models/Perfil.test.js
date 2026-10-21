@@ -1,4 +1,4 @@
-const Perfil = require('../../../src/models/Perfil.js');
+const { Perfil } = require('../../../src/models/proyecto.js');
 
 describe('Perfil', () => {
     const tipoCompromiso = { cantHoras: 10, periodo: 'semanal' };

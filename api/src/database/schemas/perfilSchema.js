@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const { Periodo} = require('../../models/dominio');
-const  Perfil  = require('../../models/Perfil');
+const { Periodo, Perfil } = require('../../models/proyecto');
 const Schema = mongoose.Schema;
 
 const valuesPeriodo = Object.values(Periodo);

@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo } = require('./comunes.js');
-const { Periodo } = require('../models/dominio.js');
+const { Periodo } = require('../models/proyecto.js');
 
 const habilidades = z.array(objectId("Id de habilidad inválido"), { error: "Las habilidades deben ser una lista de ids" });
 

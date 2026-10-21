@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const { Colaborador } = require('../../models/dominio')
-const MedioDeContacto = require('../../models/Contacto/MedioDeContacto');
+const { Colaborador } = require('../../models/colaborador')
+const { MedioDeContacto } = require('../../models/Contacto');
 const Schema = mongoose.Schema;
 
 const valuesMedioDeContacto = Object.values(MedioDeContacto);

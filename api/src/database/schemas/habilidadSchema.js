@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
-
-const { TipoHabilidad, Habilidad } = require('../../models/dominio')
+const { TipoHabilidad, Habilidad } = require('../../models/habilidad')
 
 const Schema = mongoose.Schema;
-
 const valuesTipoHabilidad = Object.values(TipoHabilidad);
 
 const habilidadSchema = new Schema({

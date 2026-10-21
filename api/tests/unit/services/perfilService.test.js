@@ -12,7 +12,7 @@ jest.mock('../../../src/services/habilidadService.js', () => ({
 const perfilRepository = require('../../../src/repositories/perfilRepository.js');
 const habilidadService = require('../../../src/services/habilidadService.js');
 const perfilService = require('../../../src/services/perfilService.js');
-const Perfil = require('../../../src/models/Perfil.js');
+const { Perfil } = require('../../../src/models/proyecto.js');
 const { BadRequestError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PERFIL = '507f1f77bcf86cd799439031';

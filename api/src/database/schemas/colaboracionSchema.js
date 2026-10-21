@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Colaboracion } = require('../../models/dominio.js');
+const { Colaboracion } = require('../../models/colaboracion.js');
 
 const Schema = mongoose.Schema;
 

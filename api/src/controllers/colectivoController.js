@@ -1,5 +1,5 @@
 const colectivoService = require('../services/colectivoService.js');
-const { TipoColectivo } = require('../models/dominio.js');
+const { TipoColectivo } = require('../models/colectivo.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
 

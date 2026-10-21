@@ -14,7 +14,7 @@ const colaboracionRepository = require('../../../src/repositories/colaboracionRe
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colaboracionService = require('../../../src/services/colaboracionService.js');
-const Perfil = require('../../../src/models/Perfil.js');
+const { Perfil } = require('../../../src/models/proyecto.js');
 const { ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';

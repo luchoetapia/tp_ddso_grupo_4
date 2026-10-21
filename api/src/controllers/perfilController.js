@@ -1,5 +1,5 @@
 const perfilService = require('../services/perfilService.js');
-const { Periodo } = require('../models/dominio.js');
+const { Periodo } = require('../models/proyecto.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionPerfil } = require('../validators/perfilesValidator.js');
 

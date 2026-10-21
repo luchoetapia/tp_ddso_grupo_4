@@ -1,4 +1,4 @@
-const Notificacion = require('../../../src/models/Notificacion.js');
+const { Notificacion } = require('../../../src/models/Notificacion.js');
 
 describe('Notificacion', () => {
     test('asigna los atributos y usa la fecha actual por defecto', () => {

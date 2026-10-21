@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const { TipoCompromiso, ModalidadColaboracion, Proyecto, Periodo } = require('../../models/dominio');
-const Logro = require('../../models/Logro')
+const { TipoCompromiso, ModalidadColaboracion, Proyecto, Periodo, Logro } = require('../../models/proyecto');
 const Schema = mongoose.Schema;
 
 const tipoCompromisoSchema = new Schema({

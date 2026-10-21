@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { TipoColectivo, Colectivo } = require('../../models/dominio')
+const { TipoColectivo, Colectivo } = require('../../models/colectivo')
 
 const Schema = mongoose.Schema;
 const valuesTipoColectivo = Object.values(TipoColectivo);
