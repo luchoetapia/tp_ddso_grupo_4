@@ -27,26 +27,6 @@ const perfil = (requeridas) => new Perfil('perfil', 'Perfil', 'desc', requeridas
 describe('ColaboracionService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('toDTO', () => {
-        test('mapea los campos de la colaboración', () => {
-            const inicio = new Date();
-
-            expect(colaboracionService.toDTO({
-                id: ID_COLABORACION, colaborador: ID_COLAB, proyecto: ID_PROY, inicio, fin: null, esAnonima: false,
-            })).toEqual({
-                id: ID_COLABORACION, colaborador: ID_COLAB, proyecto: ID_PROY, inicio, fin: null, esAnonima: false,
-            });
-        });
-
-        test('usa toDTO de colaborador/proyecto si existe y null si faltan', () => {
-            const dto = colaboracionService.toDTO({ _id: ID_COLABORACION, colaborador: { toDTO: () => 'colab' } });
-
-            expect(dto.id).toBe(ID_COLABORACION);
-            expect(dto.colaborador).toBe('colab');
-            expect(dto.proyecto).toBeNull();
-        });
-    });
-
     describe('obtenerTodas', () => {
         test('devuelve todas las colaboraciones', async () => {
             colaboracionRepository.findAll.mockResolvedValue([{ id: ID_COLABORACION }]);

@@ -24,18 +24,6 @@ const habilidadDoc = (id, titulo = 'JS') => ({
 describe('HabilidadService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('toDTO', () => {
-        test('mapea los campos de la habilidad', () => {
-            expect(habilidadService.toDTO(habilidadDoc(ID_1))).toEqual({
-                id: ID_1, titulo: 'JS', tipoHabilidad: 'programacion', descripcion: 'desc',
-            });
-        });
-
-        test('usa _id si no hay id', () => {
-            expect(habilidadService.toDTO({ _id: ID_1 }).id).toBe(ID_1);
-        });
-    });
-
     describe('obtenerTodas', () => {
         test('devuelve todas las habilidades como DTO', async () => {
             habilidadRepository.findAll.mockResolvedValue([habilidadDoc(ID_1), habilidadDoc(ID_2, 'Node')]);

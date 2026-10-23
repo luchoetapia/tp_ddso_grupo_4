@@ -10,9 +10,17 @@ const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js')
 
 const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_COLAB = '507f1f77bcf86cd799439011';
-const colaboracion = {
-    id: '507f1f77bcf86cd799439061', colaborador: ID_COLAB, proyecto: ID_PROY,
+const colaboracionPublica = {
+    id: '507f1f77bcf86cd799439061',
+    colaborador: { id: ID_COLAB, cuentaGit: 'juanp' },
+    proyecto: { id: ID_PROY, titulo: 'Aula Virtual' },
     inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
+};
+// Como lo devuelve el repositorio: referencias populadas con campos de más
+const colaboracion = {
+    ...colaboracionPublica,
+    colaborador: { ...colaboracionPublica.colaborador, nombre: 'Juan' },
+    proyecto: { ...colaboracionPublica.proyecto, descripcion: 'desc' },
 };
 
 describe('Endpoints /colaboraciones', () => {
@@ -30,7 +38,16 @@ describe('Endpoints /colaboraciones', () => {
             const res = await request(app).get('/colaboraciones');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colaboracion]);
+            expect(res.body).toEqual([colaboracionPublica]);
+        });
+
+        test('oculta al colaborador si la colaboración es anónima', async () => {
+            colaboracionService.obtenerTodas.mockResolvedValue([{ ...colaboracion, esAnonima: true }]);
+
+            const res = await request(app).get('/colaboraciones');
+
+            expect(res.body[0].colaborador).toBeNull();
+            expect(res.body[0].esAnonima).toBe(true);
         });
     });
 
@@ -43,7 +60,7 @@ describe('Endpoints /colaboraciones', () => {
             const res = await request(app).post('/colaboraciones').send(body);
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Colaboracion creada exitosamente', data: colaboracion });
+            expect(res.body).toEqual({ message: 'Colaboracion creada exitosamente', data: colaboracionPublica });
             expect(colaboracionService.crear).toHaveBeenCalledWith(body);
         });
 

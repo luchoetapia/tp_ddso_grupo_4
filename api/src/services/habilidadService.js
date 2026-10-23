@@ -9,16 +9,7 @@ class HabilidadService {
 
     obtenerTodas = async () => {
         const habilidades = await this.habilidadRepository.findAll();
-        return habilidades.map(h => this.toDTO(h));
-    }
-
-    toDTO = (habilidad) => {
-        return {
-            id: habilidad.id || habilidad._id?.toString(),
-            titulo: habilidad.titulo,
-            tipoHabilidad: habilidad.tipoHabilidad,
-            descripcion: habilidad.descripcion
-        };
+        return habilidades;
     }
 
     crear = async (datos) => {
@@ -32,7 +23,7 @@ class HabilidadService {
             tipoHabilidad: datos.tipoHabilidad,
             descripcion: datos.descripcion
         })
-        return this.toDTO(creada);
+        return creada;
     }
 
     obtenerPorId = async (id) => {
@@ -44,7 +35,7 @@ class HabilidadService {
         if (!habilidad) {
             throw new NotFoundError("Habilidad no encontrada")
         }
-        return this.toDTO(habilidad)
+        return habilidad
     }
 
     obtenerPorListaId = async (listaDeIDs) => {
@@ -59,7 +50,7 @@ class HabilidadService {
         if (faltantes.length > 0) {
             throw new NotFoundError("Habilidades no encontradas", faltantes)
         }
-        return habilidades.map(h => this.toDTO(h))
+        return habilidades
     }
 }
 

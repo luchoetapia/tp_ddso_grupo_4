@@ -120,7 +120,10 @@ describe('Endpoints /colaboradores', () => {
 
     describe('POST /colaboradores/:cuentaGit/anotarProyecto/:idProyecto', () => {
         test('anota al colaborador en el proyecto', async () => {
-            const colaboracion = { id: 'c1', colaborador: ID, proyecto: ID_PROY };
+            const colaboracion = {
+                id: 'c1', colaborador: { id: ID, cuentaGit: 'juanp' }, proyecto: { id: ID_PROY, titulo: 'Aula' },
+                inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
+            };
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
             colaboracionService.crear.mockResolvedValue(colaboracion);
 
@@ -158,7 +161,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ id: ID_PROY }]);
+            expect(res.body).toEqual([{ id: ID_PROY, perfiles: [] }]);
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
             expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
         });
@@ -175,12 +178,16 @@ describe('Endpoints /colaboradores', () => {
 
     describe('GET /colaboradores/:cuentaGit/notificaciones', () => {
         test('devuelve las notificaciones del colaborador', async () => {
-            notificacionService.obtenerPorColaborador.mockResolvedValue([{ id: 'n1', mensaje: 'Hola' }]);
+            const notificacion = {
+                id: 'n1', mensaje: 'Hola', fecha: '2024-01-01T00:00:00.000Z',
+                proyecto: { id: ID_PROY, titulo: 'Aula' }, perfil: { id: 'p1', descripcion: 'Backend' },
+            };
+            notificacionService.obtenerPorColaborador.mockResolvedValue([{ ...notificacion, destinatario: ID }]);
 
             const res = await request(app).get('/colaboradores/juanp/notificaciones');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ id: 'n1', mensaje: 'Hola' }]);
+            expect(res.body).toEqual([notificacion]);
         });
 
         test('responde 404 si el colaborador no existe', async () => {

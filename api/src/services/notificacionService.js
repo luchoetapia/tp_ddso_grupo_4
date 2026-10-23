@@ -12,17 +12,6 @@ class NotificacionService {
         this.colaboradorService = colaboradorService;
     }
 
-    toDTO = (notificacion) => {
-        return {
-            id: notificacion.id || notificacion._id?.toString(),
-            destinatario: (notificacion.destinatario?._id ?? notificacion.destinatario)?.toString(),
-            proyecto: { id: notificacion.proyecto.id.toString(), titulo: notificacion.proyecto.titulo },
-            perfil: { id: notificacion.perfil.id.toString(), descripcion: notificacion.perfil.descripcion },
-            mensaje: notificacion.mensaje,
-            fecha: notificacion.fecha
-        };
-    }
-
     obtenerColaborador = async (cuentaGit) => {
         return await this.colaboradorService.obtenerPorCuentaGit(cuentaGit);
     }
@@ -50,7 +39,7 @@ class NotificacionService {
         const contactos = await this.colaboradorService.obtenerContactos(cuentaGit);
         this.replicarPorMediosDeContacto(contactos, notificacion);
 
-        return this.toDTO(notificacion);
+        return notificacion;
     }
 
     replicarPorMediosDeContacto = (contactos = [], notificacion) => {
@@ -65,7 +54,7 @@ class NotificacionService {
     obtenerPorColaborador = async (cuentaGit) => {
         const colaborador = await this.obtenerColaborador(cuentaGit);
         const notificaciones = await this.notificacionRepository.findByDestinatario(colaborador.id);
-        return notificaciones.map(this.toDTO);
+        return notificaciones;
     }
 }
 
