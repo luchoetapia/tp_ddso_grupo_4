@@ -80,7 +80,10 @@ class ColaboradorController {
     }
 
     buscarPotencialesProyectos = async (req, res) => {
-        const proyectos = await this.proyectoService.buscarPotencialesProyectos(req.params.cuentaGit);
+        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit);
+        const idsHabilidades = colaborador.habilidades.map(h => (h._id ?? h).toString());
+
+        const proyectos = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades);
         res.status(200).json(proyectos);
     }
 

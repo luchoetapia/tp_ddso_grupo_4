@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { TipoColectivo, Colectivo } = require('../../models/dominio')
+const { TipoColectivo, Colectivo } = require('../../models/colectivo')
 
 const Schema = mongoose.Schema;
 const valuesTipoColectivo = Object.values(TipoColectivo);
@@ -16,6 +16,11 @@ const colectivoSchema = new Schema({
     timestamps: true,
     versionKey: false,
 })
+
+// findByNombre
+colectivoSchema.index({ nombre: 1 });
+// Listado de colectivos activos
+colectivoSchema.index({ active: 1 });
 
 colectivoSchema.loadClass(Colectivo);
 

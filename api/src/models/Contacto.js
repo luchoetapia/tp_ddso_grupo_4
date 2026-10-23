@@ -6,4 +6,10 @@ class Contacto {
     }
 }
 
-module.exports = Contacto;
+const MedioDeContacto = {
+    EMAIL: "Email",
+    WHATSAPP: "WhatsApp",
+    SMS: "SMS"
+}
+
+module.exports = { Contacto, MedioDeContacto };

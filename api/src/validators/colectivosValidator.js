@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo } = require('./comunes.js');
-const { TipoColectivo } = require('../models/dominio.js');
+const { TipoColectivo } = require('../models/colectivo.js');
 
 const campos = {
     nombre: z.string({ error: "El nombre del colectivo es obligatorio" }).min(1, "El nombre del colectivo no puede estar vacío"),

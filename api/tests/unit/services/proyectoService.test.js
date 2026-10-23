@@ -3,33 +3,42 @@ jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
     findByTitulo: jest.fn(),
     findById: jest.fn(),
     findByIds: jest.fn(),
+    findByCondition: jest.fn(),
+    obtenerActivos: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
     updateMultiple: jest.fn(),
+    obtenerPerfiles: jest.fn(),
+    obtenerPerfil: jest.fn(),
+    agregarPerfil: jest.fn(),
+    modificarPerfil: jest.fn(),
+    eliminarPerfil: jest.fn(),
 }));
-jest.mock('../../../src/services/perfilService.js', () => ({
-    obtenerPorId: jest.fn(),
-    perfilesQueCumplenHabilidadesRequeridas: jest.fn(),
+jest.mock('../../../src/services/habilidadService.js', () => ({
+    obtenerPorListaId: jest.fn(),
 }));
 jest.mock('../../../src/services/colaboradorService.js', () => ({
-    obtenerPorCuentaGit: jest.fn(),
-    obtenerTodos: jest.fn(),
+    obtenerColaboradoresPotenciales: jest.fn(),
 }));
 
 const proyectoRepository = require('../../../src/repositories/proyectoRepository.js');
-const perfilService = require('../../../src/services/perfilService.js');
+const habilidadService = require('../../../src/services/habilidadService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const proyectoService = require('../../../src/services/proyectoService.js');
-const Perfil = require('../../../src/models/Perfil.js');
+const { Proyecto, Perfil } = require('../../../src/models/proyecto.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_PROY_2 = '507f1f77bcf86cd799439042';
 const ID_PERFIL = '507f1f77bcf86cd799439031';
-const ID_PERFIL_2 = '507f1f77bcf86cd799439032';
 const ID_HAB = '507f1f77bcf86cd799439021';
+const ID_HAB_2 = '507f1f77bcf86cd799439022';
 
-const perfil = (id, requeridas = []) => new Perfil(id, 'Perfil', requeridas, [], { cantHoras: 1, periodo: 'total' }, {});
+// Las habilidades de un perfil embebido llegan como ObjectId, que exponen _id
+const hab = (id) => ({ _id: id });
+const perfil = (requeridas = [], opcionales = []) =>
+    new Perfil(ID_PERFIL, 'Perfil', 'desc', requeridas.map(hab), opcionales.map(hab), { cantHoras: 1, periodo: 'total' }, {});
+const proyecto = (id, perfiles = []) => new Proyecto(id, 'Proyecto', 'desc', perfiles);
 
 const proyectoDoc = (extra = {}) => ({
     id: ID_PROY,
@@ -38,44 +47,20 @@ const proyectoDoc = (extra = {}) => ({
     descripcion: 'desc',
     perfiles: [],
     finalizado: false,
-    porcentajeFinalizado: 0,
-    enlaceSistema: null,
-    enlaceCodigoFuente: null,
-    logros: [],
     ...extra,
 });
 
+const perfilDatos = {
+    titulo: 'Frontend',
+    descripcion: 'desc perfil',
+    habilidadesRequeridas: [ID_HAB],
+    habilidadesOpcionales: [ID_HAB_2, ID_HAB],
+    tipoCompromiso: { cantHoras: 10, periodo: 'semanal' },
+    modalidadColaboracion: {},
+};
+
 describe('ProyectoService', () => {
     beforeEach(() => jest.resetAllMocks());
-
-    describe('toDTO', () => {
-        test('mapea los campos del proyecto', () => {
-            expect(proyectoService.toDTO(proyectoDoc())).toEqual({
-                id: ID_PROY,
-                titulo: 'Aula Virtual',
-                descripcion: 'desc',
-                perfiles: [],
-                finalizado: false,
-                porcentajeFinalizado: 0,
-                enlaceSistema: null,
-                enlaceCodigoFuente: null,
-                logros: [],
-            });
-        });
-
-        test('aplica valores por defecto y usa toDTO de los anidados', () => {
-            const dto = proyectoService.toDTO({
-                _id: ID_PROY,
-                perfiles: [{ toDTO: () => 'perfilDTO' }],
-                logros: [{ toDTO: () => 'logroDTO' }],
-            });
-
-            expect(dto.finalizado).toBe(false);
-            expect(dto.porcentajeFinalizado).toBe(0);
-            expect(dto.perfiles).toEqual(['perfilDTO']);
-            expect(dto.logros).toEqual(['logroDTO']);
-        });
-    });
 
     describe('obtenerTodos', () => {
         test('devuelve todos los proyectos', async () => {
@@ -86,20 +71,20 @@ describe('ProyectoService', () => {
     });
 
     describe('crear', () => {
-        const datos = { titulo: 'Aula Virtual', descripcion: 'desc', perfiles: [ID_PERFIL] };
+        const datos = { titulo: 'Aula Virtual', descripcion: 'desc', perfiles: [perfilDatos] };
 
-        test('crea el proyecto validando sus perfiles', async () => {
+        test('crea el proyecto embebiendo sus perfiles y validando sus habilidades', async () => {
             proyectoRepository.findByTitulo.mockResolvedValue(null);
-            perfilService.obtenerPorId.mockResolvedValue({ id: ID_PERFIL });
+            habilidadService.obtenerPorListaId.mockResolvedValue([]);
             proyectoRepository.save.mockResolvedValue(proyectoDoc());
 
             const resultado = await proyectoService.crear(datos);
 
-            expect(perfilService.obtenerPorId).toHaveBeenCalledWith(ID_PERFIL);
+            expect(habilidadService.obtenerPorListaId).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
             expect(proyectoRepository.save).toHaveBeenCalledWith({
                 titulo: 'Aula Virtual',
                 descripcion: 'desc',
-                perfiles: [ID_PERFIL],
+                perfiles: [perfilDatos],
                 enlaceSistema: null,
                 enlaceCodigoFuente: null,
             });
@@ -112,7 +97,7 @@ describe('ProyectoService', () => {
 
             await proyectoService.crear({ titulo: 'x', descripcion: 'y' });
 
-            expect(perfilService.obtenerPorId).not.toHaveBeenCalled();
+            expect(habilidadService.obtenerPorListaId).not.toHaveBeenCalled();
             expect(proyectoRepository.save).toHaveBeenCalledWith(expect.objectContaining({ perfiles: [] }));
         });
 
@@ -123,9 +108,9 @@ describe('ProyectoService', () => {
             expect(proyectoRepository.save).not.toHaveBeenCalled();
         });
 
-        test('no guarda si algún perfil no existe', async () => {
+        test('no guarda si alguna habilidad de los perfiles no existe', async () => {
             proyectoRepository.findByTitulo.mockResolvedValue(null);
-            perfilService.obtenerPorId.mockRejectedValue(new NotFoundError('Perfil no encontrado'));
+            habilidadService.obtenerPorListaId.mockRejectedValue(new NotFoundError('Habilidades no encontradas'));
 
             await expect(proyectoService.crear(datos)).rejects.toThrow(NotFoundError);
             expect(proyectoRepository.save).not.toHaveBeenCalled();
@@ -137,6 +122,14 @@ describe('ProyectoService', () => {
             proyectoRepository.findById.mockResolvedValue(proyectoDoc());
 
             await expect(proyectoService.obtenerPorId(ID_PROY)).resolves.toMatchObject({ id: ID_PROY });
+        });
+
+        test('pasa la proyección al repositorio', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+
+            await proyectoService.obtenerPorId(ID_PROY, { finalizado: 1 });
+
+            expect(proyectoRepository.findById).toHaveBeenCalledWith(ID_PROY, { finalizado: 1 });
         });
 
         test('lanza BadRequestError con id inválido', async () => {
@@ -176,7 +169,6 @@ describe('ProyectoService', () => {
 
     describe('finalizar', () => {
         test('marca el proyecto como finalizado', async () => {
-            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
             proyectoRepository.update.mockResolvedValue(proyectoDoc({ finalizado: true }));
 
             const resultado = await proyectoService.finalizar(ID_PROY);
@@ -186,9 +178,13 @@ describe('ProyectoService', () => {
         });
 
         test('lanza NotFoundError si el proyecto no existe', async () => {
-            proyectoRepository.findById.mockResolvedValue(null);
+            proyectoRepository.update.mockResolvedValue(null);
 
             await expect(proyectoService.finalizar(ID_PROY)).rejects.toThrow(NotFoundError);
+        });
+
+        test('lanza BadRequestError con id inválido', async () => {
+            await expect(proyectoService.finalizar('malo')).rejects.toThrow(BadRequestError);
             expect(proyectoRepository.update).not.toHaveBeenCalled();
         });
     });
@@ -205,11 +201,8 @@ describe('ProyectoService', () => {
     });
 
     describe('proyectosActivos', () => {
-        test('devuelve solo los proyectos no finalizados', async () => {
-            proyectoRepository.findAll.mockResolvedValue([
-                proyectoDoc({ id: 'activo' }),
-                proyectoDoc({ id: 'finalizado', finalizado: true }),
-            ]);
+        test('devuelve los proyectos activos del repositorio', async () => {
+            proyectoRepository.obtenerActivos.mockResolvedValue([proyectoDoc({ id: 'activo' })]);
 
             const resultado = await proyectoService.proyectosActivos();
 
@@ -217,63 +210,169 @@ describe('ProyectoService', () => {
         });
     });
 
-    describe('buscarPotencialesProyectos', () => {
-        test('devuelve proyectos activos con algún perfil que el colaborador cumple', async () => {
-            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ habilidades: [{ _id: ID_HAB }] });
-            perfilService.perfilesQueCumplenHabilidadesRequeridas.mockResolvedValue([{ id: ID_PERFIL }]);
-            proyectoRepository.findAll.mockResolvedValue([
-                proyectoDoc({ id: 'match', perfiles: [perfil(ID_PERFIL)] }),
-                proyectoDoc({ id: 'otroPerfil', perfiles: [perfil(ID_PERFIL_2)] }),
-                proyectoDoc({ id: 'finalizado', finalizado: true, perfiles: [perfil(ID_PERFIL)] }),
-            ]);
+    describe('puedeAplicar', () => {
+        test('es verdadero si cumple las habilidades de algún perfil', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyecto(ID_PROY, [perfil([ID_HAB])]));
 
-            const resultado = await proyectoService.buscarPotencialesProyectos('juanp');
-
-            expect(perfilService.perfilesQueCumplenHabilidadesRequeridas).toHaveBeenCalledWith([ID_HAB]);
-            expect(resultado.map(p => p.id)).toEqual(['match']);
+            await expect(proyectoService.puedeAplicar(ID_PROY, [ID_HAB])).resolves.toBe(true);
+            expect(proyectoRepository.findById).toHaveBeenCalledWith(ID_PROY, { finalizado: 1, perfiles: 1 });
         });
 
-        test('propaga NotFoundError si el colaborador no existe', async () => {
-            colaboradorService.obtenerPorCuentaGit.mockRejectedValue(new NotFoundError('Colaborador no encontrado'));
+        test('es falso si no cumple ningún perfil', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyecto(ID_PROY, [perfil([ID_HAB])]));
 
-            await expect(proyectoService.buscarPotencialesProyectos('nadie')).rejects.toThrow(NotFoundError);
+            await expect(proyectoService.puedeAplicar(ID_PROY, [ID_HAB_2])).resolves.toBe(false);
+        });
+
+        test('es falso si el proyecto está finalizado', async () => {
+            const finalizado = proyecto(ID_PROY, [perfil([ID_HAB])]);
+            finalizado.finalizado = true;
+            proyectoRepository.findById.mockResolvedValue(finalizado);
+
+            await expect(proyectoService.puedeAplicar(ID_PROY, [ID_HAB])).resolves.toBe(false);
+        });
+    });
+
+    describe('buscarPotencialesProyectos', () => {
+        test('busca proyectos activos con algún perfil cumplible', async () => {
+            proyectoRepository.findByCondition.mockResolvedValue([]);
+
+            await proyectoService.buscarPotencialesProyectos([ID_HAB]);
+
+            expect(proyectoRepository.findByCondition).toHaveBeenCalledWith({
+                finalizado: false,
+                perfiles: { $elemMatch: { habilidadesRequeridas: { $not: { $elemMatch: { $nin: [ID_HAB] } } } } },
+            });
+        });
+
+        test('ordena por perfiles cumplidos y desempata por habilidades cumplidas', async () => {
+            const unPerfil = proyecto('unPerfil', [perfil([ID_HAB])]);
+            const unPerfilConOpcional = proyecto('unPerfilConOpcional', [perfil([ID_HAB], [ID_HAB_2])]);
+            const dosPerfiles = proyecto('dosPerfiles', [perfil([ID_HAB]), perfil([])]);
+            proyectoRepository.findByCondition.mockResolvedValue([unPerfil, unPerfilConOpcional, dosPerfiles]);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB, ID_HAB_2]);
+
+            expect(resultado.map(p => p.id)).toEqual(['dosPerfiles', 'unPerfilConOpcional', 'unPerfil']);
         });
     });
 
     describe('perfilPerteneceAProyecto', () => {
         test('devuelve el perfil si pertenece al proyecto', async () => {
-            const p = perfil(ID_PERFIL);
-            proyectoRepository.findById.mockResolvedValue(proyectoDoc({ perfiles: [p] }));
+            const p = perfil();
+            proyectoRepository.obtenerPerfil.mockResolvedValue(p);
 
             await expect(proyectoService.perfilPerteneceAProyecto(ID_PROY, ID_PERFIL)).resolves.toBe(p);
+            expect(proyectoRepository.obtenerPerfil).toHaveBeenCalledWith(ID_PROY, ID_PERFIL);
         });
 
         test('lanza NotFoundError si el perfil no pertenece', async () => {
-            proyectoRepository.findById.mockResolvedValue(proyectoDoc({ perfiles: [perfil(ID_PERFIL_2)] }));
+            proyectoRepository.obtenerPerfil.mockResolvedValue(null);
 
             await expect(proyectoService.perfilPerteneceAProyecto(ID_PROY, ID_PERFIL)).rejects.toThrow(NotFoundError);
         });
     });
 
     describe('buscarPotencialesColaboradores', () => {
-        test('devuelve los colaboradores que cumplen las habilidades del perfil', async () => {
-            proyectoRepository.findById.mockResolvedValue(proyectoDoc({ perfiles: [perfil(ID_PERFIL, [ID_HAB])] }));
-            colaboradorService.obtenerTodos.mockResolvedValue([
-                { cuentaGit: 'cumple', habilidades: [{ _id: ID_HAB }] },
-                { cuentaGit: 'cumpleConId', habilidades: [ID_HAB] },
-                { cuentaGit: 'noCumple', habilidades: [] },
-            ]);
+        test('busca colaboradores para el perfil indicado', async () => {
+            const p = perfil([ID_HAB]);
+            proyectoRepository.obtenerPerfil.mockResolvedValue(p);
+            colaboradorService.obtenerColaboradoresPotenciales.mockResolvedValue([{ cuentaGit: 'juanp' }]);
 
             const resultado = await proyectoService.buscarPotencialesColaboradores(ID_PROY, ID_PERFIL);
 
-            expect(resultado.map(c => c.cuentaGit)).toEqual(['cumple', 'cumpleConId']);
+            expect(colaboradorService.obtenerColaboradoresPotenciales).toHaveBeenCalledWith([p]);
+            expect(resultado).toEqual([{ cuentaGit: 'juanp' }]);
         });
 
         test('lanza NotFoundError si el perfil no pertenece al proyecto', async () => {
-            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            proyectoRepository.obtenerPerfil.mockResolvedValue(null);
 
             await expect(proyectoService.buscarPotencialesColaboradores(ID_PROY, ID_PERFIL)).rejects.toThrow(NotFoundError);
-            expect(colaboradorService.obtenerTodos).not.toHaveBeenCalled();
+            expect(colaboradorService.obtenerColaboradoresPotenciales).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('obtenerPerfiles', () => {
+        test('devuelve los perfiles del proyecto', async () => {
+            proyectoRepository.obtenerPerfiles.mockResolvedValue([perfil()]);
+
+            await expect(proyectoService.obtenerPerfiles(ID_PROY)).resolves.toHaveLength(1);
+        });
+
+        test('lanza NotFoundError si el proyecto no existe', async () => {
+            proyectoRepository.obtenerPerfiles.mockResolvedValue(null);
+
+            await expect(proyectoService.obtenerPerfiles(ID_PROY)).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe('agregarPerfil', () => {
+        test('valida las habilidades y devuelve el perfil agregado', async () => {
+            const agregado = perfil();
+            proyectoRepository.agregarPerfil.mockResolvedValue({ perfiles: [perfil(), agregado] });
+
+            const resultado = await proyectoService.agregarPerfil(ID_PROY, perfilDatos);
+
+            expect(habilidadService.obtenerPorListaId).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
+            expect(proyectoRepository.agregarPerfil).toHaveBeenCalledWith(ID_PROY, perfilDatos);
+            expect(resultado).toBe(agregado);
+        });
+
+        test('no agrega si alguna habilidad no existe', async () => {
+            habilidadService.obtenerPorListaId.mockRejectedValue(new NotFoundError('Habilidades no encontradas'));
+
+            await expect(proyectoService.agregarPerfil(ID_PROY, perfilDatos)).rejects.toThrow(NotFoundError);
+            expect(proyectoRepository.agregarPerfil).not.toHaveBeenCalled();
+        });
+
+        test('lanza NotFoundError si el proyecto no existe', async () => {
+            proyectoRepository.agregarPerfil.mockResolvedValue(null);
+
+            await expect(proyectoService.agregarPerfil(ID_PROY, perfilDatos)).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe('modificarPerfil', () => {
+        test('devuelve el perfil modificado', async () => {
+            const modificado = perfil();
+            proyectoRepository.modificarPerfil.mockResolvedValue({ perfiles: { id: () => modificado } });
+
+            const resultado = await proyectoService.modificarPerfil(ID_PROY, ID_PERFIL, { titulo: 'Nuevo' });
+
+            expect(habilidadService.obtenerPorListaId).not.toHaveBeenCalled();
+            expect(proyectoRepository.modificarPerfil).toHaveBeenCalledWith(ID_PROY, ID_PERFIL, { titulo: 'Nuevo' });
+            expect(resultado).toBe(modificado);
+        });
+
+        test('valida las habilidades si se modifican', async () => {
+            proyectoRepository.modificarPerfil.mockResolvedValue({ perfiles: { id: () => perfil() } });
+
+            await proyectoService.modificarPerfil(ID_PROY, ID_PERFIL, { habilidadesRequeridas: [ID_HAB] });
+
+            expect(habilidadService.obtenerPorListaId).toHaveBeenCalledWith([ID_HAB]);
+        });
+
+        test('lanza NotFoundError si el proyecto o el perfil no existen', async () => {
+            proyectoRepository.modificarPerfil.mockResolvedValue(null);
+
+            await expect(proyectoService.modificarPerfil(ID_PROY, ID_PERFIL, { titulo: 'x' })).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe('eliminarPerfil', () => {
+        test('elimina el perfil del proyecto', async () => {
+            proyectoRepository.eliminarPerfil.mockResolvedValue(proyectoDoc());
+
+            await proyectoService.eliminarPerfil(ID_PROY, ID_PERFIL);
+
+            expect(proyectoRepository.eliminarPerfil).toHaveBeenCalledWith(ID_PROY, ID_PERFIL);
+        });
+
+        test('lanza NotFoundError si el proyecto o el perfil no existen', async () => {
+            proyectoRepository.eliminarPerfil.mockResolvedValue(null);
+
+            await expect(proyectoService.eliminarPerfil(ID_PROY, ID_PERFIL)).rejects.toThrow(NotFoundError);
         });
     });
 });

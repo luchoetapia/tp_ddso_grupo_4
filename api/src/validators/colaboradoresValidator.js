@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo } = require('./comunes.js');
-const MedioDeContacto = require('../models/Contacto/MedioDeContacto.js');
+const { MedioDeContacto } = require('../models/Contacto.js');
 
 const cuentaGit = z.string({ error: "La cuenta de Git es obligatoria" })
     .regex(/^[a-zA-Z0-9._-]{1,39}$/, "Cuenta de Git inválida");

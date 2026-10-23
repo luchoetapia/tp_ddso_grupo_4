@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Colaboracion } = require('../../models/dominio.js');
+const { Colaboracion } = require('../../models/colaboracion.js');
 
 const Schema = mongoose.Schema;
 
@@ -13,6 +13,9 @@ const colaboracionSchema = new Schema({
     timestamps: true,
     versionKey: false,
 });
+
+// findActiva: colaboración abierta de un colaborador en un proyecto
+colaboracionSchema.index({ colaborador: 1, proyecto: 1, fin: 1 });
 
 colaboracionSchema.loadClass(Colaboracion);
 

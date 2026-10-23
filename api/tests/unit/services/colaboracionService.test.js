@@ -14,7 +14,7 @@ const colaboracionRepository = require('../../../src/repositories/colaboracionRe
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colaboracionService = require('../../../src/services/colaboracionService.js');
-const Perfil = require('../../../src/models/Perfil.js');
+const { Perfil } = require('../../../src/models/proyecto.js');
 const { ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -22,7 +22,7 @@ const ID_COLAB = '507f1f77bcf86cd799439011';
 const ID_HAB = '507f1f77bcf86cd799439021';
 const ID_COLABORACION = '507f1f77bcf86cd799439061';
 
-const perfil = (requeridas) => new Perfil('perfil', 'Perfil', requeridas, [], {}, {});
+const perfil = (requeridas) => new Perfil('perfil', 'Perfil', 'desc', requeridas, [], {}, {});
 
 describe('ColaboracionService', () => {
     beforeEach(() => jest.resetAllMocks());

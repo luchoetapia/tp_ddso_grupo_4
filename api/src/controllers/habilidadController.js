@@ -1,5 +1,5 @@
 const habilidadService = require('../services/habilidadService.js');
-const { TipoHabilidad } = require('../models/dominio.js');
+const { TipoHabilidad } = require('../models/habilidad.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionHabilidad } = require('../validators/habilidadesValidator.js');
 

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Notificacion = require('../../models/Notificacion');
+const { Notificacion } = require('../../models/Notificacion');
 const Schema = mongoose.Schema;
 
 const notificacionSchema = new Schema({
@@ -19,6 +19,9 @@ const notificacionSchema = new Schema({
     timestamps: true,
     versionKey: false
 });
+
+// findByDestinatario ordenado por fecha descendente
+notificacionSchema.index({ destinatario: 1, fecha: -1 });
 
 notificacionSchema.loadClass(Notificacion);
 

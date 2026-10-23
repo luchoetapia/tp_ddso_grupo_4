@@ -6,8 +6,8 @@ const {
 const { validarCreacionColectivo, validarActualizacionColectivo, validarFiltrosColectivo } = require('../../../src/validators/colectivosValidator.js');
 const { validarCreacionHabilidad, validarActualizacionHabilidad } = require('../../../src/validators/habilidadesValidator.js');
 const { validarCreacionLogro, validarActualizacionLogro, validarIdsLogro } = require('../../../src/validators/logrosValidator.js');
-const { validarCreacionPerfil, validarActualizacionPerfil } = require('../../../src/validators/perfilesValidator.js');
 const {
+    validarCreacionPerfil, validarActualizacionPerfil,
     validarCreacionProyecto, validarActualizacionProyecto, validarFinalizacionProyecto, validarContactoColaborador,
     validarIdsPerfilDeProyecto,
 } = require('../../../src/validators/proyectosValidator.js');
@@ -158,7 +158,8 @@ describe('Validadores', () => {
 
     describe('perfil', () => {
         const valido = {
-            descripcion: 'Backend',
+            titulo: 'Backend',
+            descripcion: 'Backend Node.js',
             tipoCompromiso: { cantHoras: 10, periodo: 'semanal' },
             modalidadColaboracion: {},
         };
@@ -173,11 +174,12 @@ describe('Validadores', () => {
         });
 
         test.each([
-            ['sin tipoCompromiso', { descripcion: 'x', modalidadColaboracion: {} }],
+            ['sin título', { descripcion: 'x', tipoCompromiso: valido.tipoCompromiso, modalidadColaboracion: {} }],
+            ['sin tipoCompromiso', { titulo: 'x', descripcion: 'x', modalidadColaboracion: {} }],
             ['horas negativas', { ...valido, tipoCompromiso: { cantHoras: -1, periodo: 'semanal' } }],
             ['período inválido', { ...valido, tipoCompromiso: { cantHoras: 1, periodo: 'anual' } }],
             ['incentivo negativo', { ...valido, modalidadColaboracion: { incentivoEconomico: -5 } }],
-            ['sin modalidad', { descripcion: 'x', tipoCompromiso: valido.tipoCompromiso }],
+            ['sin modalidad', { titulo: 'x', descripcion: 'x', tipoCompromiso: valido.tipoCompromiso }],
         ])('creación rechaza: %s', (_, datos) => {
             expect(esValido(validarCreacionPerfil, datos)).toBe(false);
         });
@@ -193,6 +195,13 @@ describe('Validadores', () => {
 
         test('creación válida con defaults', () => {
             expect(validarCreacionProyecto.parse(valido)).toEqual({ ...valido, perfiles: [] });
+        });
+
+        test('creación exige perfiles completos, no ids', () => {
+            const perfil = { titulo: 'Backend', descripcion: 'x', tipoCompromiso: { cantHoras: 1, periodo: 'total' }, modalidadColaboracion: {} };
+
+            expect(esValido(validarCreacionProyecto, { ...valido, perfiles: [perfil] })).toBe(true);
+            expect(esValido(validarCreacionProyecto, { ...valido, perfiles: [ID] })).toBe(false);
         });
 
         test('creación valida URLs de enlaces', () => {
