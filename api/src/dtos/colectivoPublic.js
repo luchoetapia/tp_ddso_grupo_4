@@ -8,9 +8,11 @@ class ColectivoPublic {
         this.proyectos = proyectos.map(proyecto => {
             return {
                 id: proyecto.id,
-                nombre: proyecto.nombre,
+                titulo: proyecto.titulo,
                 finalizado: proyecto.finalizado
             }
         });
     }
 }
+
+module.exports = { ColectivoPublic }

@@ -7,8 +7,8 @@ class ColaboradorPublic {
         this.cuentaGit = cuentaGit
         this.habilidades = habilidades.map(habilidad => {
             return {
-                id: habilidad.nombre,
-                nombre: habilidad.nombre
+                id: habilidad.id,
+                titulo: habilidad.titulo
             }
         })
         this.presentacion = presentacion
