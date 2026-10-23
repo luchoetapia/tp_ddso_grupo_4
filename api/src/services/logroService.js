@@ -7,14 +7,6 @@ class LogroService{
         this.proyectoRepository = proyectoRepository;
     }
 
-    toDTO = (logro) => {
-        return {
-            id: logro.id || logro._id?.toString(),
-            titulo: logro.titulo,
-            descripcion: logro.descripcion
-        };
-    }
-
     obtenerTodos = async (idProyecto) => {
         if (!mongoose.isValidObjectId(idProyecto))
             throw new BadRequestError("Id de proyecto inválido");
@@ -23,7 +15,7 @@ class LogroService{
 
         if (logros === null)
             throw new NotFoundError("Proyecto no encontrado");
-        return logros.map(l => this.toDTO(l));
+        return logros;
     }
 
     obtenerPorId = async (idLogro, idProyecto) => {
@@ -37,7 +29,7 @@ class LogroService{
         const logro = logros.id(idLogro);
         if (!logro)
             throw new NotFoundError("Logro no encontrado");
-        return this.toDTO(logro);
+        return logro;
     }
 
     crear = async (idProyecto, datos) => {
@@ -49,7 +41,7 @@ class LogroService{
         if (proyecto === null)
             throw new NotFoundError("Proyecto no encontrado");
 
-        return this.toDTO(proyecto.logros.at(-1));
+        return proyecto.logros.at(-1);
     }
 
     actualizar = async (idLogro, idProyecto, cambios) => {
@@ -60,7 +52,7 @@ class LogroService{
         if (!proyecto)
             throw new NotFoundError("Logro o proyecto no encontrado");
 
-        return this.toDTO(proyecto.logros.id(idLogro));
+        return proyecto.logros.id(idLogro);
     }
 
     eliminar = async (idLogro, idProyecto) => {
