@@ -23,16 +23,6 @@ const logro = (id, titulo = 'MVP') => ({ id, titulo, descripcion: 'desc' });
 describe('LogroService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('toDTO', () => {
-        test('mapea los campos del logro', () => {
-            expect(logroService.toDTO(logro(ID_LOGRO))).toEqual({ id: ID_LOGRO, titulo: 'MVP', descripcion: 'desc' });
-        });
-
-        test('usa _id si no hay id', () => {
-            expect(logroService.toDTO({ _id: ID_LOGRO }).id).toBe(ID_LOGRO);
-        });
-    });
-
     describe('obtenerTodos', () => {
         test('devuelve los logros del proyecto', async () => {
             proyectoRepository.logrosDelProyecto.mockResolvedValue(listaDeLogros(logro(ID_LOGRO), logro(ID_LOGRO_2)));

@@ -41,36 +41,6 @@ const notificacionGuardada = (extra = {}) => ({
 describe('NotificacionService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('toDTO', () => {
-        test('expone la copia de proyecto y perfil guardada en la notificación', () => {
-            const fecha = new Date();
-
-            const dto = notificacionService.toDTO(notificacionGuardada({ destinatario: objectId(ID_COLAB), fecha }));
-
-            expect(dto).toEqual({
-                id: ID_NOTIF,
-                destinatario: ID_COLAB,
-                proyecto: { id: ID_PROY, titulo: 'Aula' },
-                perfil: { id: ID_PERFIL, descripcion: 'Backend' },
-                mensaje: 'Hola',
-                fecha,
-            });
-        });
-
-        test('usa _id si no hay id y resuelve el destinatario populado', () => {
-            const dto = notificacionService.toDTO(notificacionGuardada({
-                id: undefined,
-                _id: objectId(ID_NOTIF),
-                destinatario: { _id: objectId(ID_COLAB) },
-            }));
-
-            expect(dto.id).toBe(ID_NOTIF);
-            expect(dto.destinatario).toBe(ID_COLAB);
-            expect(dto.proyecto).toEqual({ id: ID_PROY, titulo: 'Aula' });
-            expect(dto.perfil).toEqual({ id: ID_PERFIL, descripcion: 'Backend' });
-        });
-    });
-
     describe('obtenerColaborador', () => {
         test('delega en colaboradorService', async () => {
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ id: ID_COLAB });
@@ -105,12 +75,7 @@ describe('NotificacionService', () => {
                 mensaje: 'Hola',
             });
             expect(notificador.enviar).toHaveBeenCalledWith(contactos[0], guardada);
-            expect(resultado).toMatchObject({
-                id: ID_NOTIF,
-                proyecto: { id: ID_PROY, titulo: 'Aula' },
-                perfil: { id: ID_PERFIL, descripcion: 'Backend' },
-                mensaje: 'Hola',
-            });
+            expect(resultado).toBe(guardada);
         });
 
         test('lanza ConflictError si el proyecto está finalizado', async () => {

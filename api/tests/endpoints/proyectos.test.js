@@ -40,6 +40,10 @@ const proyecto = {
     id: ID, titulo: 'Aula Virtual', descripcion: 'desc', perfiles: [], finalizado: false,
     porcentajeFinalizado: 0, enlaceSistema: null, enlaceCodigoFuente: null, logros: [],
 };
+const proyectoPublico = {
+    id: ID, nombre: 'Aula Virtual', descripcion: 'desc', finalizado: false, porcentajeFinalizado: 0,
+    habilidadesRequeridas: [], habilidadesOpcionales: [],
+};
 const logro = { id: ID_LOGRO, titulo: 'MVP', descripcion: 'Primera versión' };
 const ID_HAB = '507f1f77bcf86cd799439021';
 const perfil = {
@@ -67,7 +71,7 @@ describe('Endpoints /proyectos', () => {
             const res = await request(app).get('/proyectos');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([proyecto]);
+            expect(res.body).toEqual([proyectoPublico]);
         });
     });
 
@@ -79,7 +83,7 @@ describe('Endpoints /proyectos', () => {
                 .send({ titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org' });
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyecto });
+            expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyectoPublico });
             expect(proyectoService.crear).toHaveBeenCalledWith({
                 titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org', perfiles: [],
             });
@@ -115,7 +119,24 @@ describe('Endpoints /proyectos', () => {
             const res = await request(app).get(`/proyectos/${ID}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual(proyecto);
+            expect(res.body).toEqual(proyectoPublico);
+        });
+
+        test('junta las habilidades de los perfiles sin repetirlas', async () => {
+            const js = { id: ID_HAB, titulo: 'JavaScript' };
+            const figma = { id: '507f1f77bcf86cd799439022', titulo: 'Figma' };
+            proyectoService.obtenerPorId.mockResolvedValue({
+                ...proyecto,
+                perfiles: [
+                    { habilidadesRequeridas: [js], habilidadesOpcionales: [figma] },
+                    { habilidadesRequeridas: [js], habilidadesOpcionales: [] },
+                ],
+            });
+
+            const res = await request(app).get(`/proyectos/${ID}`);
+
+            expect(res.body.habilidadesRequeridas).toEqual([{ id: ID_HAB, nombre: 'JavaScript' }]);
+            expect(res.body.habilidadesOpcionales).toEqual([{ id: figma.id, nombre: 'Figma' }]);
         });
 
         test('responde 400 con un id inválido', async () => {
@@ -323,7 +344,7 @@ describe('Endpoints /proyectos', () => {
             const res = await request(app).get(url);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ cuentaGit: 'juanp' }]);
+            expect(res.body).toEqual([{ cuentaGit: 'juanp', habilidades: [] }]);
             expect(proyectoService.buscarPotencialesColaboradores).toHaveBeenCalledWith(ID, ID_PERFIL);
         });
 
@@ -487,7 +508,8 @@ describe('Endpoints /proyectos', () => {
 
             expect(res.status).toBe(201);
             expect(res.body.data).toHaveLength(1);
-            expect(res.body.data[0].perfiles.map(p => p.titulo)).toEqual(['Desarrollador Backend', 'Diseñador UX/UI']);
+            expect(res.body.data[0].nombre).toBe('Plataforma Educativa');
+            expect(proyectoService.crear.mock.calls[0][0].perfiles.map(p => p.titulo)).toEqual(['Desarrollador Backend', 'Diseñador UX/UI']);
         });
 
         test('responde 400 si algún elemento es inválido', async () => {

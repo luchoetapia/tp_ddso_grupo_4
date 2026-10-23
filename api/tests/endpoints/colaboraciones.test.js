@@ -14,6 +14,7 @@ const colaboracion = {
     id: '507f1f77bcf86cd799439061', colaborador: ID_COLAB, proyecto: ID_PROY,
     inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
 };
+const { esAnonima, ...colaboracionPublica } = colaboracion;
 
 describe('Endpoints /colaboraciones', () => {
     beforeAll(() => {
@@ -30,7 +31,7 @@ describe('Endpoints /colaboraciones', () => {
             const res = await request(app).get('/colaboraciones');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colaboracion]);
+            expect(res.body).toEqual([colaboracionPublica]);
         });
     });
 
@@ -43,7 +44,7 @@ describe('Endpoints /colaboraciones', () => {
             const res = await request(app).post('/colaboraciones').send(body);
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Colaboracion creada exitosamente', data: colaboracion });
+            expect(res.body).toEqual({ message: 'Colaboracion creada exitosamente', data: colaboracionPublica });
             expect(colaboracionService.crear).toHaveBeenCalledWith(body);
         });
 

@@ -34,23 +34,6 @@ const colectivoDoc = (extra = {}) => ({
 describe('ColectivoService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('toDTO', () => {
-        test('mapea los campos del colectivo', () => {
-            expect(colectivoService.toDTO(colectivoDoc())).toEqual(colectivoDoc());
-        });
-
-        test('usa toDTO de los proyectos si lo tienen y lista vacía por defecto', () => {
-            expect(colectivoService.toDTO(colectivoDoc({ proyectos: [{ toDTO: () => 'p' }, ID_PROY] })).proyectos)
-                .toEqual(['p', ID_PROY]);
-            expect(colectivoService.toDTO({ _id: ID_COLECTIVO }).proyectos).toEqual([]);
-        });
-
-        test('considera activo al colectivo si no tiene el campo', () => {
-            expect(colectivoService.toDTO({ _id: ID_COLECTIVO }).active).toBe(true);
-            expect(colectivoService.toDTO(colectivoDoc({ active: false })).active).toBe(false);
-        });
-    });
-
     describe('obtenerTodos', () => {
         test('devuelve todos los colectivos', async () => {
             colectivoRepository.findAll.mockResolvedValue([colectivoDoc()]);

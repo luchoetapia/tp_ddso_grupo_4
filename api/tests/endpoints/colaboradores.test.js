@@ -32,6 +32,7 @@ const colaborador = {
     id: ID, nombre: 'Juan', apellido: 'Pérez', nombreFantasia: 'Juani', cuentaGit: 'juanp',
     habilidades: [], pronombres: 'él', presentacion: 'Hola', deseaSerContactado: true,
 };
+const { pronombres, ...colaboradorPublico } = colaborador;
 
 describe('Endpoints /colaboradores', () => {
     beforeAll(() => {
@@ -48,7 +49,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).get('/colaboradores');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colaborador]);
+            expect(res.body).toEqual([colaboradorPublico]);
         });
     });
 
@@ -64,7 +65,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).post('/colaboradores').send(body);
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Colaboradora creada exitosamente', data: colaborador });
+            expect(res.body).toEqual({ message: 'Colaboradora creada exitosamente', data: colaboradorPublico });
             expect(colaboradorService.crear).toHaveBeenCalledWith({ ...body, deseaSerContactado: false });
         });
 
@@ -99,7 +100,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).get('/colaboradores/juanp');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual(colaborador);
+            expect(res.body).toEqual(colaboradorPublico);
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
         });
 
@@ -158,7 +159,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ id: ID_PROY }]);
+            expect(res.body).toEqual([{ id: ID_PROY, habilidadesRequeridas: [], habilidadesOpcionales: [] }]);
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
             expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
         });
