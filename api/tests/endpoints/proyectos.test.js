@@ -42,7 +42,7 @@ const proyecto = {
 };
 const proyectoPublico = {
     id: ID, nombre: 'Aula Virtual', descripcion: 'desc', finalizado: false, porcentajeFinalizado: 0,
-    habilidadesRequeridas: [], habilidadesOpcionales: [],
+    perfiles: [],
 };
 const logro = { id: ID_LOGRO, titulo: 'MVP', descripcion: 'Primera versión' };
 const ID_HAB = '507f1f77bcf86cd799439021';
@@ -122,21 +122,22 @@ describe('Endpoints /proyectos', () => {
             expect(res.body).toEqual(proyectoPublico);
         });
 
-        test('junta las habilidades de los perfiles sin repetirlas', async () => {
-            const js = { id: ID_HAB, titulo: 'JavaScript' };
-            const figma = { id: '507f1f77bcf86cd799439022', titulo: 'Figma' };
+        test('expone los perfiles con sus habilidades resumidas', async () => {
+            const js = { id: ID_HAB, titulo: 'JavaScript', tipoHabilidad: 'programacion' };
+            const figma = { id: '507f1f77bcf86cd799439022', titulo: 'Figma', tipoHabilidad: 'diseño' };
             proyectoService.obtenerPorId.mockResolvedValue({
                 ...proyecto,
-                perfiles: [
-                    { habilidadesRequeridas: [js], habilidadesOpcionales: [figma] },
-                    { habilidadesRequeridas: [js], habilidadesOpcionales: [] },
-                ],
+                perfiles: [{ ...perfil, id: ID_PERFIL, habilidadesRequeridas: [js], habilidadesOpcionales: [figma] }],
             });
 
             const res = await request(app).get(`/proyectos/${ID}`);
 
-            expect(res.body.habilidadesRequeridas).toEqual([{ id: ID_HAB, nombre: 'JavaScript' }]);
-            expect(res.body.habilidadesOpcionales).toEqual([{ id: figma.id, nombre: 'Figma' }]);
+            expect(res.body.perfiles).toEqual([{
+                id: ID_PERFIL,
+                titulo: 'Backend',
+                habilidadesRequeridas: [{ id: ID_HAB, nombre: 'JavaScript' }],
+                habilidadesOpcionales: [{ id: figma.id, nombre: 'Figma' }],
+            }]);
         });
 
         test('responde 400 con un id inválido', async () => {
@@ -509,7 +510,7 @@ describe('Endpoints /proyectos', () => {
             expect(res.status).toBe(201);
             expect(res.body.data).toHaveLength(1);
             expect(res.body.data[0].nombre).toBe('Plataforma Educativa');
-            expect(proyectoService.crear.mock.calls[0][0].perfiles.map(p => p.titulo)).toEqual(['Desarrollador Backend', 'Diseñador UX/UI']);
+            expect(res.body.data[0].perfiles.map(p => p.titulo)).toEqual(['Desarrollador Backend', 'Diseñador UX/UI']);
         });
 
         test('responde 400 si algún elemento es inválido', async () => {

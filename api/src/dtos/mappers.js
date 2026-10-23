@@ -31,23 +31,13 @@ const toColectivoPublic = (colectivo) => new ColectivoPublic(
     colectivo.proyectos ?? []
 )
 
-// Un proyecto no tiene habilidades propias: se juntan las de sus perfiles, sin repetir
-const habilidadesDePerfiles = (perfiles, campo) => {
-    const habilidades = perfiles.flatMap(perfil => perfil[campo] ?? []);
-    return [...new Map(habilidades.map(h => [h.id, h])).values()];
-}
-
-const toProyectoPublic = (proyecto) => {
-    const perfiles = proyecto.perfiles ?? [];
-    return new ProyectosPublic(
-        proyecto.id,
-        proyecto.titulo,
-        proyecto.descripcion,
-        proyecto.finalizado,
-        proyecto.porcentajeFinalizado,
-        habilidadesDePerfiles(perfiles, 'habilidadesRequeridas'),
-        habilidadesDePerfiles(perfiles, 'habilidadesOpcionales')
-    )
-}
+const toProyectoPublic = (proyecto) => new ProyectosPublic(
+    proyecto.id,
+    proyecto.titulo,
+    proyecto.descripcion,
+    proyecto.finalizado,
+    proyecto.porcentajeFinalizado,
+    proyecto.perfiles ?? []
+)
 
 module.exports = { toColaboracionPublic, toColaboradorPublic, toColectivoPublic, toProyectoPublic }

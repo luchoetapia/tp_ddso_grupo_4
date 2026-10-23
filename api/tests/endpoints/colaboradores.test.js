@@ -159,7 +159,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ id: ID_PROY, habilidadesRequeridas: [], habilidadesOpcionales: [] }]);
+            expect(res.body).toEqual([{ id: ID_PROY, perfiles: [] }]);
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
             expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
         });
