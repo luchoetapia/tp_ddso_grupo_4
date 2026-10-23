@@ -1,8 +1,11 @@
 const ProyectoModel = require('../database/schemas/proyectoSchema.js');
 
+// Habilidades de los perfiles embebidos, necesarias para armar la vista pública del proyecto y sus perfiles
+const HABILIDADES_PERFILES = ['perfiles.habilidadesRequeridas', 'perfiles.habilidadesOpcionales'];
+
 class ProyectoRepository {
     async findAll() {
-        return await ProyectoModel.find().lean();
+        return await ProyectoModel.find().populate(HABILIDADES_PERFILES);
     }
 
     async findByTitulo(titulo) {
@@ -10,7 +13,7 @@ class ProyectoRepository {
     }
 
     async findById(id, proyeccion) {
-        return await ProyectoModel.findById(id, proyeccion);
+        return await ProyectoModel.findById(id, proyeccion).populate(HABILIDADES_PERFILES);
     }
 
     async findByIds(ids) {
@@ -18,7 +21,7 @@ class ProyectoRepository {
     }
 
     async findByCondition(condition) {
-        return await ProyectoModel.find(condition);
+        return await ProyectoModel.find(condition).populate(HABILIDADES_PERFILES);
     }
 
     async obtenerActivos() {
@@ -28,11 +31,11 @@ class ProyectoRepository {
     async save(datos) {
         const proyecto = new ProyectoModel(datos);
         await proyecto.save();
-        return await proyecto.populate('perfiles');
+        return await proyecto.populate(HABILIDADES_PERFILES);
     }
 
     async update(id, cambios) {
-        return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true });
+        return await ProyectoModel.findByIdAndUpdate(id, cambios, { new: true }).populate(HABILIDADES_PERFILES);
     }
 
     async updateMultiple(ids, cambios) {
@@ -78,7 +81,7 @@ class ProyectoRepository {
             idProyecto,
             { $push: { perfiles: perfil } },
             { new: true }
-        );
+        ).populate(HABILIDADES_PERFILES);
     }
 
     async agregarMultiplesPerfiles(idProyecto, perfiles) {
@@ -90,7 +93,7 @@ class ProyectoRepository {
     }
 
     async obtenerPerfiles(idProyecto) {
-        const proyecto = await ProyectoModel.findById(idProyecto, { perfiles: 1, _id: 0 });
+        const proyecto = await ProyectoModel.findById(idProyecto, { perfiles: 1, _id: 0 }).populate(HABILIDADES_PERFILES);
         return proyecto ? proyecto.perfiles : null;
     }
 
@@ -98,7 +101,7 @@ class ProyectoRepository {
         const proyecto = await ProyectoModel.findOne(
             { _id: idProyecto, 'perfiles._id': idPerfil },
             { 'perfiles.$': 1 }
-        );
+        ).populate(HABILIDADES_PERFILES);
         return proyecto ? proyecto.perfiles[0] : null;
     }
 
@@ -112,7 +115,7 @@ class ProyectoRepository {
             { _id: idProyecto, 'perfiles._id': idPerfil },
             { $set: set },
             { new: true }
-        );
+        ).populate(HABILIDADES_PERFILES);
     }
 
     async eliminarPerfil(idProyecto, idPerfil) {

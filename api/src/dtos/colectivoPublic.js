@@ -1,7 +1,8 @@
 class ColectivoPublic {
-    constructor(id, nombre, descripcion, ubicacion, tipo, proyectos) {
+    constructor(id, nombre, active, descripcion, ubicacion, tipo, proyectos = []) {
         this.id = id;
         this.nombre = nombre;
+        this.active = active;
         this.descripcion = descripcion;
         this.ubicacion = ubicacion;
         this.tipo = tipo;
@@ -12,6 +13,18 @@ class ColectivoPublic {
                 finalizado: proyecto.finalizado
             }
         });
+    }
+
+    static desde(colectivo) {
+        return new ColectivoPublic(
+            colectivo.id,
+            colectivo.nombre,
+            colectivo.active,
+            colectivo.descripcion,
+            colectivo.ubicacion,
+            colectivo.tipo,
+            colectivo.proyectos
+        )
     }
 }
 

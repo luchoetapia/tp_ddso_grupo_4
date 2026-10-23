@@ -41,13 +41,13 @@ const proyecto = {
     porcentajeFinalizado: 0, enlaceSistema: null, enlaceCodigoFuente: null, logros: [],
 };
 const proyectoPublico = {
-    id: ID, nombre: 'Aula Virtual', descripcion: 'desc', finalizado: false, porcentajeFinalizado: 0,
+    id: ID, titulo: 'Aula Virtual', descripcion: 'desc', finalizado: false, porcentajeFinalizado: 0,
     perfiles: [],
 };
 const logro = { id: ID_LOGRO, titulo: 'MVP', descripcion: 'Primera versión' };
 const ID_HAB = '507f1f77bcf86cd799439021';
 const perfil = {
-    _id: ID_PERFIL,
+    id: ID_PERFIL,
     titulo: 'Backend',
     descripcion: 'Backend Node.js',
     habilidadesRequeridas: [],
@@ -73,6 +73,20 @@ describe('Endpoints /proyectos', () => {
             expect(res.status).toBe(200);
             expect(res.body).toEqual([proyectoPublico]);
         });
+
+        test('resume los perfiles de cada proyecto', async () => {
+            const js = { id: ID_HAB, titulo: 'JavaScript', tipoHabilidad: 'programacion' };
+            proyectoService.obtenerTodos.mockResolvedValue([{ ...proyecto, perfiles: [{ ...perfil, habilidadesRequeridas: [js] }] }]);
+
+            const res = await request(app).get('/proyectos');
+
+            expect(res.body[0].perfiles).toEqual([{
+                id: ID_PERFIL,
+                titulo: 'Backend',
+                habilidadesRequeridas: [{ id: ID_HAB, titulo: 'JavaScript' }],
+                habilidadesOpcionales: [],
+            }]);
+        });
     });
 
     describe('POST /proyectos', () => {
@@ -83,7 +97,7 @@ describe('Endpoints /proyectos', () => {
                 .send({ titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org' });
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyectoPublico });
+            expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyecto });
             expect(proyectoService.crear).toHaveBeenCalledWith({
                 titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org', perfiles: [],
             });
@@ -119,24 +133,23 @@ describe('Endpoints /proyectos', () => {
             const res = await request(app).get(`/proyectos/${ID}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual(proyectoPublico);
+            expect(res.body).toEqual(proyecto);
         });
 
-        test('expone los perfiles con sus habilidades resumidas', async () => {
+        test('expone el detalle de los perfiles con sus habilidades resumidas', async () => {
             const js = { id: ID_HAB, titulo: 'JavaScript', tipoHabilidad: 'programacion' };
             const figma = { id: '507f1f77bcf86cd799439022', titulo: 'Figma', tipoHabilidad: 'diseño' };
             proyectoService.obtenerPorId.mockResolvedValue({
                 ...proyecto,
-                perfiles: [{ ...perfil, id: ID_PERFIL, habilidadesRequeridas: [js], habilidadesOpcionales: [figma] }],
+                perfiles: [{ ...perfil, habilidadesRequeridas: [js], habilidadesOpcionales: [figma] }],
             });
 
             const res = await request(app).get(`/proyectos/${ID}`);
 
             expect(res.body.perfiles).toEqual([{
-                id: ID_PERFIL,
-                titulo: 'Backend',
-                habilidadesRequeridas: [{ id: ID_HAB, nombre: 'JavaScript' }],
-                habilidadesOpcionales: [{ id: figma.id, nombre: 'Figma' }],
+                ...perfil,
+                habilidadesRequeridas: [{ id: ID_HAB, titulo: 'JavaScript' }],
+                habilidadesOpcionales: [{ id: figma.id, titulo: 'Figma' }],
             }]);
         });
 
@@ -369,13 +382,17 @@ describe('Endpoints /proyectos', () => {
         const url = `/proyectos/${ID}/perfiles/${ID_PERFIL}/contactarColaborador`;
 
         test('contacta al colaborador', async () => {
-            const notificacion = { id: 'n1', mensaje: 'Hola' };
+            const notificacion = {
+                id: 'n1', destinatario: '507f1f77bcf86cd799439011', mensaje: 'Hola', fecha: '2024-01-01T00:00:00.000Z',
+                proyecto: { id: ID, titulo: 'Aula Virtual' }, perfil: { id: ID_PERFIL, descripcion: 'Backend Node.js' },
+            };
+            const { destinatario, ...notificacionPublica } = notificacion;
             notificacionService.contactarColaborador.mockResolvedValue(notificacion);
 
             const res = await request(app).post(url).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Colaborador contactado exitosamente', data: notificacion });
+            expect(res.body).toEqual({ message: 'Colaborador contactado exitosamente', data: notificacionPublica });
             expect(notificacionService.contactarColaborador).toHaveBeenCalledWith(ID, ID_PERFIL, 'juanp', 'Hola');
         });
 
@@ -509,7 +526,7 @@ describe('Endpoints /proyectos', () => {
 
             expect(res.status).toBe(201);
             expect(res.body.data).toHaveLength(1);
-            expect(res.body.data[0].nombre).toBe('Plataforma Educativa');
+            expect(res.body.data[0].titulo).toBe('Plataforma Educativa');
             expect(res.body.data[0].perfiles.map(p => p.titulo)).toEqual(['Desarrollador Backend', 'Diseñador UX/UI']);
         });
 

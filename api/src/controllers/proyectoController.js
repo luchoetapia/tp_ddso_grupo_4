@@ -5,7 +5,11 @@ const logroService = require('../services/logroService.js');
 const {Periodo} = require("../models/proyecto.js");
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionProyecto } = require('../validators/proyectosValidator.js');
-const { toColaboradorPublic, toProyectoPublic } = require('../dtos/mappers.js');
+const { ProyectoPublic, ProyectoDetalle } = require('../dtos/proyectoPublic.js');
+const { PerfilPublic } = require('../dtos/perfilPublic.js');
+const { LogroPublic } = require('../dtos/logroPublic.js');
+const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
+const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
 
 class ProyectoController {
     constructor() {
@@ -17,17 +21,17 @@ class ProyectoController {
 
     obtenerProyectos = async (req, res) => {
         const proyectos = await this.proyectoService.obtenerTodos();
-        res.status(200).json(proyectos.map(toProyectoPublic))
+        res.status(200).json(proyectos.map(ProyectoPublic.desde))
     }
 
     crearProyecto = async (req, res) => {
         const proyectoNuevo = await this.proyectoService.crear(req.body)
-        res.status(201).json({ message: 'Proyecto creado exitosamente', data: toProyectoPublic(proyectoNuevo) })
+        res.status(201).json({ message: 'Proyecto creado exitosamente', data: ProyectoDetalle.desde(proyectoNuevo) })
     }
 
     obtenerProyectoPorId = async (req, res) => {
         const proyecto = await this.proyectoService.obtenerPorId(req.params.id)
-        res.status(200).json(toProyectoPublic(proyecto))
+        res.status(200).json(ProyectoDetalle.desde(proyecto))
     }
 
     finalizarProyecto = async (req, res) => {
@@ -38,7 +42,7 @@ class ProyectoController {
 
         res.status(200).json({
             message: 'Proyecto finalizado exitosamente por el colectivo',
-            data: toProyectoPublic(proyecto)
+            data: ProyectoDetalle.desde(proyecto)
         });
     }
 
@@ -77,35 +81,35 @@ class ProyectoController {
             creados.push(await this.proyectoService.crear(resultado.data));
         }
 
-        return res.status(201).json({ status: "success", data: creados.map(toProyectoPublic) });
+        return res.status(201).json({ status: "success", data: creados.map(ProyectoPublic.desde) });
     }
 
     obtenerPerfilesDeUnProyecto = async (req, res) => {
         const { id } = req.params;
 
         const perfiles = await this.proyectoService.obtenerPerfiles(id);
-        res.status(200).json(perfiles);
+        res.status(200).json(perfiles.map(PerfilPublic.desde));
     }
 
     obtenerPerfilPorId = async (req, res) => {
         const { id, idPerfil } = req.params;
 
         const perfil = await this.proyectoService.perfilPerteneceAProyecto(id, idPerfil);
-        res.status(200).json(perfil);
+        res.status(200).json(PerfilPublic.desde(perfil));
     }
 
     crearPerfil = async (req, res) => {
         const { id } = req.params;
 
         const perfilCreado = await this.proyectoService.agregarPerfil(id, req.body);
-        res.status(201).json({ message: 'Perfil creado exitosamente', data: perfilCreado });
+        res.status(201).json({ message: 'Perfil creado exitosamente', data: PerfilPublic.desde(perfilCreado) });
     }
 
     actualizarPerfil = async (req, res) => {
         const { id, idPerfil } = req.params;
 
         const perfilActualizado = await this.proyectoService.modificarPerfil(id, idPerfil, req.body);
-        res.status(200).json({ message: 'Perfil actualizado exitosamente', data: perfilActualizado });
+        res.status(200).json({ message: 'Perfil actualizado exitosamente', data: PerfilPublic.desde(perfilActualizado) });
     }
 
     eliminarPerfil = async (req, res) => {
@@ -119,28 +123,28 @@ class ProyectoController {
         const { id, idPerfil } = req.params;
 
         const potencialesColaboradores = await this.proyectoService.buscarPotencialesColaboradores(id, idPerfil);
-        res.status(200).json(potencialesColaboradores.map(toColaboradorPublic));
+        res.status(200).json(potencialesColaboradores.map(ColaboradorPublic.desde));
     }
 
     contactarColaborador = async (req, res) => {
         const { id, idPerfil } = req.params;
         const { cuentaGit, mensaje } = req.body;
         const notificacion = await this.notificacionService.contactarColaborador(id, idPerfil, cuentaGit, mensaje);
-        res.status(201).json({ message: 'Colaborador contactado exitosamente', data: notificacion });
+        res.status(201).json({ message: 'Colaborador contactado exitosamente', data: NotificacionPublic.desde(notificacion) });
     }
     
     obtenerLogrosDeUnProyecto = async (req, res) => {
         const { id } = req.params;
 
         const logros = await this.logroService.obtenerTodos(id);
-        res.status(200).json(logros);
+        res.status(200).json(logros.map(LogroPublic.desde));
     }
 
     obtenerLogroPorId = async (req, res) => {
         const { id, idLogro } = req.params;
 
         const logro = await this.logroService.obtenerPorId(idLogro, id);
-        res.status(200).json(logro);
+        res.status(200).json(LogroPublic.desde(logro));
     }
 
     crearLogro = async (req, res) => {
@@ -148,7 +152,7 @@ class ProyectoController {
         const datos = req.body;
 
         const logroCreado = await this.logroService.crear(id, datos);
-        res.status(201).json({ message: 'Logro creado exitosamente', data: logroCreado });
+        res.status(201).json({ message: 'Logro creado exitosamente', data: LogroPublic.desde(logroCreado) });
     }
 
     actualizarLogro = async (req, res) => {
@@ -156,7 +160,7 @@ class ProyectoController {
         const cambios = req.body;
 
         const logroActualizado = await this.logroService.actualizar(idLogro, id, cambios);
-        res.status(200).json({ message: 'Logro actualizado exitosamente', data: logroActualizado });
+        res.status(200).json({ message: 'Logro actualizado exitosamente', data: LogroPublic.desde(logroActualizado) });
     }
 
     eliminarLogro = async (req, res) => {
