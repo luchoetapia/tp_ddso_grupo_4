@@ -2,6 +2,7 @@ const colectivoService = require('../services/colectivoService.js');
 const { TipoColectivo } = require('../models/colectivo.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
+const { toColectivoPublic } = require('../dtos/mappers.js');
 
 class ColectivoController {
     constructor() {
@@ -13,22 +14,22 @@ class ColectivoController {
 
         if (activos === 'true') {
             const colectivosActivos = await this.colectivoService.obtenerActivos();
-            return res.status(200).json(colectivosActivos);
+            return res.status(200).json(colectivosActivos.map(toColectivoPublic));
         }
 
         // Default: obtener todos los colectivos
         const colectivos = await this.colectivoService.obtenerTodos();
-        res.status(200).json(colectivos)
+        res.status(200).json(colectivos.map(toColectivoPublic))
     }
 
     crearColectivo = async (req, res) => {
         const colectivoNuevo = await this.colectivoService.crear(req.body)
-        res.status(201).json({ message: 'Colectivo creado exitosamente', data: colectivoNuevo })
+        res.status(201).json({ message: 'Colectivo creado exitosamente', data: toColectivoPublic(colectivoNuevo) })
     }
 
     obtenerColectivoPorId = async (req, res) => {
         const colectivo = await this.colectivoService.obtenerPorId(req.params.id)
-        res.status(200).json(colectivo)
+        res.status(200).json(toColectivoPublic(colectivo))
     }
 
     desactivarColectivo = async (req, res) => {
@@ -67,7 +68,7 @@ class ColectivoController {
             creados.push(await this.colectivoService.crear(resultado.data));
         }
 
-        return res.status(201).json({ status: "success", data: creados });
+        return res.status(201).json({ status: "success", data: creados.map(toColectivoPublic) });
     }
 }
 
