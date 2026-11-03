@@ -26,7 +26,7 @@ class Proyecto {
 }
 
 class Perfil {
-    constructor(id, titulo, descripcion, habilidadesRequeridas, habilidadesOpcionales, tipoCompromiso, modalidadColaboracion) {
+    constructor(id, titulo, descripcion, habilidadesRequeridas, habilidadesOpcionales, tipoCompromiso, modalidadColaboracion, busquedaAbierta = true, limiteColaboraciones = null, fechaFinBusqueda = null) {
         this.id = id,
         this.titulo = titulo,
         this.descripcion = descripcion,
