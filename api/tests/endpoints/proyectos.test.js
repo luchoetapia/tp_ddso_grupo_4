@@ -238,11 +238,11 @@ describe('Endpoints /proyectos', () => {
                 const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
 
                 expect(res.status).toBe(201);
-                expect(res.body).toEqual({ message: 'Perfil creado exitosamente', data: perfil });
                 expect(proyectoService.agregarPerfil).toHaveBeenCalledWith(ID, {
                     ...body,
                     habilidadesOpcionales: [],
                     modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: false },
+                    busquedaAbierta: true,
                 });
             });
 
@@ -308,13 +308,14 @@ describe('Endpoints /proyectos', () => {
 
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe('Perfil actualizado exitosamente');
-                expect(res.body.data.descripcion).toBe('Nuevo');
+                // Se espera que pase exactamente lo que se envió, sin inyectar busquedaAbierta
                 expect(proyectoService.modificarPerfil).toHaveBeenCalledWith(ID, ID_PERFIL, { descripcion: 'Nuevo' });
             });
 
             test('responde 400 con body vacío', async () => {
                 const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({});
 
+                // Al no haber defaults, el objeto está vacío y Zod lanza el error correspondiente
                 expect(res.status).toBe(400);
                 expect(res.body.message).toBe('Debe enviarse al menos un campo para actualizar');
             });

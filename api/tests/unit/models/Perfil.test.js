@@ -3,10 +3,10 @@ const { Perfil } = require('../../../src/models/proyecto.js');
 describe('Perfil', () => {
     const tipoCompromiso = { cantHoras: 10, periodo: 'semanal' };
     const modalidad = { incentivoEconomico: 0, posibleContratacion: false };
+    const fechaFin = new Date();
 
     test('asigna todos los atributos del constructor', () => {
-        const perfil = new Perfil(1, 'Backend', 'Desarrollo de la API', ['h1'], ['h2'], tipoCompromiso, modalidad);
-
+        const perfil = new Perfil(1, 'Backend', 'Desarrollo de la API', ['h1'], ['h2'], tipoCompromiso, modalidad, false, 3, fechaFin);
         expect(perfil).toEqual({
             id: 1,
             titulo: 'Backend',
@@ -15,6 +15,9 @@ describe('Perfil', () => {
             habilidadesOpcionales: ['h2'],
             tipoCompromiso,
             modalidadColaboracion: modalidad,
+            busquedaAbierta: false,
+            limiteColaboraciones: 3,
+            fechaFinBusqueda: fechaFin
         });
     });
 
