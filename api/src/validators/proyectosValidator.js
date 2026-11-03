@@ -42,9 +42,9 @@ const validarActualizacionPerfil = z.object({
         incentivoEconomico,
         posibleContratacion,
     }, { error: "La modalidad de colaboración debe ser un objeto" }).strict(),
-    busquedaAbierta: validarCreacionPerfil.shape.busquedaAbierta,
-    limiteColaboraciones: validarCreacionPerfil.shape.limiteColaboraciones,
-    fechaFinBusqueda: validarCreacionPerfil.shape.fechaFinBusqueda,
+    busquedaAbierta: z.boolean({ error: "busquedaAbierta debe ser un booleano" }),
+    limiteColaboraciones: z.number().int().positive("El límite de colaboraciones debe ser mayor a 0").nullable(),
+    fechaFinBusqueda: z.coerce.date({ error: "La fecha de fin de búsqueda es inválida" }).nullable(),
 }).partial().strict()
     .refine(...alMenosUnCampo);
 
