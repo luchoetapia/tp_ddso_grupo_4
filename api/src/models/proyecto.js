@@ -34,6 +34,9 @@ class Perfil {
         this.habilidadesOpcionales = habilidadesOpcionales,
         this.tipoCompromiso = tipoCompromiso,
         this.modalidadColaboracion = modalidadColaboracion
+        this.busquedaAbierta = busquedaAbierta
+        this.limiteColaboraciones = limiteColaboraciones
+        this.fechaFinBusqueda = fechaFinBusqueda
     }
 
     cantidadHabilidadesCumplidas(idsHabilidades) {

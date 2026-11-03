@@ -27,7 +27,10 @@ const perfilSchema = new Schema({
     habilidadesRequeridas: [{ type: Schema.Types.ObjectId, ref: 'Habilidad' }],
     habilidadesOpcionales: [{ type: Schema.Types.ObjectId, ref: 'Habilidad' }],
     tipoCompromiso: { type: tipoCompromisoSchema, required: true },
-    modalidadColaboracion: { type: modalidadColaboracionSchema, required: true }
+    modalidadColaboracion: { type: modalidadColaboracionSchema, required: true },
+    busquedaAbierta: { type: Boolean, default: true },
+    limiteColaboraciones: { type: Number, min: 1, default: null },
+    fechaFinBusqueda: { type: Date, default: null }
 }, { timestamps: true, versionKey: false, _id: true })
 
 

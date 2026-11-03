@@ -26,6 +26,9 @@ const validarCreacionPerfil = z.object({
         incentivoEconomico: incentivoEconomico.default(0),
         posibleContratacion: posibleContratacion.default(false),
     }, { error: "La modalidad de colaboración es obligatoria" }).strict(),
+    busquedaAbierta: z.boolean({ error: "busquedaAbierta debe ser un booleano" }).default(true),
+    limiteColaboraciones: z.number().int().positive("El límite de colaboraciones debe ser mayor a 0").optional().nullable(),
+    fechaFinBusqueda: z.coerce.date({ error: "La fecha de fin de búsqueda es inválida" }).optional().nullable(),
 }).strict();
 
 // Sin defaults: los campos que no se envían no deben pisar los valores guardados
@@ -39,6 +42,9 @@ const validarActualizacionPerfil = z.object({
         incentivoEconomico,
         posibleContratacion,
     }, { error: "La modalidad de colaboración debe ser un objeto" }).strict(),
+    busquedaAbierta: validarCreacionPerfil.shape.busquedaAbierta,
+    limiteColaboraciones: validarCreacionPerfil.shape.limiteColaboraciones,
+    fechaFinBusqueda: validarCreacionPerfil.shape.fechaFinBusqueda,
 }).partial().strict()
     .refine(...alMenosUnCampo);
 

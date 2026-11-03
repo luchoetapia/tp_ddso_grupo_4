@@ -59,13 +59,18 @@ class ProyectoController {
                             titulo: "Desarrollador Backend",
                             descripcion: "Desarrollador Backend Node.js / Express",
                             tipoCompromiso: { cantHoras: 10, periodo: Periodo.SEMANAL },
-                            modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: true }
+                            modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: true },
+                            busquedaAbierta: true,
+                            limiteColaboraciones: 2,
+                            fechaFinBusqueda: new Date(new Date().setMonth(new Date().getMonth() + 2))
                         },
                         {
                             titulo: "Diseñador UX/UI",
                             descripcion: "Diseñador UX/UI para Aplicaciones Web",
                             tipoCompromiso: { cantHoras: 20, periodo: Periodo.MENSUAL },
-                            modalidadColaboracion: { incentivoEconomico: 15000, posibleContratacion: false }
+                            modalidadColaboracion: { incentivoEconomico: 15000, posibleContratacion: false },
+                            busquedaAbierta: false,
+                            limiteColaboraciones: 1
                         }
                     ],
                 }
