@@ -28,10 +28,6 @@ class EstrategiaAceptacion {
     Boolean evaluarColaborador(Colaborador)
 }
 
-class EstrategiaAceptacionManager {
-    estrategiasAceptacion : List<EstrategiaAceptacion>
-}
-
 '(Fran): No estoy seguro que mas agregarle a los logros, consultar.
 class Logro {
 titulo: String
@@ -147,6 +143,4 @@ TipoCompromiso -r-> Periodo
 Habilidad -l-> TipoHabilidad
 
 Proyecto -> EstrategiaAceptacion
-
-EstrategiaAceptacionManager -d-> " * " EstrategiaAceptacion
 @enduml
