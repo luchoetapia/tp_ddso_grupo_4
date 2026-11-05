@@ -110,6 +110,7 @@ class ProyectoService {
             finalizado: false,
             perfiles: { 
                 $elemMatch: {
+                    busquedaAbierta: true,
                     habilidadesRequeridas: { $not: { $elemMatch: { $nin: idsHabilidades } } }
                 } 
             } 

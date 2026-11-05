@@ -241,7 +241,12 @@ describe('ProyectoService', () => {
 
             expect(proyectoRepository.findByCondition).toHaveBeenCalledWith({
                 finalizado: false,
-                perfiles: { $elemMatch: { habilidadesRequeridas: { $not: { $elemMatch: { $nin: [ID_HAB] } } } } },
+                perfiles: { 
+                    $elemMatch: { 
+                        busquedaAbierta: true, 
+                        habilidadesRequeridas: { $not: { $elemMatch: { $nin: [ID_HAB] } } } 
+                    } 
+                },
             });
         });
 

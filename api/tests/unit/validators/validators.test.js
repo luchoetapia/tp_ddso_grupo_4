@@ -170,6 +170,7 @@ describe('Validadores', () => {
                 habilidadesRequeridas: [],
                 habilidadesOpcionales: [],
                 modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: false },
+                busquedaAbierta: true,
             });
         });
 
@@ -187,6 +188,7 @@ describe('Validadores', () => {
         test('actualización no aplica defaults y exige al menos un campo', () => {
             expect(esValido(validarActualizacionPerfil, {})).toBe(false);
             expect(validarActualizacionPerfil.parse({ descripcion: 'Nuevo' })).toEqual({ descripcion: 'Nuevo' });
+            expect(validarActualizacionPerfil.parse({ limiteColaboraciones: 2 })).toEqual({ limiteColaboraciones: 2 });
         });
     });
 
