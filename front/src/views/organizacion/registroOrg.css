@@ -1,0 +1,91 @@
+.registro-org {
+  max-width: 480px;
+  margin: 40px auto;
+  padding: 32px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #333333;
+}
+
+.registro-org h1 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  color: #4a3f8c;
+}
+
+.registro-org .subtitulo {
+  margin: 0 0 24px 0;
+  color: #777777;
+  font-size: 14px;
+}
+
+.registro-org form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.registro-org label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.registro-org input,
+.registro-org select,
+.registro-org textarea {
+  padding: 10px;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: normal;
+}
+
+.registro-org input:focus,
+.registro-org select:focus,
+.registro-org textarea:focus {
+  outline: none;
+  border-color: #6c5ce7;
+}
+
+.registro-org textarea {
+  resize: vertical;
+}
+
+.registro-org button {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.registro-org button:hover {
+  background-color: #5a4bd1;
+}
+
+.registro-org .mensaje {
+  margin: 0;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.registro-org .exito {
+  background-color: #e3f9e5;
+  color: #1e7b34;
+}
+
+.registro-org .error {
+  background-color: #fde8e8;
+  color: #b42318;
+}
