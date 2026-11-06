@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import './registroOrg.css'
 
@@ -7,7 +9,7 @@ const RegistroOrg = () => {
   const [descripcionOrg, setDescripcionOrg] = useState('');
   const [ubicacionOrg, setUbicacionOrg] = useState('');
 
-  const registrarOrganizacion = async (e) => {
+  const registrarOrganizacion = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const res = await fetch('/api/colectivos', {
         method: 'POST',
@@ -22,17 +24,17 @@ const RegistroOrg = () => {
         }),
     });
     const data = await res.json();
-    
-    if (res.ok) 
+
+    if (res.ok)
         alert('Organización registrada exitosamente');
 
     else
         alert('Error al registrar la organización: ' + data.message);
-};
+    };
 
   return (
     <form onSubmit={registrarOrganizacion}>
-        <label>Nombre de la organización: 
+        <label>Nombre de la organización:
             <input type="text" name="nombreOrg" value={nombreOrg} onChange={(e) => setNombreOrg(e.target.value)} />
         </label>
         <label> Tipo de organización:
@@ -45,7 +47,7 @@ const RegistroOrg = () => {
             </select>
 
         </label>
-        <label>Descripción de la organización: 
+        <label>Descripción de la organización:
             <input type="text" name="descripcionOrg" value={descripcionOrg} onChange={(e) => setDescripcionOrg(e.target.value)} />
         </label>
         <label>Ubicación de la organización:
