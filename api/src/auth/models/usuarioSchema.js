@@ -9,10 +9,12 @@ const userSchema = new Schema({
     email: { type: String, required: true, unique: true },
     rol: {  type: String, enum: Object.values(roles), required: true },
     activo: { type: Boolean, default: true, required: true },
-    ultimoAcceso: { type: Date, default: new Date() },
+    ultimoAcceso: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 userSchema.loadClass(Usuario);
-userSchema.index({ username: 1, email: 1 }, { unique: true });
 
-module.exports = mongoose.model('User', userSchema);
+userSchema.index({ username: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+
+module.exports = mongoose.model('Usuario', userSchema);

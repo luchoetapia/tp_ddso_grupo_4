@@ -1,5 +1,3 @@
-const bcrypt = require('bcrypt');
-
 const roles = {
     ADMIN: 'admin',
     COLABORADOR: 'colaborador',
@@ -23,9 +21,6 @@ class Usuario {
 
     desactivar() { this.activo = false }
     activar() { this.activo = true}
-
-    encriptarPassword() { this.password = bcrypt.hashSync(this.password, 10) }
-    verificarPassword(password) { return bcrypt.compareSync(password, this.password); }
 }
 
 module.exports = { Usuario, roles };
