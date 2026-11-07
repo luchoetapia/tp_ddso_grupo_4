@@ -4,9 +4,22 @@ const { errorLogger } = require("./middlewares/errorLogger.js");
 const { errorHandler } = require("./middlewares/errorHandler.js");
 
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 const router = require("./routers/router.js");
+
+// CORS: orígenes válidos desde CORS_ORIGINS (separados por coma).
+// Si no está definida, se permiten todos los orígenes.
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+app.use(cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    credentials: true,
+}));
 
 // Logs de consultas exitosas
 app.use(requestLogger);
