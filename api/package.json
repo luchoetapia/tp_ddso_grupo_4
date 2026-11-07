@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/luchoetapia/tp_dsi_grupo_4#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
     "jest": "^30.5.2",
