@@ -7,10 +7,11 @@ const { Colaboracion } = require('../../../src/models/colaboracion.js');
 describe('Modelos de dominio', () => {
     describe('Colectivo', () => {
         test('asigna todos los atributos del constructor', () => {
-            const colectivo = new Colectivo(1, 'Nombre', 'Desc', 'CABA', TipoColectivo.ONG, ['p1']);
+            const colectivo = new Colectivo(1, 'usr1', 'Nombre', 'Desc', 'CABA', TipoColectivo.ONG, ['p1']);
 
             expect(colectivo).toEqual({
                 id: 1,
+                usuario: 'usr1',
                 nombre: 'Nombre',
                 descripcion: 'Desc',
                 ubicacion: 'CABA',
@@ -67,9 +68,10 @@ describe('Modelos de dominio', () => {
 
     describe('Colaborador', () => {
         test('asigna todos los atributos', () => {
-            const colaborador = new Colaborador('Juan', 'Pérez', 'Juani', 'juanp', ['h1'], 'él', 'Hola', true, ['c1']);
+            const colaborador = new Colaborador('usr2', 'Juan', 'Pérez', 'Juani', 'juanp', ['h1'], 'él', 'Hola', true, ['c1']);
 
             expect(colaborador).toEqual({
+                usuario: 'usr2',
                 nombre: 'Juan',
                 apellido: 'Pérez',
                 nombreFantasia: 'Juani',

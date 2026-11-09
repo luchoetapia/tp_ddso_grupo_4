@@ -19,6 +19,9 @@
       "src/**/*.js",
       "!src/database/mongoose.js",
       "!src/swagger.js"
+    ],
+    "setupFiles": [
+      "<rootDir>/tests/setupEnv.js"
     ]
   },
   "repository": {

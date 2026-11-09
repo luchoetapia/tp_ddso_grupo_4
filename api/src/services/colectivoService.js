@@ -3,6 +3,8 @@ const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const proyectoService = require('./proyectoService.js');
 
+const MENSAJE_USUARIO_CON_COLECTIVO = "El usuario ya tiene un colectivo asociado";
+
 class ColectivoService {
     constructor() {
         this.colectivoRepository = colectivoRepository;
@@ -19,22 +21,33 @@ class ColectivoService {
         return colectivos;
     }
 
-    crear = async (datos) => {
+    // idUsuario: usuario de la sesión que crea el colectivo (queda como su cuenta)
+    crear = async (datos, idUsuario) => {
         const existente = await this.colectivoRepository.findByNombre(datos.nombre)
         if (existente) {
             throw new ConflictError("Ya existe un colectivo con ese nombre")
         }
 
+        if (await this.colectivoRepository.findByUsuario(idUsuario)) {
+            throw new ConflictError(MENSAJE_USUARIO_CON_COLECTIVO)
+        }
+
         const proyectos = await this.proyectoService.obtenerPorListaId(datos.proyectos ?? [])
 
-        const creado = await this.colectivoRepository.save({
-            nombre: datos.nombre,
-            descripcion: datos.descripcion,
-            ubicacion: datos.ubicacion,
-            tipo: datos.tipo,
-            proyectos: proyectos.map(p => p._id)
-        })
-        return creado;
+        try {
+            return await this.colectivoRepository.save({
+                usuario: idUsuario,
+                nombre: datos.nombre,
+                descripcion: datos.descripcion,
+                ubicacion: datos.ubicacion,
+                tipo: datos.tipo,
+                proyectos: proyectos.map(p => p._id)
+            })
+        } catch (error) {
+            // El índice único de usuario cubre la carrera entre dos pedidos simultáneos
+            if (error.code === 11000 && error.keyPattern?.usuario) throw new ConflictError(MENSAJE_USUARIO_CON_COLECTIVO)
+            throw error
+        }
     }
 
     obtenerPorId = async (id) => {
