@@ -5,6 +5,7 @@ const { errorHandler } = require("./middlewares/errorHandler.js");
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const app = express();
 
 const router = require("./routers/router.js");
@@ -25,6 +26,8 @@ app.use(cors({
 app.use(requestLogger);
 
 app.use(express.json());
+// Parsea las cookies de la request en req.cookies (el access token viaja en la cookie httpOnly)
+app.use(cookieParser());
 app.use(router);
 
 // Rutas de checkeo
