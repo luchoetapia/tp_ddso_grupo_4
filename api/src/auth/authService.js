@@ -26,6 +26,17 @@ class AuthService {
         return usuario;
     }
 
+    // Devuelve el usuario si existe y está activo (se usa al renovar la sesión y en /auth/me).
+    // Si el usuario ya no existe o fue desactivado, la sesión deja de ser válida.
+    async obtenerUsuarioActivo(id) {
+        const usuario = await this.repositorio.obtenerUsuarioPorId(id);
+
+        if (!usuario) throw new UnauthorizedError('La sesión ya no es válida');
+        if (!usuario.activo) throw new ForbiddenError('El usuario está desactivado');
+
+        return usuario;
+    }
+
     async registrarUsuario(username, password, email, rol, activo = true) {
         const body = {
             username,

@@ -1,8 +1,23 @@
 const jwt = require('jsonwebtoken');
+const ms = require('ms');
 const { UnauthorizedError, ForbiddenError } =require('../errors/AppError');
 
-const ACCESS_EXPIRACION = '15m';
-const REFRESH_EXPIRACION = '7d';
+// Duraciones por defecto, configurables con JWT_ACCESS_TIME y JWT_REFRESH_TIME
+const ACCESS_TIME_DEFAULT = '15m';
+const REFRESH_TIME_DEFAULT = '7d';
+
+// Formato válido: número entero + unidad (s, m, h, d, w). Ej: "30s", "15m", "2h", "7d".
+// Se exige la unidad porque jsonwebtoken interpreta un número sin unidad como milisegundos.
+const FORMATO_DURACION = /^[1-9]\d*[smhdw]$/;
+
+const leerDuracion = (nombreVariable, valorPorDefecto) => {
+    const valor = (process.env[nombreVariable] ?? '').trim() || valorPorDefecto;
+
+    if (!FORMATO_DURACION.test(valor))
+        throw new Error(`${nombreVariable} inválida ("${valor}"): usar un número entero con unidad s, m, h, d o w (ej: 15m, 7d)`);
+
+    return valor;
+};
 
 class JwtUtils {
     constructor() {
@@ -11,6 +26,12 @@ class JwtUtils {
 
         if (!this.accessKey || !this.refreshKey)
             throw new Error('Faltan las variables de entorno JWT_ACCESS_KEY y/o JWT_REFRESH_KEY');
+
+        // Misma fuente para el vencimiento del JWT (expiresIn) y el maxAge de la cookie: no se pueden desfasar
+        this.accessTime = leerDuracion('JWT_ACCESS_TIME', ACCESS_TIME_DEFAULT);
+        this.refreshTime = leerDuracion('JWT_REFRESH_TIME', REFRESH_TIME_DEFAULT);
+        this.accessMs = ms(this.accessTime);
+        this.refreshMs = ms(this.refreshTime);
     }
 
     _payload(usuario) {
@@ -18,11 +39,11 @@ class JwtUtils {
     }
 
     generarAccessToken(usuario) {
-        return jwt.sign(this._payload(usuario), this.accessKey, { expiresIn: ACCESS_EXPIRACION });
+        return jwt.sign(this._payload(usuario), this.accessKey, { expiresIn: this.accessTime });
     }
 
     generarRefreshToken(usuario) {
-        return jwt.sign(this._payload(usuario), this.refreshKey, { expiresIn: REFRESH_EXPIRACION });
+        return jwt.sign(this._payload(usuario), this.refreshKey, { expiresIn: this.refreshTime });
     }
 
     generarTokens(usuario) {

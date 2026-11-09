@@ -8,6 +8,8 @@ class AuthRepository {
 
     obtenerUsuarioPorMail(email) { return Usuario.findOne({ email }); }
 
+    obtenerUsuarioPorId(id) { return Usuario.findById(id); }
+
     crearUsuario(body) { return Usuario.create(body) }
 
     desactivarUsuario(id) { return this._actualizar(id, { activo: false }) }
