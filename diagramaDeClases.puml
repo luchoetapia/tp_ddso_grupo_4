@@ -21,14 +21,23 @@ porcentajeFinalizado: Float
 enlaceSistema : String
 enlaceCodigoFuente : String
 logros: List<Logros>
-limiteColaboradores :Int
 estrategiaAceptacion : EstrategiaAceptacion
 }
 
-class EstrategiaAceptacion {
+interface EstrategiaAceptacion {
     nombre : String
 
-    Boolean evaluarColaborador(Colaborador)
+    evaluarPostulacion(Postulacion)
+    Boolean aplicableAProyecto(Proyecto)
+}
+
+class RevisionManual implements EstrategiaAceptacion {
+}
+
+class TodoSuma implements EstrategiaAceptacion {
+}
+
+class HastaLlenarVacantes implements EstrategiaAceptacion {
 }
 
 class Logro {
