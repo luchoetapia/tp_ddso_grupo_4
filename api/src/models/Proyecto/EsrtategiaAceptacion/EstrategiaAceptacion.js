@@ -4,7 +4,11 @@ class estrategiaAceptacionInterfaz {
         this.proyecto = proyecto;
     }
 
-    evaluarColaborador(colaborador, proyecto) {
+    evaluarPostulacion(postulacion) {
+        return;
+    }
+
+    aplicableAProyecto(proyecto) {
         return;
     }
 }

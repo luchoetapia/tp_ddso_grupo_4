@@ -1,4 +1,4 @@
-const Logro = require('../../../src/models/Logro.js');
+const { Logro } = require('../../../src/models/proyecto.js');
 
 describe('Logro', () => {
     test('asigna todos los atributos del constructor', () => {

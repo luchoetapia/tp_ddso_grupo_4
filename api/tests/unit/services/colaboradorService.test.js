@@ -33,39 +33,6 @@ const colaboradorDoc = (extra = {}) => ({
 describe('ColaboradorService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('toDTO', () => {
-        test('mapea los campos y no expone los contactos', () => {
-            const dto = colaboradorService.toDTO(colaboradorDoc({ contactos: [{ medio: 'Email', valor: 'x' }] }));
-
-            expect(dto).toEqual({
-                id: ID_COLAB,
-                nombre: 'Juan',
-                apellido: 'Pérez',
-                nombreFantasia: 'Juani',
-                cuentaGit: 'juanp',
-                habilidades: [],
-                pronombres: 'él',
-                presentacion: 'Hola',
-                deseaSerContactado: true,
-            });
-        });
-
-        test('usa toDTO de las habilidades si lo tienen', () => {
-            const habilidad = { toDTO: () => ({ id: ID_HAB, titulo: 'JS' }) };
-
-            const dto = colaboradorService.toDTO(colaboradorDoc({ habilidades: [habilidad, 'idPlano'] }));
-
-            expect(dto.habilidades).toEqual([{ id: ID_HAB, titulo: 'JS' }, 'idPlano']);
-        });
-
-        test('deseaSerContactado es false y habilidades vacías por defecto', () => {
-            const dto = colaboradorService.toDTO({ _id: ID_COLAB });
-
-            expect(dto.deseaSerContactado).toBe(false);
-            expect(dto.habilidades).toEqual([]);
-        });
-    });
-
     describe('obtenerTodos', () => {
         test('devuelve todos los colaboradores como DTO', async () => {
             colaboradorRepository.findAll.mockResolvedValue([colaboradorDoc()]);

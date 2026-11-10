@@ -10,20 +10,9 @@ class ColaboracionService {
         this.colaboradorService = colaboradorService;
     }
 
-    toDTO = (colaboracion) => {
-        return {
-            id: colaboracion.id || colaboracion._id?.toString(),
-            colaborador: colaboracion.colaborador ? (colaboracion.colaborador.toDTO ? colaboracion.colaborador.toDTO() : colaboracion.colaborador) : null,
-            proyecto: colaboracion.proyecto ? (colaboracion.proyecto.toDTO ? colaboracion.proyecto.toDTO() : colaboracion.proyecto) : null,
-            inicio: colaboracion.inicio,
-            fin: colaboracion.fin,
-            esAnonima: colaboracion.esAnonima
-        };
-    }
-
     obtenerTodas = async () => {
         const colaboraciones = await this.colaboracionRepository.findAll();
-        return colaboraciones.map(this.toDTO);
+        return colaboraciones;
     }
 
     obtenerPorProyectoId = async (idProyecto) => {
@@ -54,7 +43,7 @@ class ColaboracionService {
             proyecto: proyecto.id,
             inicio: new Date()
         });
-        return this.toDTO(creada);
+        return creada;
     }
 }
 

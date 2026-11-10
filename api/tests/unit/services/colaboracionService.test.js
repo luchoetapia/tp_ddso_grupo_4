@@ -14,7 +14,7 @@ const colaboracionRepository = require('../../../src/repositories/colaboracionRe
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colaboracionService = require('../../../src/services/colaboracionService.js');
-const Perfil = require('../../../src/models/Perfil.js');
+const { Perfil } = require('../../../src/models/proyecto.js');
 const { ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -22,30 +22,10 @@ const ID_COLAB = '507f1f77bcf86cd799439011';
 const ID_HAB = '507f1f77bcf86cd799439021';
 const ID_COLABORACION = '507f1f77bcf86cd799439061';
 
-const perfil = (requeridas) => new Perfil('perfil', 'Perfil', requeridas, [], {}, {});
+const perfil = (requeridas) => new Perfil('perfil', 'Perfil', 'desc', requeridas, [], {}, {});
 
 describe('ColaboracionService', () => {
     beforeEach(() => jest.resetAllMocks());
-
-    describe('toDTO', () => {
-        test('mapea los campos de la colaboración', () => {
-            const inicio = new Date();
-
-            expect(colaboracionService.toDTO({
-                id: ID_COLABORACION, colaborador: ID_COLAB, proyecto: ID_PROY, inicio, fin: null, esAnonima: false,
-            })).toEqual({
-                id: ID_COLABORACION, colaborador: ID_COLAB, proyecto: ID_PROY, inicio, fin: null, esAnonima: false,
-            });
-        });
-
-        test('usa toDTO de colaborador/proyecto si existe y null si faltan', () => {
-            const dto = colaboracionService.toDTO({ _id: ID_COLABORACION, colaborador: { toDTO: () => 'colab' } });
-
-            expect(dto.id).toBe(ID_COLABORACION);
-            expect(dto.colaborador).toBe('colab');
-            expect(dto.proyecto).toBeNull();
-        });
-    });
 
     describe('obtenerTodas', () => {
         test('devuelve todas las colaboraciones', async () => {

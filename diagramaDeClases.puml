@@ -1,12 +1,15 @@
 @startuml
+skinparam nodesep 40
+skinparam ranksep 50
 
+' Nivel 1: Organización
 class Colectivo {
-id : Int
-nombre : String
-descripcion : String
-ubicacion : String
-tipo: TipoColectivo
-proyectos : List<Proyecto>
+  id : Int
+  nombre : String
+  descripcion : String
+  ubicacion : String
+  tipo: TipoColectivo
+  proyectos : List
 }
 
 class Proyecto {
@@ -28,119 +31,174 @@ class EstrategiaAceptacion {
     Boolean evaluarColaborador(Colaborador)
 }
 
-'(Fran): No estoy seguro que mas agregarle a los logros, consultar.
 class Logro {
-titulo: String
-descripcion: String
+  titulo: String
+  descripcion: String
 }
 
+' Nivel 3: Perfil
 class Perfil {
-descripcion : String
-habilidadesRequeridas : List<Habilidad>
-habilidadesOpcionales : List<Habilidad>
-tipoCompromiso : TipoCompromiso
-modalidadColaboracion : ModalidadColaboracion
+  descripcion : String
+  habilidadesRequeridas : List
+  habilidadesOpcionales : List
+  tipoCompromiso : TipoCompromiso
+  modalidadColaboracion : ModalidadColaboracion
+  busquedaAbierta : Boolean
+  limiteColaboraciones : Int
+  fechaFinBusqueda : LocalDate
 }
 
 class TipoCompromiso {
-cantHoras : Int
-periodo : Periodo
-}
-
-' Cambio el id a String, porque el enunciado dice que es el titulo normalizado.
-class Habilidad {
-id : String
-titulo : String
-tipoHabilidad : TipoHabilidad
-descripcion : String
-}
-
-class Colaborador{
-id: Int
-nombre : String
-apellido : String
-nombreFantasia : String
-cuentaGit : String
-habilidades : List<Habilidad>
-pronombres : List<String>
-presentacion : String
-deseaSerContactado : Boolean
-notificaciones : List<Notificacion>
-contactos : List<Contacto>
-}
-
-class Contacto {
-medio : MedioDeContacto
-valor : String
-}
-
-enum MedioDeContacto {
-EMAIL,
-WHATSAPP,
-SMS
-}
-
-class Notificacion {
-proyecto: Proyecto
-mensaje: String
-fecha: LocalDate
-}
-
-class Colaboracion {
-proyecto : Proyecto
-colaborador : Colaborador
-esAnonima : Boolean
+  cantHoras : Int
+  periodo : Periodo
 }
 
 class ModalidadColaboracion {
-incentivoEconomico : Float
-posibleContratacion : boolean
+  incentivoEconomico : Float
+  posibleContratacion : boolean
 }
 
+' Nivel 4: Flujos (Postulación y Colaboración)
+class Postulacion {
+  fecha : LocalDate
+  estado : EstadoPostulacion
+  mensaje : String
+  colaborador : Colaborador
+  perfil : Perfil
+}
+
+class Colaboracion {
+  proyecto : Proyecto
+  colaborador : Colaborador
+  perfil : Perfil
+  esAnonima : Boolean
+  fechaInicio : LocalDate
+  fechaFin : LocalDate
+  activa : Boolean
+}
+
+' Nivel 5: Actor y Habilidad
+class Colaborador {
+  id: Int
+  nombre : String
+  apellido : String
+  nombreFantasia : String
+  cuentaGit : String
+  habilidades : List
+  pronombres : List
+  presentacion : String
+  deseaSerContactado : Boolean
+  notificaciones : List
+  contactos : List
+}
+
+class Habilidad {
+  id : String
+  titulo : String
+  tipoHabilidad : TipoHabilidad
+  descripcion : String
+}
+
+class Contacto {
+  medio : MedioDeContacto
+  valor : String
+}
+
+class Notificacion {
+  proyecto: Proyecto
+  mensaje: String
+  fecha: LocalDate
+}
+
+
 enum TipoColectivo {
-FUNDACION, 
-ASOCIACION_BARRIAL, 
-ONG, 
-ASAMBLEA,
+  FUNDACION
+  ASOCIACION_BARRIAL
+  ONG
+  ASAMBLEA
+}
+
+enum EstadoPostulacion {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
 }
 
 enum Periodo {
-MENSUAL, 
-SEMANAL, 
-TOTAL,
+  MENSUAL
+  SEMANAL
+  TOTAL
+}
+
+enum MedioDeContacto {
+  EMAIL
+  WHATSAPP
+  SMS
 }
 
 enum TipoHabilidad {
-PROGRAMACION, 
-DISEÑO, 
-MARKETING, 
-COMUNICACION, 
-GESTION_PROYECTOS, 
-COLABORACION,
+  PROGRAMACION
+  DISEÑO
+  MARKETING
+  COMUNICACION
+  GESTION_PROYECTOS
+  COLABORACION
 }
 
-Colectivo -d-> " * " Proyecto
-Colectivo -l-> TipoColectivo
+together {
+  class Colectivo
+  enum TipoColectivo
+}
 
-Proyecto -d-> " * " Perfil
-Proyecto -d-> " * " Logro
+together {
+  class Proyecto
+  class Logro
+}
 
-Perfil -r-> TipoCompromiso
-Perfil -l-> ModalidadColaboracion
-Perfil -u-> " * " Habilidad
+together {
+  class Perfil
+  class TipoCompromiso
+  class ModalidadColaboracion
+}
 
-Colaboracion -d-> Proyecto
+together {
+  class Postulacion
+  class Colaboracion
+  enum EstadoPostulacion
+}
 
-Colaborador <-u- Colaboracion
-Colaborador -d-> " * " Habilidad
-Colaborador -l-> " * " Contacto
-Colaborador -> " * " Notificacion
+together {
+  class Colaborador
+  class Habilidad
+  class Contacto
+  class Notificacion
+}
 
-Contacto -u-> MedioDeContacto
+Colectivo -r-> TipoColectivo
+Colectivo --> " * " Proyecto
+Proyecto --> " * " Logro
+Proyecto --> " * " Perfil
 
-TipoCompromiso -r-> Periodo
+Perfil --> TipoCompromiso
+Perfil --> ModalidadColaboracion
+Perfil --> " * " Habilidad
 
-Habilidad -l-> TipoHabilidad
+Postulacion --> Perfil
+Postulacion --> EstadoPostulacion
+Postulacion --> Colaborador
+
+Colaboracion --> Proyecto
+Colaboracion --> Perfil
+Colaboracion --> Colaborador
+
+Colaborador --> " * " Habilidad
+Colaborador --> " * " Contacto
+Colaborador --> " * " Notificacion
+
+Habilidad --> TipoHabilidad
+Contacto --> MedioDeContacto
+
+TipoCompromiso -d-> Periodo
 
 Proyecto -> EstrategiaAceptacion
 @enduml

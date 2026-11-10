@@ -1,7 +1,8 @@
 const colectivoService = require('../services/colectivoService.js');
-const { TipoColectivo } = require('../models/dominio.js');
+const { TipoColectivo } = require('../models/colectivo.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
+const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
 
 class ColectivoController {
     constructor() {
@@ -9,18 +10,33 @@ class ColectivoController {
     }
 
     obtenerColectivos = async (req, res) => {
+        const { activos } = req.query;
+
+        if (activos === 'true') {
+            const colectivosActivos = await this.colectivoService.obtenerActivos();
+            return res.status(200).json(colectivosActivos.map(ColectivoPublic.desde));
+        }
+
+        // Default: obtener todos los colectivos
         const colectivos = await this.colectivoService.obtenerTodos();
-        res.status(200).json(colectivos)
+        res.status(200).json(colectivos.map(ColectivoPublic.desde))
     }
 
     crearColectivo = async (req, res) => {
         const colectivoNuevo = await this.colectivoService.crear(req.body)
-        res.status(201).json({ message: 'Colectivo creado exitosamente', data: colectivoNuevo })
+        res.status(201).json({ message: 'Colectivo creado exitosamente', data: ColectivoPublic.desde(colectivoNuevo) })
     }
 
     obtenerColectivoPorId = async (req, res) => {
         const colectivo = await this.colectivoService.obtenerPorId(req.params.id)
-        res.status(200).json(colectivo)
+        res.status(200).json(ColectivoPublic.desde(colectivo))
+    }
+
+    desactivarColectivo = async (req, res) => {
+        const { id } = req.params;
+        const resultado = await this.colectivoService.desactivarColectivo(id);
+        
+        res.status(200).json(resultado);
     }
 
     llenarDatosPrueba = async (req, res) => {
@@ -52,7 +68,7 @@ class ColectivoController {
             creados.push(await this.colectivoService.crear(resultado.data));
         }
 
-        return res.status(201).json({ status: "success", data: creados });
+        return res.status(201).json({ status: "success", data: creados.map(ColectivoPublic.desde) });
     }
 }
 

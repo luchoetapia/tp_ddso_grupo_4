@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo } = require('./comunes.js');
-const { TipoColectivo } = require('../models/dominio.js');
+const { TipoColectivo } = require('../models/colectivo.js');
 
 const campos = {
     nombre: z.string({ error: "El nombre del colectivo es obligatorio" }).min(1, "El nombre del colectivo no puede estar vacío"),
@@ -25,8 +25,13 @@ const validarIdsColectivo = z.object({
     id: objectId("Id de colectivo inválido"),
 });
 
+const validarFiltrosColectivo = z.object({
+    activos: z.enum(['true', 'false'], { error: "El filtro 'activos' debe ser 'true' o 'false'" }).optional(),
+});
+
 module.exports = {
     validarCreacionColectivo,
     validarActualizacionColectivo,
     validarIdsColectivo,
+    validarFiltrosColectivo
 };

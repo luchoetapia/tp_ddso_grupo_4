@@ -10,6 +10,8 @@ const {
     validarContactoColaborador,
     validarIdsProyecto,
     validarIdsPerfilDeProyecto,
+    validarCreacionPerfil,
+    validarActualizacionPerfil,
 } = require('../validators/proyectosValidator.js')
 
 const proyectoController = new ProyectoController()
@@ -36,6 +38,32 @@ router.route('/:id/finalizar')
         validar(validarIdsProyecto, 'params'),
         validar(validarFinalizacionProyecto, 'body'),
         (req, res) => proyectoController.finalizarProyecto(req, res)
+    );
+
+router.route('/:id/perfiles')
+    .get(
+        validar(validarIdsProyecto, 'params'),
+        (req, res) => proyectoController.obtenerPerfilesDeUnProyecto(req, res)
+    )
+    .post(
+        validar(validarIdsProyecto, 'params'),
+        validar(validarCreacionPerfil, 'body'),
+        (req, res) => proyectoController.crearPerfil(req, res)
+    );
+
+router.route('/:id/perfiles/:idPerfil')
+    .get(
+        validar(validarIdsPerfilDeProyecto, 'params'),
+        (req, res) => proyectoController.obtenerPerfilPorId(req, res)
+    )
+    .put(
+        validar(validarIdsPerfilDeProyecto, 'params'),
+        validar(validarActualizacionPerfil, 'body'),
+        (req, res) => proyectoController.actualizarPerfil(req, res)
+    )
+    .delete(
+        validar(validarIdsPerfilDeProyecto, 'params'),
+        (req, res) => proyectoController.eliminarPerfil(req, res)
     );
 
 router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')

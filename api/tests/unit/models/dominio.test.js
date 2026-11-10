@@ -1,7 +1,8 @@
-const {
-    Colectivo, Proyecto, TipoCompromiso, Habilidad, Colaborador, Colaboracion,
-    ModalidadColaboracion, Periodo, TipoColectivo, TipoHabilidad
-} = require('../../../src/models/dominio.js');
+const { Colectivo, TipoColectivo } = require('../../../src/models/colectivo.js');
+const { Proyecto, TipoCompromiso, ModalidadColaboracion, Periodo } = require('../../../src/models/proyecto.js');
+const { Habilidad, TipoHabilidad } = require('../../../src/models/habilidad.js');
+const { Colaborador } = require('../../../src/models/colaborador.js');
+const { Colaboracion } = require('../../../src/models/colaboracion.js');
 
 describe('Modelos de dominio', () => {
     describe('Colectivo', () => {
@@ -112,7 +113,7 @@ describe('Modelos de dominio', () => {
             const modalidad = new ModalidadColaboracion(1000, true);
 
             expect(modalidad.incentivoEconomico).toBe(1000);
-            expect(modalidad.posibleContractacion).toBe(true);
+            expect(modalidad.posibleContratacion).toBe(true);
         });
     });
 

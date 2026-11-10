@@ -25,12 +25,11 @@ class Proyecto {
     }
 }
 
-//TODO: Agregar Estrategia Aceptacion y Manager
 class TipoCompromiso {
     constructor(cantHoras, periodo) {
         this.cantHoras = cantHoras
         this.periodo = periodo
-    }
+    }   
 }
 
 class Habilidad {
@@ -55,6 +54,8 @@ class Colaborador {
         this.contactos = contactos
     }
 }
+
+
 
 class Colaboracion {
     constructor(colaborador, proyecto, esAnonima = false, inicio, fin = null) {

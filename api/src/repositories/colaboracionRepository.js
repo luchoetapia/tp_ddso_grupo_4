@@ -1,12 +1,18 @@
 const ColaboracionModel = require('../database/schemas/colaboracionSchema');
 
+// Datos mínimos del colaborador y del proyecto para la vista pública de la colaboración
+const REFERENCIAS = [
+    { path: 'colaborador', select: 'cuentaGit' },
+    { path: 'proyecto', select: 'titulo' }
+];
+
 class ColaboracionRepository {
     constructor() {
         this.model = ColaboracionModel;
     }
 
     async findAll() {
-        return await ColaboracionModel.find();
+        return await ColaboracionModel.find().populate(REFERENCIAS);
     }
 
     async findActiva(idColaborador, idProyecto) {
@@ -18,7 +24,8 @@ class ColaboracionRepository {
     }
 
     async save(colaboracion) {
-        return await ColaboracionModel.create(colaboracion);
+        const creada = await ColaboracionModel.create(colaboracion);
+        return await creada.populate(REFERENCIAS);
     }
 }
 

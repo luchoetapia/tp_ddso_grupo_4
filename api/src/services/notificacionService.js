@@ -1,6 +1,6 @@
 const notificacionRepository = require('../repositories/notificacionRepository.js');
 const proyectoService = require('./proyectoService.js');
-const { obtenerNotificador } = require('../models/Contacto/Notificadores.js');
+const { obtenerNotificador } = require('../models/Notificacion.js');
 const { ConflictError } = require('../errors/AppError.js');
 const colaboradorService = require('./colaboradorService.js');
 
@@ -10,21 +10,6 @@ class NotificacionService {
         this.proyectoService = proyectoService;
         this.obtenerNotificador = obtenerNotificador;
         this.colaboradorService = colaboradorService;
-    }
-
-    toDTO = (notificacion) => {
-        return {
-            id: notificacion.id || notificacion._id?.toString(),
-            destinatario: (notificacion.destinatario?._id ?? notificacion.destinatario)?.toString(),
-            proyecto: notificacion.proyecto?.titulo
-                ? { id: notificacion.proyecto._id.toString(), titulo: notificacion.proyecto.titulo }
-                : notificacion.proyecto,
-            perfil: notificacion.perfil?.descripcion
-                ? { id: notificacion.perfil._id.toString(), descripcion: notificacion.perfil.descripcion }
-                : notificacion.perfil,
-            mensaje: notificacion.mensaje,
-            fecha: notificacion.fecha
-        };
     }
 
     obtenerColaborador = async (cuentaGit) => {
@@ -37,7 +22,7 @@ class NotificacionService {
             throw new ConflictError("El proyecto está finalizado");
         }
 
-        await this.proyectoService.perfilPerteneceAProyecto(idProyecto, idPerfil);
+        const perfil = await this.proyectoService.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
         const colaborador = await this.obtenerColaborador(cuentaGit);
         if (!colaborador.deseaSerContactado) {
@@ -46,15 +31,15 @@ class NotificacionService {
 
         const notificacion = await this.notificacionRepository.save({
             destinatario: colaborador.id,
-            proyecto: proyecto.id,
-            perfil: idPerfil,
+            proyecto: { id: proyecto.id, titulo: proyecto.titulo },
+            perfil: { id: perfil.id, descripcion: perfil.descripcion },
             mensaje
         });
 
         const contactos = await this.colaboradorService.obtenerContactos(cuentaGit);
         this.replicarPorMediosDeContacto(contactos, notificacion);
 
-        return this.toDTO(notificacion);
+        return notificacion;
     }
 
     replicarPorMediosDeContacto = (contactos = [], notificacion) => {
@@ -69,7 +54,7 @@ class NotificacionService {
     obtenerPorColaborador = async (cuentaGit) => {
         const colaborador = await this.obtenerColaborador(cuentaGit);
         const notificaciones = await this.notificacionRepository.findByDestinatario(colaborador.id);
-        return notificaciones.map(this.toDTO);
+        return notificaciones;
     }
 }
 

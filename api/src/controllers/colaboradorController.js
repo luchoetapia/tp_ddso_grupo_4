@@ -5,6 +5,10 @@ const proyectoService = require('../services/proyectoService.js');
 const notificacionService = require('../services/notificacionService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColaborador } = require('../validators/colaboradoresValidator.js');
+const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
+const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
+const { ProyectoPublic } = require('../dtos/proyectoPublic.js');
+const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
 
 class ColaboradorController {
     constructor() {
@@ -17,17 +21,17 @@ class ColaboradorController {
 
     obtenerColaboradores = async (req, res) => {
         const colaboradores = await this.colaboradorService.obtenerTodos();
-        res.status(200).json(colaboradores)
+        res.status(200).json(colaboradores.map(ColaboradorPublic.desde))
     }
 
     crearColaborador = async (req, res) => {
         const colaboradoraNueva = await this.colaboradorService.crear(req.body)
-        res.status(201).json({ message: 'Colaboradora creada exitosamente', data: colaboradoraNueva })
+        res.status(201).json({ message: 'Colaboradora creada exitosamente', data: ColaboradorPublic.desde(colaboradoraNueva) })
     }
 
     obtenerColaboradorPorCuentaGit = async (req, res) => {
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit)
-        res.status(200).json(colaborador)
+        res.status(200).json(ColaboradorPublic.desde(colaborador))
     }
 
     anotarColaboradorAProyecto = async (req, res) => {
@@ -37,7 +41,7 @@ class ColaboradorController {
             idColaborador: colaborador.id,
             idProyecto
         })
-        res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion })
+        res.status(200).json({ message: 'Colaboradora anotada al proyecto exitosamente', data: ColaboracionPublic.desde(colaboracion) })
     }
 
     llenarDatosPrueba = async (req, res) => {
@@ -76,17 +80,20 @@ class ColaboradorController {
             creados.push(await this.colaboradorService.crear(resultado.data));
         }
 
-        return res.status(201).json({ status: "success", data: creados });
+        return res.status(201).json({ status: "success", data: creados.map(ColaboradorPublic.desde) });
     }
 
     buscarPotencialesProyectos = async (req, res) => {
-        const proyectos = await this.proyectoService.buscarPotencialesProyectos(req.params.cuentaGit);
-        res.status(200).json(proyectos);
+        const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit);
+        const idsHabilidades = colaborador.habilidades.map(h => (h._id ?? h).toString());
+
+        const proyectos = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades);
+        res.status(200).json(proyectos.map(ProyectoPublic.desde));
     }
 
     obtenerNotificaciones = async (req, res) => {
         const notificaciones = await this.notificacionService.obtenerPorColaborador(req.params.cuentaGit);
-        res.status(200).json(notificaciones);
+        res.status(200).json(notificaciones.map(NotificacionPublic.desde));
     }
 }
 

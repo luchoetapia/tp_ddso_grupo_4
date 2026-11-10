@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const { Colaborador } = require('../../models/dominio')
-const MedioDeContacto = require('../../models/Contacto/MedioDeContacto');
+const { Colaborador } = require('../../models/colaborador')
+const { MedioDeContacto } = require('../../models/Contacto');
 const Schema = mongoose.Schema;
 
 const valuesMedioDeContacto = Object.values(MedioDeContacto);
@@ -24,6 +24,11 @@ const colaboradorSchema = new Schema({
     timestamps: true,
     versionKey: false
 });
+
+// findByCuentaGit
+colaboradorSchema.index({ cuentaGit: 1 });
+// Búsqueda de colaboradores potenciales por habilidades ($all)
+colaboradorSchema.index({ habilidades: 1 });
 
 colaboradorSchema.loadClass(Colaborador);
 

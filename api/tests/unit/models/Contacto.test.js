@@ -1,8 +1,7 @@
-const Contacto = require('../../../src/models/Contacto/Contacto.js');
-const MedioDeContacto = require('../../../src/models/Contacto/MedioDeContacto.js');
+const { Contacto, MedioDeContacto } = require('../../../src/models/Contacto.js');
 const {
     NotificadorEmail, NotificadorWhatsapp, NotificadorSms, obtenerNotificador
-} = require('../../../src/models/Contacto/Notificadores.js');
+} = require('../../../src/models/Notificacion.js');
 
 describe('Contacto', () => {
     test('asigna todos los atributos del constructor', () => {

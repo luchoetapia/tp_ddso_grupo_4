@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo } = require('./comunes.js');
-const { TipoHabilidad } = require('../models/dominio.js');
+const { TipoHabilidad } = require('../models/habilidad.js');
 
 const validarCreacionHabilidad = z.object({
     titulo: z.string({ error: "El título de la habilidad es obligatorio" }).min(1, "El título de la habilidad no puede estar vacío"),
