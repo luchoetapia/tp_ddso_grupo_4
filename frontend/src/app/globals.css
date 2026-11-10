@@ -1,20 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f6f4ee;
-  --card: #fff;
-  --sf: #ecebe2;
-  --border: #e0ddd0;
-  --text: #16302b;
-  --muted: #566661;
-  --accent: #0f766e;
-  --on-accent: #fff;
-  --error: #b42318;
-  --highlight: #f4b740;
+    --bg: #f6f4ee;
+    --card: #fff;
+    --sf: #ecebe2;
+    --border: #e0ddd0;
+    --text: #16302b;
+    --muted: #566661;
+    --accent: #0f766e;
+    --on-accent: #fff;
+    --error: #b42318;
+    --highlight: #f4b740;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+    :root:not([data-theme="light"]) {
+        --bg: #0e1a18;
+        --card: #132421;
+        --sf: #162824;
+        --border: #26403a;
+        --text: #eaf3f0;
+        --muted: #a3b8b2;
+        --accent: #5eead4;
+        --on-accent: #06201c;
+        --error: #fda4af;
+    }
+}
+
+:root[data-theme="dark"] {
     --bg: #0e1a18;
     --card: #132421;
     --sf: #162824;
@@ -24,88 +37,75 @@
     --accent: #5eead4;
     --on-accent: #06201c;
     --error: #fda4af;
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #0e1a18;
-  --card: #132421;
-  --sf: #162824;
-  --border: #26403a;
-  --text: #eaf3f0;
-  --muted: #a3b8b2;
-  --accent: #5eead4;
-  --on-accent: #06201c;
-  --error: #fda4af;
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-card: var(--card);
-  --color-sf: var(--sf);
-  --color-border: var(--border);
-  --color-text: var(--text);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-on-accent: var(--on-accent);
-  --color-error: var(--error);
-  --color-highlight: var(--highlight);
-  --font-display: var(--font-fraunces), Georgia, serif;
-  --font-sans: var(--font-jakarta), Inter, Arial, sans-serif;
+    --color-bg: var(--bg);
+    --color-card: var(--card);
+    --color-sf: var(--sf);
+    --color-border: var(--border);
+    --color-text: var(--text);
+    --color-muted: var(--muted);
+    --color-accent: var(--accent);
+    --color-on-accent: var(--on-accent);
+    --color-error: var(--error);
+    --color-highlight: var(--highlight);
+    --font-display: var(--font-fraunces), Georgia, serif;
+    --font-sans: var(--font-jakarta), Inter, Arial, sans-serif;
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-jakarta), Inter, Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.45;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-jakarta), Inter, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
 }
 
 h1,
 h2 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 700;
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-weight: 700;
 }
 
 h1 {
-  font-size: clamp(30px, 5vw, 46px);
-  line-height: 1.1;
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.1;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .main {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 24px 20px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
 .card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 1px 2px rgba(22, 48, 43, 0.06);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 1px 2px rgba(22, 48, 43, 0.06);
 }
 
 .eyebrow {
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
 }
 
 .muted {
-  color: var(--muted);
+    color: var(--muted);
 }
