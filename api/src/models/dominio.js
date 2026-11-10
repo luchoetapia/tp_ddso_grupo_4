@@ -1,3 +1,6 @@
+const { obtenerEstrategia } = require('./Proyecto/EsrtategiaAceptacion/index.js');
+const { ConflictError } = require('../errors/AppError.js');
+
 class Colectivo {
     constructor(id, nombre, descripcion, ubicacion, tipo, proyectos) {
         this.id = id
@@ -7,29 +10,6 @@ class Colectivo {
         this.tipo = tipo
         this.proyectos = proyectos
     }
-}
-
-class Proyecto {
-    constructor(id, titulo, descripcion, perfiles, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = [], limite, estrategiaAceptacion) {
-        this.id = id
-        this.titulo = titulo
-        this.descripcion = descripcion
-        this.perfiles = perfiles
-        this.finalizado = finalizado
-        this.porcentajeFinalizado = porcentajeFinalizado
-        this.enlaceSistema = enlaceSistema
-        this.enlaceCodigoFuente = enlaceCodigoFuente
-        this.logros = logros
-        this.limiteColaboradores = limite
-        this.estrategiaAceptacion = estrategiaAceptacion
-    }
-}
-
-class TipoCompromiso {
-    constructor(cantHoras, periodo) {
-        this.cantHoras = cantHoras
-        this.periodo = periodo
-    }   
 }
 
 class Habilidad {
@@ -58,27 +38,28 @@ class Colaborador {
 
 
 class Colaboracion {
-    constructor(colaborador, proyecto, esAnonima = false, inicio, fin = null) {
+    constructor(colaborador, proyecto, esAnonima = false, inicio, fin = null, perfil = null) {
         this.colaborador = colaborador;
         this.proyecto = proyecto;
         this.esAnonima = esAnonima;
         this.inicio = inicio;
         this.fin = fin || null;
+        this.perfil = perfil;
     }
 }
 
-class ModalidadColaboracion {
-    constructor(incentivoEconomico, posibleContractacion) {
-        this.incentivoEconomico = incentivoEconomico
-        this.posibleContractacion = posibleContractacion
-    } 
-}
+// class ModalidadColaboracion {
+//     constructor(incentivoEconomico, posibleContractacion) {
+//         this.incentivoEconomico = incentivoEconomico
+//         this.posibleContractacion = posibleContractacion
+//     } 
+// }
 
-const Periodo = {
-    SEMANAL: 'semanal',
-    MENSUAL: 'mensual',
-    TOTAL: 'total'
-}
+// const Periodo = {
+//     SEMANAL: 'semanal',
+//     MENSUAL: 'mensual',
+//     TOTAL: 'total'
+// }
 
 const TipoColectivo = {
     FUNDACION: 'fundacion',
@@ -97,6 +78,6 @@ const TipoHabilidad = {
 }
 
 module.exports = {
-    Colectivo, Proyecto, TipoCompromiso, Habilidad, Colaborador, Colaboracion,
+    Colectivo, Habilidad, Colaborador, Colaboracion,
     ModalidadColaboracion, Periodo, TipoColectivo, TipoHabilidad
 }

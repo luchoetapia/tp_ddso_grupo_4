@@ -34,8 +34,6 @@ const perfilSchema = new Schema({
 }, { timestamps: true, versionKey: false, _id: true })
 
 
-//TODO: Agregar estrategia Schema.
-
 const proyectoSchema = new Schema({
     titulo: { type: String, required: true },
     descripcion: { type: String, required: true },
@@ -44,7 +42,8 @@ const proyectoSchema = new Schema({
     porcentajeFinalizado: { type: Number, default: 0, min: 0, max: 100 },
     enlaceSistema: { type: String, default: null },
     enlaceCodigoFuente: { type: String, default: null },
-    logros: {type: [logroSchema], default: []}
+    logros: {type: [logroSchema], default: []},
+    estrategiaAceptacion: { type: String, default: 'RevisionManual' }
 }, {timestamps: true, versionKey: false});
 
 

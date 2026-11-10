@@ -1,5 +1,8 @@
+const { obtenerEstrategia } = require('./Proyecto/EsrtategiaAceptacion/index.js');
+const { ConflictError } = require('../errors/AppError.js');
+
 class Proyecto {
-    constructor(id, titulo, descripcion, perfiles, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = [], limiteColaboradores) {
+    constructor(id, titulo, descripcion, perfiles, finalizado = false, porcentajeFinalizado = 0, enlaceSistema, enlaceCodigoFuente, logros = [], estrategiaAceptacion = null) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
@@ -9,7 +12,43 @@ class Proyecto {
         this.enlaceSistema = enlaceSistema
         this.enlaceCodigoFuente = enlaceCodigoFuente
         this.logros = logros
-        this.limiteColaboradores = limiteColaboradores
+
+        if (estrategiaAceptacion) {
+            this.asignarEstrategia(estrategiaAceptacion)
+        }
+    }
+
+    tieneLimite() {
+        return Boolean(this.perfiles && this.perfiles.length > 0 && this.perfiles.some(perfil => perfil.limiteColaboraciones != null && perfil.limiteColaboraciones > 0))
+    }
+
+    asignarEstrategia(estrategia) {
+        const estrategiaInstancia = obtenerEstrategia(estrategia, this)
+        if (!estrategiaInstancia.aplicableAProyecto(this)) {
+            throw new ConflictError(`La estrategia '${estrategiaInstancia.nombre}' no es aplicable a este proyecto`)
+        }
+        this.estrategiaAceptacion = estrategiaInstancia
+        estrategiaInstancia.proyecto = this
+        return this.estrategiaAceptacion
+    }
+
+    asignarPostulacion(postulacion) {
+        postulacion.proyecto = this
+        if (!this.postulaciones) {
+            this.postulaciones = []
+        }
+        const yaExiste = this.postulaciones.some(p => (p.id ?? p._id ?? p) === (postulacion.id ?? postulacion._id ?? postulacion))
+        if (!yaExiste) {
+            this.postulaciones.push(postulacion)
+        }
+        return this.evaluarPostulacion(postulacion)
+    }
+
+    evaluarPostulacion(postulacion) {
+        if (!this.estrategiaAceptacion) {
+            this.asignarEstrategia('RevisionManual')
+        }
+        return this.estrategiaAceptacion.evaluarPostulacion(postulacion)
     }
 
     obtenerPerfilesQueCumplen(idsHabilidades) {
