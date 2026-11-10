@@ -1,23 +1,18 @@
-const estrategiaAceptacionInterfaz = require('../EstrategiaAceptacion.js');
-const colaboracionService = require('../../../../services/colaboracionService.js');
-const EstadoPostulacion = require('../../Postulaciones/EstadoPostulacion.js');
+const EstrategiaAceptacion = require('../EstrategiaAceptacion.js');
 
-class RevisionManual extends estrategiaAceptacionInterfaz {
-    constructor(proyecto) {
-        super("HastaLlenarVacantes", proyecto)
+class RevisionManual extends EstrategiaAceptacion {
+    constructor(proyecto = null) {
+        super("RevisionManual", proyecto);
     }
 
     evaluarPostulacion(postulacion) {
-        //TODO
+        // En revisión manual no se realizan aceptaciones ni rechazos automáticos
+        return postulacion;
     }
 
     aplicableAProyecto(proyecto) {
-        if(!this.proyecto.limiteColaboradores == 0 && !this.proyecto.limiteColaboradores == null) {
-            return ;
-        }
-
         return true;
     }
 }
 
-module.exports = HastaLlenarVacantes;
+module.exports = RevisionManual;

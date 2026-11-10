@@ -1,21 +1,24 @@
-const estrategiaAceptacionInterfaz = require('../EstrategiaAceptacion.js');
+const EstrategiaAceptacion = require('../EstrategiaAceptacion.js');
 const EstadoPostulacion = require('../../Postulaciones/EstadoPostulacion.js');
 
-class TodoSuma extends estrategiaAceptacionInterfaz {
-    constructor(proyecto) {
-        super("TodoSuma", proyecto)
+class TodoSuma extends EstrategiaAceptacion {
+    constructor(proyecto = null) {
+        super("TodoSuma", proyecto);
     }
 
-    evaluarColaborador(postulacion) {
+    evaluarPostulacion(postulacion) {
         postulacion.estado = EstadoPostulacion.ACEPTADA;
+        return postulacion;
     }
 
     aplicableAProyecto(proyecto) {
-        if(!this.proyecto.limiteColaboradores == 0 && !this.proyecto.limiteColaboradores == null) {
-            return ;
+        const p = proyecto ?? this.proyecto;
+        if (!p) return true;
+        if (typeof p.tieneLimite === 'function') {
+            return !p.tieneLimite();
         }
-
-        return true;
+        if (!p.perfiles || p.perfiles.length === 0) return true;
+        return p.perfiles.every(perfil => perfil.limiteColaboraciones == null);
     }
 }
 
