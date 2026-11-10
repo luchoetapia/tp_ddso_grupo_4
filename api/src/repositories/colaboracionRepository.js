@@ -19,6 +19,14 @@ class ColaboracionRepository {
         return await ColaboracionModel.findOne({ colaborador: idColaborador, proyecto: idProyecto, fin: null });
     }
 
+    async contarActivasPorPerfil(idProyecto, idPerfil) {
+        return await ColaboracionModel.countDocuments({ proyecto: idProyecto, perfil: idPerfil, fin: null });
+    }
+
+    async findByProyectoID(idProyecto) {
+        return await ColaboracionModel.find({proyecto: idProyecto});
+    }
+
     async save(colaboracion) {
         const creada = await ColaboracionModel.create(colaboracion);
         return await creada.populate(REFERENCIAS);

@@ -12,17 +12,32 @@ class Colectivo {
   proyectos : List
 }
 
-' Nivel 2: Proyecto
 class Proyecto {
-  id : Int
-  titulo : String
-  descripcion : String
-  perfiles: List
-  finalizado: boolean
-  porcentajeFinalizado: Float
-  enlaceSistema : String
-  enlaceCodigoFuente : String
-  logros: List
+id : Int 
+titulo : String
+descripcion : String
+perfiles: List<Perfil>
+porcentajeFinalizado: Float
+enlaceSistema : String
+enlaceCodigoFuente : String
+logros: List<Logros>
+estrategiaAceptacion : EstrategiaAceptacion
+}
+
+interface EstrategiaAceptacion {
+    nombre : String
+
+    evaluarPostulacion(Postulacion)
+    Boolean aplicableAProyecto(Proyecto)
+}
+
+class RevisionManual implements EstrategiaAceptacion {
+}
+
+class TodoSuma implements EstrategiaAceptacion {
+}
+
+class HastaLlenarVacantes implements EstrategiaAceptacion {
 }
 
 class Logro {
@@ -168,7 +183,7 @@ together {
   class Notificacion
 }
 
-Colectivo --> TipoColectivo
+Colectivo -r-> TipoColectivo
 Colectivo --> " * " Proyecto
 Proyecto --> " * " Logro
 Proyecto --> " * " Perfil
@@ -176,7 +191,6 @@ Proyecto --> " * " Perfil
 Perfil --> TipoCompromiso
 Perfil --> ModalidadColaboracion
 Perfil --> " * " Habilidad
-TipoCompromiso --> Periodo
 
 Postulacion --> Perfil
 Postulacion --> EstadoPostulacion
@@ -193,4 +207,7 @@ Colaborador --> " * " Notificacion
 Habilidad --> TipoHabilidad
 Contacto --> MedioDeContacto
 
+TipoCompromiso -d-> Periodo
+
+Proyecto -> EstrategiaAceptacion
 @enduml

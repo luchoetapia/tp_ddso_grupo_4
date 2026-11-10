@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const proyectoRepository = require('../repositories/proyectoRepository.js');
 const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
+const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
@@ -25,13 +26,26 @@ class ProyectoService {
         // Los perfiles se embeben en el proyecto: solo hay que validar que existan sus habilidades
         await this.validarHabilidadesDePerfiles(datos.perfiles ?? []);
 
-        const creado = await this.proyectoRepository.save({
+        if (datos.estrategiaAceptacion) {
+            const estrategiaInstancia = obtenerEstrategia(datos.estrategiaAceptacion);
+            const dummy = { perfiles: datos.perfiles ?? [] };
+            if (!estrategiaInstancia.aplicableAProyecto(dummy)) {
+                throw new ConflictError(`La estrategia '${estrategiaInstancia.nombre}' no es aplicable a este proyecto`);
+            }
+        }
+
+        const payload = {
             titulo: datos.titulo,
             descripcion: datos.descripcion,
             perfiles: datos.perfiles ?? [],
             enlaceSistema: datos.enlaceSistema ?? null,
             enlaceCodigoFuente: datos.enlaceCodigoFuente ?? null
-        });
+        };
+        if (datos.estrategiaAceptacion) {
+            payload.estrategiaAceptacion = datos.estrategiaAceptacion;
+        }
+
+        const creado = await this.proyectoRepository.save(payload);
 
         return creado;
     }

@@ -56,6 +56,7 @@ const validarCreacionProyecto = z.object({
     perfiles: z.array(validarCreacionPerfil, { error: "Los perfiles deben ser una lista" }).default([]),
     enlaceSistema: enlace("El enlace al sistema debe ser una URL válida").optional(),
     enlaceCodigoFuente: enlace("El enlace al código fuente debe ser una URL válida").optional(),
+    estrategiaAceptacion: z.string().optional(),
 }).strict();
 
 const validarActualizacionProyecto = z.object({
@@ -63,6 +64,7 @@ const validarActualizacionProyecto = z.object({
     descripcion: validarCreacionProyecto.shape.descripcion,
     enlaceSistema: enlace("El enlace al sistema debe ser una URL válida"),
     enlaceCodigoFuente: enlace("El enlace al código fuente debe ser una URL válida"),
+    estrategiaAceptacion: z.string().optional(),
 }).partial().strict()
     .refine(...alMenosUnCampo);
 
