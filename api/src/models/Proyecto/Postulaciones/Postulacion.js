@@ -1,10 +1,13 @@
+const EstadoPostulacion = require('./EstadoPostulacion.js');
+
 class Postulacion {
-    constructor(fecha, estado, mensaje, colaborador, perfil) {
-        this.fecha = fecha;
-        this.estado = estado;
-        this.mensaje = mensaje;
+    constructor(colaborador, proyecto, perfil, mensaje = "", estado = EstadoPostulacion.PENDIENTE, fecha = new Date()) {
         this.colaborador = colaborador;
+        this.proyecto = proyecto;
         this.perfil = perfil;
+        this.mensaje = mensaje;
+        this.estado = estado;
+        this.fecha = fecha;
     }
 }
 
