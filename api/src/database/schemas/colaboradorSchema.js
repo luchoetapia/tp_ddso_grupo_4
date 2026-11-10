@@ -13,6 +13,7 @@ const contactoSchema = new Schema({
 const colaboradorSchema = new Schema({
     nombre: { type: String, required: true },
     apellido: { type: String, required: true },
+    usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     nombreFantasia: { type: String, default: null },
     cuentaGit: { type: String, required: true },
     pronombres: { type: String, default: null },
@@ -29,6 +30,8 @@ const colaboradorSchema = new Schema({
 colaboradorSchema.index({ cuentaGit: 1 });
 // Búsqueda de colaboradores potenciales por habilidades ($all)
 colaboradorSchema.index({ habilidades: 1 });
+// Un usuario tiene como máximo un perfil de colaborador (parcial: ignora documentos viejos sin usuario)
+colaboradorSchema.index({ usuario: 1 }, { unique: true, partialFilterExpression: { usuario: { $exists: true } } });
 
 colaboradorSchema.loadClass(Colaborador);
 

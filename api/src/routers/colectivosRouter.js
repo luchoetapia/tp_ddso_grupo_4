@@ -3,6 +3,8 @@ const { ColectivoController } = require('../controllers/colectivoController.js')
 
 // Import de validaciones
 const validar = require('../middlewares/validar.js')
+const autenticar = require('../middlewares/autenticar.js')
+const { roles } = require('../auth/models/usuario.js')
 const { validarCreacionColectivo, validarIdsColectivo , validarFiltrosColectivo} = require('../validators/colectivosValidator.js')
 
 const colectivoController = new ColectivoController()
@@ -14,6 +16,7 @@ router.route('/')
         (req, res) => colectivoController.obtenerColectivos(req, res)
     )
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarCreacionColectivo, 'body'),
         (req, res) => colectivoController.crearColectivo(req, res)
     );

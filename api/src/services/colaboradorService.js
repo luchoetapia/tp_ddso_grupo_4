@@ -3,6 +3,8 @@ const colaboradorRepository = require('../repositories/colaboradorRepository.js'
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const habilidadService = require("./habilidadService.js");
 
+const MENSAJE_USUARIO_CON_COLABORADOR = "El usuario ya tiene un perfil de colaborador asociado";
+
 class ColaboradorService {
     constructor() {
         this.colaboradorRepository = colaboradorRepository;
@@ -14,26 +16,37 @@ class ColaboradorService {
         return colaboradores;
     }
 
-    crear = async (datos) => {
+    // idUsuario: usuario de la sesión que crea el perfil (queda como su cuenta)
+    crear = async (datos, idUsuario) => {
         const existente = await this.colaboradorRepository.findByCuentaGit(datos.cuentaGit)
         if (existente) {
             throw new ConflictError("Ya existe un colaborador con esa cuenta de Git")
         }
 
+        if (await this.colaboradorRepository.findByUsuario(idUsuario)) {
+            throw new ConflictError(MENSAJE_USUARIO_CON_COLABORADOR)
+        }
+
         const habilidades = await this.habilidadService.obtenerPorListaId(datos.habilidades ?? [])
 
-        const creado = await this.colaboradorRepository.save({
-            nombre: datos.nombre,
-            apellido: datos.apellido,
-            nombreFantasia: datos.nombreFantasia,
-            cuentaGit: datos.cuentaGit,
-            habilidades: habilidades.map(h => h.id),
-            pronombres: datos.pronombres,
-            presentacion: datos.presentacion,
-            deseaSerContactado: datos.deseaSerContactado ?? false,
-            contactos: datos.contactos ?? []
-        })
-        return creado;
+        try {
+            return await this.colaboradorRepository.save({
+                usuario: idUsuario,
+                nombre: datos.nombre,
+                apellido: datos.apellido,
+                nombreFantasia: datos.nombreFantasia,
+                cuentaGit: datos.cuentaGit,
+                habilidades: habilidades.map(h => h.id),
+                pronombres: datos.pronombres,
+                presentacion: datos.presentacion,
+                deseaSerContactado: datos.deseaSerContactado ?? false,
+                contactos: datos.contactos ?? []
+            })
+        } catch (error) {
+            // El índice único de usuario cubre la carrera entre dos pedidos simultáneos
+            if (error.code === 11000 && error.keyPattern?.usuario) throw new ConflictError(MENSAJE_USUARIO_CON_COLABORADOR)
+            throw error
+        }
     }
 
     obtenerPorId = async (id) => {

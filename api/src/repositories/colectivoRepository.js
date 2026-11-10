@@ -9,6 +9,10 @@ class ColectivoRepository {
         return await ColectivoModel.findOne({ nombre });
     }
 
+    async findByUsuario(usuario) {
+        return await ColectivoModel.findOne({ usuario });
+    }
+
     async findById(id) {
         return await ColectivoModel.findById(id).populate('proyectos');
     }
