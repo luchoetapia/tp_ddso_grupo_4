@@ -23,6 +23,15 @@ class ColaboracionRepository {
         const creada = await ColaboracionModel.create(colaboracion);
         return await creada.populate(REFERENCIAS);
     }
+
+    async findById(id) {
+        return await ColaboracionModel.findById(id).populate(REFERENCIAS);
+    }
+
+    async cerrar(id, fin) {
+        return await ColaboracionModel.findOneAndUpdate({ _id: id, fin: null }, { fin }, { new: true }).populate(REFERENCIAS);
+    }
+
 }
 
 module.exports = new ColaboracionRepository();

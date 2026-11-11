@@ -6,6 +6,10 @@ class Colaboracion {
         this.inicio = inicio;
         this.fin = fin || null;
     }
+
+    estaActiva() {
+    return !this.fin;
+    }
 }
 
 module.exports = { Colaboracion }

@@ -92,6 +92,10 @@ class ColectivoService {
             mensaje: `Colectivo ${desactivado.nombre} desactivado correctamente, ${finalizados} proyectos finalizados.` 
         };
     }
+
+    buscarPorUsuario = async (idUsuario) => {
+        return await this.colectivoRepository.findByUsuario(idUsuario);
+    }
 }
 
 module.exports = new ColectivoService();
