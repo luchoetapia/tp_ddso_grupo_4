@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const proyectoRepository = require('../repositories/proyectoRepository.js');
 const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
+const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
@@ -9,6 +10,7 @@ class ProyectoService {
         this.proyectoRepository = proyectoRepository;
         this.habilidadService = habilidadService;
         this.colaboradorService = colaboradorService;
+        this.colectivoRepository = colectivoRepository;
     }
 
     obtenerTodos = async () => {
@@ -16,10 +18,17 @@ class ProyectoService {
         return proyectos;
     }
 
-    crear = async (datos) => {
+    crear = async (datos, idUsuario = null) => {
         const existente = await this.proyectoRepository.findByTitulo(datos.titulo)
         if (existente) {
             throw new ConflictError("Ya existe un proyecto con ese título")
+        }
+
+        let colectivo = null;
+        if (idUsuarioColectivo) {
+        colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo);
+        if (!colectivo)
+            throw new NotFoundError("El usuario no tiene un colectivo registrado");
         }
 
         // Los perfiles se embeben en el proyecto: solo hay que validar que existan sus habilidades
@@ -32,6 +41,9 @@ class ProyectoService {
             enlaceSistema: datos.enlaceSistema ?? null,
             enlaceCodigoFuente: datos.enlaceCodigoFuente ?? null
         });
+
+        if (colectivo)
+            await this.colectivoRepository.update(colectivo.id, { $push: { proyectos: creado.id } });
 
         return creado;
     }

@@ -134,4 +134,14 @@ describe('Modelos de dominio', () => {
             ]);
         });
     });
+
+    describe('Colaboracion.estaActiva', () => {
+    test('está activa mientras no tenga fecha de fin', () => {
+        expect(new Colaboracion('colab', 'proy', false, new Date()).estaActiva()).toBe(true);
+    });
+    test('no está activa si tiene fecha de fin', () => {
+        expect(new Colaboracion('colab', 'proy', false, new Date(), new Date()).estaActiva()).toBe(false);
+        });
+    });
+
 });

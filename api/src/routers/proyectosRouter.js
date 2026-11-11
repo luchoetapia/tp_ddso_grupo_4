@@ -14,12 +14,16 @@ const {
     validarActualizacionPerfil,
 } = require('../validators/proyectosValidator.js')
 
+const autenticar = require('../middlewares/autenticar.js')
+const { roles } = require('../auth/models/usuario.js')
+
 const proyectoController = new ProyectoController()
 const router = express.Router()
 
 router.route('/')
     .get((req, res) => proyectoController.obtenerProyectos(req, res))
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarCreacionProyecto, 'body'),
         (req, res) => proyectoController.crearProyecto(req, res)
     );
