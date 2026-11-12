@@ -6,6 +6,7 @@ const validar = require('../middlewares/validar.js')
 const { validarCreacionLogro, validarActualizacionLogro, validarIdsLogro } = require('../validators/logrosValidator.js')
 const {
     validarCreacionProyecto,
+    validarFiltrosProyecto,
     validarFinalizacionProyecto,
     validarContactoColaborador,
     validarIdsProyecto,
@@ -21,7 +22,10 @@ const proyectoController = new ProyectoController()
 const router = express.Router()
 
 router.route('/')
-    .get((req, res) => proyectoController.obtenerProyectos(req, res))
+    .get(
+        validar(validarFiltrosProyecto, 'query'),
+        (req, res) => proyectoController.obtenerProyectos(req, res)
+    )
     .post(
         autenticar(roles.COLECTIVO),
         validar(validarCreacionProyecto, 'body'),

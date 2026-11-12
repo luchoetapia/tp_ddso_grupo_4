@@ -66,6 +66,10 @@ const validarActualizacionProyecto = z.object({
 }).partial().strict()
     .refine(...alMenosUnCampo);
 
+const validarFiltrosProyecto = z.object({
+    texto: z.string({ error: "El filtro 'texto' debe ser un texto" }).trim().optional(),
+});
+
 const validarFinalizacionProyecto = z.object({
     idColectivo: objectId("Id de colectivo inválido"),
 }).strict();
@@ -89,6 +93,7 @@ module.exports = {
     validarActualizacionPerfil,
     validarCreacionProyecto,
     validarActualizacionProyecto,
+    validarFiltrosProyecto,
     validarFinalizacionProyecto,
     validarContactoColaborador,
     validarIdsProyecto,

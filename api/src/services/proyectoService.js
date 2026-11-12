@@ -18,6 +18,21 @@ class ProyectoService {
         return proyectos;
     }
 
+    buscarPorTexto = async (texto) => {
+        // Escapo caracteres especiales para que el texto se busque literal y no como regex
+        const textoRegex = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const coincide = { $regex: textoRegex, $options: 'i' };
+
+        const condicion = {
+            $or: [
+                { titulo: coincide },
+                { descripcion: coincide },
+            ]
+        };
+
+        return await this.proyectoRepository.findByCondition(condicion);
+    }
+
     crear = async (datos, idUsuario = null) => {
         const existente = await this.proyectoRepository.findByTitulo(datos.titulo)
         if (existente) {
@@ -117,15 +132,15 @@ class ProyectoService {
     }
 
     buscarPotencialesProyectos = async (idsHabilidades) => {
-        // Busco proyectos activos que tengan perfiles que requieran las habilidades dadas
         const condicion = {
             finalizado: false,
-            perfiles: { 
+            perfiles: {
                 $elemMatch: {
                     busquedaAbierta: true,
+                    $or: [{ fechaFinBusqueda: null }, { fechaFinBusqueda: { $gt: new Date() } }],
                     habilidadesRequeridas: { $not: { $elemMatch: { $nin: idsHabilidades } } }
-                } 
-            } 
+                }
+            }
         }
         
         const proyectos = await this.proyectoRepository.findByCondition(condicion);

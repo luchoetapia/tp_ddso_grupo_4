@@ -20,6 +20,14 @@ class ProyectoController {
     }
 
     obtenerProyectos = async (req, res) => {
+        const texto = req.query.texto?.trim();
+
+        if (texto) {
+            const proyectosEncontrados = await this.proyectoService.buscarPorTexto(texto);
+            return res.status(200).json(proyectosEncontrados.map(ProyectoPublic.desde));
+        }
+
+        // Default: obtener todos los proyectos
         const proyectos = await this.proyectoService.obtenerTodos();
         res.status(200).json(proyectos.map(ProyectoPublic.desde))
     }

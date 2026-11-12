@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const enlaces = [
     { href: "/", texto: "Inicio" },
     { href: "/proyectos", texto: "Proyectos" },
+    { href: "/colaboradoras", texto: "Colaboradoras" },
 ];
 
 export default function Navegacion() {

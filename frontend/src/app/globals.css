@@ -11,32 +11,7 @@
     --on-accent: #fff;
     --error: #b42318;
     --highlight: #f4b740;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        --bg: #0e1a18;
-        --card: #132421;
-        --sf: #162824;
-        --border: #26403a;
-        --text: #eaf3f0;
-        --muted: #a3b8b2;
-        --accent: #5eead4;
-        --on-accent: #06201c;
-        --error: #fda4af;
-    }
-}
-
-:root[data-theme="dark"] {
-    --bg: #0e1a18;
-    --card: #132421;
-    --sf: #162824;
-    --border: #26403a;
-    --text: #eaf3f0;
-    --muted: #a3b8b2;
-    --accent: #5eead4;
-    --on-accent: #06201c;
-    --error: #fda4af;
+    color-scheme: light;
 }
 
 @theme inline {
