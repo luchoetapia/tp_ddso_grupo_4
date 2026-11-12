@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import './registroOrg.css'
+import { Card } from '@/components/common';
 
 const registrar = () => {
   const [nombreOrg, setNombreOrg] = useState('');
@@ -61,7 +62,7 @@ const registrar = () => {
     };
 
   return (
-    <section></section>
+    <section className =  ></section>
     <div>
         <input type="radio" name="selectorColectivo" value="Colectivo" onChange={(e) => setTipoRegistro(e.target.value)} /> Colectivo
         <input type="radio" name="selectorColaborador" value="Colaborador" onChange={(e) => setTipoRegistro(e.target.value)} /> Colaborador
