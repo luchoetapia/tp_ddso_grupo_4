@@ -92,6 +92,10 @@ class ColaboradorService {
         
         return this.colaboradorRepository.findByCondition(condicion)
     }
+
+    buscarPorUsuario = async (idUsuario) => {
+        return await this.colaboradorRepository.findByUsuario(idUsuario);
+    }
 }
 
 module.exports = new ColaboradorService();
