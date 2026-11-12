@@ -5,10 +5,20 @@ import './registroOrg.css'
 import { Card } from '@/components/common';
 
 const registrar = () => {
+  const [tipoRegistro, setTipoRegistro] = useState('Colectivo');
+
   const [nombreOrg, setNombreOrg] = useState('');
   const [tipoOrg, setTipoOrg] = useState('');
   const [descripcionOrg, setDescripcionOrg] = useState('');
   const [ubicacionOrg, setUbicacionOrg] = useState('');
+
+  const [nombreColaborador, setNombreColaborador] = useState('');
+  const [apellidoColaborador, setApellidoColaborador] = useState('');
+  const [nombreFantasia, setNombreFantasia] = useState('');
+  const [cuentaGitColaborador, setCuentaGitColaborador] = useState('');
+  const [pronombres, setPronombres] = useState('');
+  const [presentacion, setPresentacion] = useState('');
+  const [deseaSerContactado, setDeseaSerContactado] = useState(false);
 
   const registrarColectivo = async (e) => {
     e.preventDefault();
@@ -41,16 +51,13 @@ const registrar = () => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                usuario: usuario,
                 nombre: nombreColaborador,
                 apellido: apellidoColaborador,
-                nombreFantasia: nombreFantasia, 
+                nombreFantasia: nombreFantasia || undefined,
                 cuentaGit: cuentaGitColaborador,
-                habilidades: habilidadesColaborador,
-                pronombres: pronombres,
-                presentacion: presentacion,
+                pronombres: pronombres || undefined,
+                presentacion: presentacion || undefined,
                 deseaSerContactado: deseaSerContactado,
-                contactos: contactos,
             }),
         });
         const data = await res.json();
@@ -61,38 +68,76 @@ const registrar = () => {
             alert('Error al registrar el colaborador: ' + data.message);
     };
 
-  return (
-    <section className =  ></section>
-    <div>
-        <input type="radio" name="selectorColectivo" value="Colectivo" onChange={(e) => setTipoRegistro(e.target.value)} /> Colectivo
-        <input type="radio" name="selectorColaborador" value="Colaborador" onChange={(e) => setTipoRegistro(e.target.value)} /> Colaborador
-    </div> 
-    
-    
-    
-    <form onSubmit={registrarColectivo}>
-        <label>Nombre de la organización:
-            <input type="text" name="nombreOrg" value={nombreOrg} onChange={(e) => setNombreOrg(e.target.value)} />
-        </label>
-        <label> Tipo de organización:
-            <select onChange={(e) => setTipoOrg(e.target.value)} value={tipoOrg} name="tipoOrg" required>
-                <option value="">Elegí un tipo</option>
-                <option value="fundacion">Fundación</option>
-                <option value="asociacion_barrial">Asociación Barrial</option>
-                <option value="ong">ONG</option>
-                <option value="asamblea">Asamblea</option>
-            </select>
+  const estiloLabel = 'flex flex-col gap-[3px] text-[13px] text-muted';
+  const estiloControl = 'w-full rounded-[10px] border border-border bg-bg p-2.5 text-[15px] text-text';
+  const estiloRadio = 'inline-flex cursor-pointer items-center gap-1.5';
 
-        </label>
-        <label>Descripción de la organización:
-            <input type="text" name="descripcionOrg" value={descripcionOrg} onChange={(e) => setDescripcionOrg(e.target.value)} />
-        </label>
-        <label>Ubicación de la organización:
-            <input type="text" name="ubicacionOrg" value={ubicacionOrg} onChange={(e) => setUbicacionOrg(e.target.value)} />
-        </label>
-        <button type="submit">Registrar Organización</button>
-    </form>
+  return (
+    <section className="mx-auto flex w-full max-w-[440px] flex-col gap-3 rounded-[14px] border border-border bg-card p-[18px] shadow-[0_1px_2px_rgba(22,48,43,0.06)]">
+        <div className="flex gap-4 text-[14px] text-muted">
+            <label className={estiloRadio}>
+                <input type="radio" name="selectoColectivoOColaborador" value="Colectivo" checked={tipoRegistro === 'Colectivo'} onChange={(e) => setTipoRegistro(e.target.value)} className="accent-accent" /> Colectivo
+            </label>
+            <label className={estiloRadio}>
+                <input type="radio" name="selectoColectivoOColaborador" value="Colaborador" checked={tipoRegistro === 'Colaborador'} onChange={(e) => setTipoRegistro(e.target.value)} className="accent-accent" /> Colaborador
+            </label>
+        </div>
+
+        {tipoRegistro === 'Colectivo' ? (
+        <form onSubmit={registrarColectivo} className="flex flex-col gap-2">
+            <label className={estiloLabel}>Nombre de la organización:
+                <input type="text" name="nombreOrg" value={nombreOrg} onChange={(e) => setNombreOrg(e.target.value)} className={estiloControl} />
+            </label>
+            <label className={estiloLabel}> Tipo de organización:
+                <select onChange={(e) => setTipoOrg(e.target.value)} value={tipoOrg} name="tipoOrg" required className={estiloControl}>
+                    <option value="">Elegí un tipo</option>
+                    <option value="fundacion">Fundación</option>
+                    <option value="asociacion_barrial">Asociación Barrial</option>
+                    <option value="ong">ONG</option>
+                    <option value="asamblea">Asamblea</option>
+                </select>
+
+            </label>
+            <label className={estiloLabel}>Descripción de la organización:
+                <input type="text" name="descripcionOrg" value={descripcionOrg} onChange={(e) => setDescripcionOrg(e.target.value)} className={estiloControl} />
+            </label>
+            <label className={estiloLabel}>Ubicación de la organización:
+                <input type="text" name="ubicacionOrg" value={ubicacionOrg} onChange={(e) => setUbicacionOrg(e.target.value)} className={estiloControl} />
+            </label>
+            <button type="submit" className="mt-1 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-accent bg-accent px-[18px] py-2 font-semibold text-on-accent hover:opacity-90">
+                Registrar Organización
+            </button>
+        </form>
+        ) : (
+        <form onSubmit={registrarColaborador} className="flex flex-col gap-2">
+            <label className={estiloLabel}>Nombre:
+                <input type="text" name="nombreColaborador" value={nombreColaborador} onChange={(e) => setNombreColaborador(e.target.value)} required className={estiloControl} />
+            </label>
+            <label className={estiloLabel}>Apellido:
+                <input type="text" name="apellidoColaborador" value={apellidoColaborador} onChange={(e) => setApellidoColaborador(e.target.value)} required className={estiloControl} />
+            </label>
+            <label className={estiloLabel}>Nombre de fantasía:
+                <input type="text" name="nombreFantasia" value={nombreFantasia} onChange={(e) => setNombreFantasia(e.target.value)} className={estiloControl} />
+            </label>
+            <label className={estiloLabel}>Cuenta de Git:
+                <input type="text" name="cuentaGitColaborador" value={cuentaGitColaborador} onChange={(e) => setCuentaGitColaborador(e.target.value)} required className={estiloControl} />
+            </label>
+            <label className={estiloLabel}>Pronombres:
+                <input type="text" name="pronombres" value={pronombres} onChange={(e) => setPronombres(e.target.value)} className={estiloControl} />
+            </label>
+            <label className={estiloLabel}>Presentación:
+                <textarea name="presentacion" value={presentacion} onChange={(e) => setPresentacion(e.target.value)} maxLength={300} className={estiloControl} />
+            </label>
+            <label className={estiloRadio + ' text-[14px] text-muted'}>
+                <input type="checkbox" name="deseaSerContactado" checked={deseaSerContactado} onChange={(e) => setDeseaSerContactado(e.target.checked)} className="accent-accent" /> Deseo ser contactado/a
+            </label>
+            <button type="submit" className="mt-1 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-accent bg-accent px-[18px] py-2 font-semibold text-on-accent hover:opacity-90">
+                Registrar Colaborador
+            </button>
+        </form>
+        )}
+    </section>
   );
 };
 
-export default RegistroOrg;
+export default registrar;

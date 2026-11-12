@@ -109,3 +109,76 @@ h1 {
 .muted {
     color: var(--muted);
 }
+
+.nav-barra {
+    border-bottom: 1px solid var(--border);
+}
+
+.nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.nav-marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.nav-logo {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-family: var(--font-jakarta), Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nav-enlaces {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-enlace {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 999px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.nav-enlace:hover {
+    background: var(--card);
+}
+
+.nav-enlace.activo {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 6px;
+}
+
+.nav-enlace.nav-cta {
+    background: var(--accent);
+    color: var(--on-accent);
+    padding: 8px 18px;
+}
