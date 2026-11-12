@@ -45,13 +45,13 @@ class ColaboracionService {
         return creada;
     }
 
-    desanotar = async (idColaboracion, idUsuario) => {
+    desanotar = async (idColaboracion, usuario) => {
         const colaboracion = await this.colaboracionRepository.findById(idColaboracion);
         if(!colaboracion) throw new NotFoundError("Colaboración no encontrada");
 
         await this.validarPermisoDeBaja(colaboracion, usuario);
 
-        if(!colaboracion.estaActiva()) throw new ConflictError("La colaboración ya fue finalizada");
+        if(!colaboracion.estaActiva()) throw new ConflictError("La colaboración ya fue dada de baja");
 
         const cerrada = await this.colaboracionRepository.cerrar(idColaboracion, new Date());
         if(!cerrada) throw new ConflictError("La colaboración ya fue finalizada");
