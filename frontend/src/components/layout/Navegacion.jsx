@@ -30,7 +30,7 @@ export default function Navegacion() {
                         </li>
                     ))}
                     <li>
-                        <Link href="/colectivos/registrar" className="nav-enlace nav-cta">
+                        <Link href="/ingresar" className="nav-enlace nav-cta">
                             Registrar
                         </Link>
                     </li>
