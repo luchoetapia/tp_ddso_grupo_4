@@ -1,5 +1,6 @@
 const colaboracionService = require('../services/colaboracionService.js');
 const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
+const { Paginado } = require('../dtos/paginado.js');
 
 class ColaboracionController {
     constructor() {
@@ -7,8 +8,10 @@ class ColaboracionController {
     }
 
     obtenerColaboraciones = async (req, res) => {
-        const colaboraciones = await this.colaboracionService.obtenerTodas()
-        res.status(200).json(colaboraciones.map(ColaboracionPublic.desde))
+        const { pagina, limite } = req.query;
+
+        const resultado = await this.colaboracionService.obtenerTodas({ pagina, limite })
+        res.status(200).json(Paginado.desde(resultado.colaboraciones, resultado, ColaboracionPublic))
     }
 
     crearColaboracion = async (req, res) => {

@@ -3,6 +3,7 @@ const { TipoHabilidad } = require('../models/habilidad.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionHabilidad } = require('../validators/habilidadesValidator.js');
 const { HabilidadPublic } = require('../dtos/habilidadPublic.js');
+const { Paginado } = require('../dtos/paginado.js');
 
 class HabilidadController {
     constructor() {
@@ -10,8 +11,10 @@ class HabilidadController {
     }
 
     obtenerHabilidades = async (req, res) => {
-        const habilidades = await this.habilidadService.obtenerTodas();
-        res.status(200).json(habilidades.map(HabilidadPublic.desde))
+        const { pagina, limite } = req.query;
+
+        const resultado = await this.habilidadService.obtenerTodas({ pagina, limite });
+        res.status(200).json(Paginado.desde(resultado.habilidades, resultado, HabilidadPublic))
     }
 
     crearHabilidad = async (req, res) => {

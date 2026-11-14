@@ -10,6 +10,7 @@ const { PerfilPublic } = require('../dtos/perfilPublic.js');
 const { LogroPublic } = require('../dtos/logroPublic.js');
 const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
 const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
+const { Paginado } = require('../dtos/paginado.js');
 
 class ProyectoController {
     constructor() {
@@ -20,16 +21,14 @@ class ProyectoController {
     }
 
     obtenerProyectos = async (req, res) => {
-        const texto = req.query.texto?.trim();
+        // req.query ya viene validado: texto recortado y pagina/limite como números
+        const { texto, pagina, limite } = req.query;
 
-        if (texto) {
-            const proyectosEncontrados = await this.proyectoService.buscarPorTexto(texto);
-            return res.status(200).json(proyectosEncontrados.map(ProyectoPublic.desde));
-        }
+        const resultado = texto
+            ? await this.proyectoService.buscarPorTexto(texto, { pagina, limite })
+            : await this.proyectoService.obtenerTodos({ pagina, limite });
 
-        // Default: obtener todos los proyectos
-        const proyectos = await this.proyectoService.obtenerTodos();
-        res.status(200).json(proyectos.map(ProyectoPublic.desde))
+        res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
 
     crearProyecto = async (req, res) => {
@@ -135,8 +134,10 @@ class ProyectoController {
     buscarPotencialesColaboradores = async (req, res) => {
         const { id, idPerfil } = req.params;
 
-        const potencialesColaboradores = await this.proyectoService.buscarPotencialesColaboradores(id, idPerfil);
-        res.status(200).json(potencialesColaboradores.map(ColaboradorPublic.desde));
+        const { pagina, limite } = req.query;
+
+        const resultado = await this.proyectoService.buscarPotencialesColaboradores(id, idPerfil, { pagina, limite });
+        res.status(200).json(Paginado.desde(resultado.colaboradores, resultado, ColaboradorPublic));
     }
 
     contactarColaborador = async (req, res) => {

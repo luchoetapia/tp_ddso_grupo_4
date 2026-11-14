@@ -9,6 +9,7 @@ const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
 const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
 const { ProyectoPublic } = require('../dtos/proyectoPublic.js');
 const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
+const { Paginado } = require('../dtos/paginado.js');
 const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
 const { roles } = require('../auth/models/usuario.js');
 
@@ -22,8 +23,10 @@ class ColaboradorController {
     }
 
     obtenerColaboradores = async (req, res) => {
-        const colaboradores = await this.colaboradorService.obtenerTodos();
-        res.status(200).json(colaboradores.map(ColaboradorPublic.desde))
+        const { pagina, limite } = req.query;
+
+        const resultado = await this.colaboradorService.obtenerTodos({ pagina, limite });
+        res.status(200).json(Paginado.desde(resultado.colaboradores, resultado, ColaboradorPublic))
     }
 
     crearColaborador = async (req, res) => {
@@ -50,7 +53,8 @@ class ColaboradorController {
         let lista = Array.isArray(req.body) && req.body.length > 0 ? req.body : null;
 
         if (!lista) {
-            const ids = (await this.habilidadService.obtenerTodas()).map(h => h.id);
+            const { habilidades } = await this.habilidadService.obtenerTodas({ limite: 100 });
+            const ids = habilidades.map(h => h.id);
             lista = [
                 {
                     nombre: "Juan",
@@ -90,8 +94,10 @@ class ColaboradorController {
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit);
         const idsHabilidades = colaborador.habilidades.map(h => (h._id ?? h).toString());
 
-        const proyectos = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades);
-        res.status(200).json(proyectos.map(ProyectoPublic.desde));
+        const { pagina, limite } = req.query;
+
+        const resultado = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades, { pagina, limite });
+        res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
 
     obtenerNotificaciones = async (req, res) => {
