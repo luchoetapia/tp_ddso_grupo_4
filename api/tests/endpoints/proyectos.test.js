@@ -57,6 +57,10 @@ const perfil = {
     modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: false },
 };
 
+// Resultado paginado como lo devuelven los services
+const paginaDe = (proyectos, extra = {}) => ({ proyectos, total: proyectos.length, pagina: 1, limite: 10, totalPaginas: 1, ...extra });
+const paginacionDefault = { pagina: 1, limite: 10 };
+
 describe('Endpoints /proyectos', () => {
     beforeAll(() => {
         jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -66,28 +70,55 @@ describe('Endpoints /proyectos', () => {
     beforeEach(() => jest.clearAllMocks());
 
     describe('GET /proyectos', () => {
-        test('devuelve la lista de proyectos', async () => {
-            proyectoService.obtenerTodos.mockResolvedValue([proyecto]);
+        test('devuelve la primera página de proyectos por defecto', async () => {
+            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([proyecto]));
 
             const res = await request(app).get('/proyectos');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([proyectoPublico]);
+            expect(res.body).toEqual({
+                data: [proyectoPublico],
+                paginacion: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 }
+            });
+            expect(proyectoService.obtenerTodos).toHaveBeenCalledWith(paginacionDefault);
+        });
+
+        test('pasa ?pagina y ?limite al service como números', async () => {
+            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([], { pagina: 3, limite: 5, total: 12, totalPaginas: 3 }));
+
+            const res = await request(app).get('/proyectos?pagina=3&limite=5');
+
+            expect(res.status).toBe(200);
+            expect(proyectoService.obtenerTodos).toHaveBeenCalledWith({ pagina: 3, limite: 5 });
+            expect(res.body.paginacion).toEqual({ pagina: 3, limite: 5, total: 12, totalPaginas: 3 });
+        });
+
+        test.each([
+            ['pagina=0'],
+            ['pagina=abc'],
+            ['limite=0'],
+            ['limite=101'],
+            ['limite=2.5'],
+        ])('responde 400 con ?%s', async (query) => {
+            const res = await request(app).get(`/proyectos?${query}`);
+
+            expect(res.status).toBe(400);
+            expect(proyectoService.obtenerTodos).not.toHaveBeenCalled();
         });
 
         test('con ?texto busca proyectos por texto', async () => {
-            proyectoService.buscarPorTexto.mockResolvedValue([proyecto]);
+            proyectoService.buscarPorTexto.mockResolvedValue(paginaDe([proyecto]));
 
-            const res = await request(app).get('/proyectos?texto=aula');
+            const res = await request(app).get('/proyectos?texto=aula&pagina=2');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([proyectoPublico]);
-            expect(proyectoService.buscarPorTexto).toHaveBeenCalledWith('aula');
+            expect(res.body.data).toEqual([proyectoPublico]);
+            expect(proyectoService.buscarPorTexto).toHaveBeenCalledWith('aula', { pagina: 2, limite: 10 });
             expect(proyectoService.obtenerTodos).not.toHaveBeenCalled();
         });
 
         test('con ?texto vacío devuelve todos los proyectos', async () => {
-            proyectoService.obtenerTodos.mockResolvedValue([proyecto]);
+            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([proyecto]));
 
             const res = await request(app).get('/proyectos?texto=%20%20');
 
@@ -105,11 +136,11 @@ describe('Endpoints /proyectos', () => {
 
         test('resume los perfiles de cada proyecto', async () => {
             const js = { id: ID_HAB, titulo: 'JavaScript', tipoHabilidad: 'programacion' };
-            proyectoService.obtenerTodos.mockResolvedValue([{ ...proyecto, perfiles: [{ ...perfil, habilidadesRequeridas: [js] }] }]);
+            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([{ ...proyecto, perfiles: [{ ...perfil, habilidadesRequeridas: [js] }] }]));
 
             const res = await request(app).get('/proyectos');
 
-            expect(res.body[0].perfiles).toEqual([{
+            expect(res.body.data[0].perfiles).toEqual([{
                 id: ID_PERFIL,
                 titulo: 'Backend',
                 habilidadesRequeridas: [{ id: ID_HAB, titulo: 'JavaScript' }],
@@ -383,13 +414,25 @@ describe('Endpoints /proyectos', () => {
         const url = `/proyectos/${ID}/perfiles/${ID_PERFIL}/buscarPotencialesColaboradores`;
 
         test('devuelve los colaboradores que cumplen el perfil', async () => {
-            proyectoService.buscarPotencialesColaboradores.mockResolvedValue([{ cuentaGit: 'juanp' }]);
+            proyectoService.buscarPotencialesColaboradores.mockResolvedValue({
+                colaboradores: [{ cuentaGit: 'juanp' }], total: 1, pagina: 2, limite: 5, totalPaginas: 1
+            });
 
-            const res = await request(app).get(url);
+            const res = await request(app).get(`${url}?pagina=2&limite=5`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ cuentaGit: 'juanp', habilidades: [] }]);
-            expect(proyectoService.buscarPotencialesColaboradores).toHaveBeenCalledWith(ID, ID_PERFIL);
+            expect(res.body).toEqual({
+                data: [{ cuentaGit: 'juanp', habilidades: [] }],
+                paginacion: { pagina: 2, limite: 5, total: 1, totalPaginas: 1 }
+            });
+            expect(proyectoService.buscarPotencialesColaboradores).toHaveBeenCalledWith(ID, ID_PERFIL, { pagina: 2, limite: 5 });
+        });
+
+        test('responde 400 con un límite fuera de rango', async () => {
+            const res = await request(app).get(`${url}?limite=500`);
+
+            expect(res.status).toBe(400);
+            expect(proyectoService.buscarPotencialesColaboradores).not.toHaveBeenCalled();
         });
 
         test('responde 400 con id de perfil inválido', async () => {

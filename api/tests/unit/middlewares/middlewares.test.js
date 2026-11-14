@@ -38,6 +38,17 @@ describe('Middlewares', () => {
             expect(next).toHaveBeenCalled();
         });
 
+        test('reemplaza la query con los datos parseados aunque sea un getter (Express 5)', () => {
+            // En Express 5 req.query es un getter sin setter: asignarlo directo no tendría efecto
+            const req = Object.create({ get query() { return { nombre: 'Ana' }; } });
+            const next = jest.fn();
+
+            validar(schema, 'query')(req, {}, next);
+
+            expect(req.query).toEqual({ nombre: 'Ana', edad: 18 });
+            expect(next).toHaveBeenCalled();
+        });
+
         test('lanza BadRequestError con los mensajes de error', () => {
             const req = { body: {} };
             const next = jest.fn();

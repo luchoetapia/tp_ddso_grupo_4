@@ -1,4 +1,5 @@
 jest.mock('../../../src/repositories/habilidadRepository.js', () => ({
+    buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
     findByTitulo: jest.fn(),
     findById: jest.fn(),
@@ -25,13 +26,12 @@ describe('HabilidadService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodas', () => {
-        test('devuelve todas las habilidades como DTO', async () => {
-            habilidadRepository.findAll.mockResolvedValue([habilidadDoc(ID_1), habilidadDoc(ID_2, 'Node')]);
+        test('pagina en la BD ordenando por título', async () => {
+            const pagina = { habilidades: [habilidadDoc(ID_1), habilidadDoc(ID_2, 'Node')], total: 2, pagina: 1, limite: 10, totalPaginas: 1 };
+            habilidadRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            const resultado = await habilidadService.obtenerTodas();
-
-            expect(resultado).toHaveLength(2);
-            expect(resultado.map(h => h.titulo)).toEqual(['JS', 'Node']);
+            await expect(habilidadService.obtenerTodas({ pagina: 1, limite: 10 })).resolves.toBe(pagina);
+            expect(habilidadRepository.buscarConPaginacion).toHaveBeenCalledWith(1, 10, {}, { titulo: 1, _id: 1 });
         });
     });
 

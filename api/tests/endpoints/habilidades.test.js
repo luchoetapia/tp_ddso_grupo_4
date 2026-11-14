@@ -12,6 +12,10 @@ const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js')
 const ID = '507f1f77bcf86cd799439021';
 const habilidad = { id: ID, titulo: 'JavaScript', tipoHabilidad: 'programacion', descripcion: 'Lenguaje' };
 
+// Resultado paginado como lo devuelven los services
+const paginaDe = (habilidades, extra = {}) => ({ habilidades, total: habilidades.length, pagina: 1, limite: 10, totalPaginas: 1, ...extra });
+const paginacionDefault = { pagina: 1, limite: 10 };
+
 describe('Endpoints /habilidades', () => {
     beforeAll(() => {
         jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -22,12 +26,20 @@ describe('Endpoints /habilidades', () => {
 
     describe('GET /habilidades', () => {
         test('devuelve la lista de habilidades', async () => {
-            habilidadService.obtenerTodas.mockResolvedValue([habilidad]);
+            habilidadService.obtenerTodas.mockResolvedValue(paginaDe([habilidad]));
 
             const res = await request(app).get('/habilidades');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([habilidad]);
+            expect(res.body).toEqual({ data: [habilidad], paginacion: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 } });
+            expect(habilidadService.obtenerTodas).toHaveBeenCalledWith(paginacionDefault);
+        });
+
+        test('responde 400 con una página inválida', async () => {
+            const res = await request(app).get('/habilidades?pagina=-1');
+
+            expect(res.status).toBe(400);
+            expect(habilidadService.obtenerTodas).not.toHaveBeenCalled();
         });
     });
 

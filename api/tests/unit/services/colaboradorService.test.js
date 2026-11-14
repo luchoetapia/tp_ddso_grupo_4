@@ -1,4 +1,5 @@
 jest.mock('../../../src/repositories/colaboradorRepository.js', () => ({
+    buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),
     findByCuentaGit: jest.fn(),
@@ -36,13 +37,41 @@ describe('ColaboradorService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodos', () => {
-        test('devuelve todos los colaboradores como DTO', async () => {
-            colaboradorRepository.findAll.mockResolvedValue([colaboradorDoc()]);
+        test('pagina en la BD ordenando por cuenta de Git', async () => {
+            const pagina = { colaboradores: [colaboradorDoc()], total: 1, pagina: 1, limite: 10, totalPaginas: 1 };
+            colaboradorRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            const resultado = await colaboradorService.obtenerTodos();
+            await expect(colaboradorService.obtenerTodos({ pagina: 1, limite: 10 })).resolves.toBe(pagina);
+            expect(colaboradorRepository.buscarConPaginacion).toHaveBeenCalledWith(1, 10, {}, { cuentaGit: 1, _id: 1 });
+        });
+    });
 
-            expect(resultado).toHaveLength(1);
-            expect(resultado[0].cuentaGit).toBe('juanp');
+    describe('obtenerColaboradoresPotenciales', () => {
+        const ID_HAB_2 = '507f1f77bcf86cd799439022';
+
+        test('pagina en la BD con quienes tienen todas las requeridas de algún perfil', async () => {
+            colaboradorRepository.buscarConPaginacion.mockResolvedValue({ colaboradores: [] });
+            const perfiles = [
+                { habilidadesRequeridas: [{ _id: ID_HAB }, { _id: ID_HAB_2 }] },
+                { habilidadesRequeridas: [{ _id: ID_HAB_2 }] },
+            ];
+
+            await colaboradorService.obtenerColaboradoresPotenciales(perfiles, { pagina: 3, limite: 5 });
+
+            expect(colaboradorRepository.buscarConPaginacion).toHaveBeenCalledWith(3, 5, {
+                $or: [
+                    { habilidades: { $all: [ID_HAB, ID_HAB_2] } },
+                    { habilidades: { $all: [ID_HAB_2] } },
+                ]
+            }, { cuentaGit: 1, _id: 1 });
+        });
+
+        test('sin habilidades requeridas no filtra', async () => {
+            colaboradorRepository.buscarConPaginacion.mockResolvedValue({ colaboradores: [] });
+
+            await colaboradorService.obtenerColaboradoresPotenciales([{ habilidadesRequeridas: [] }]);
+
+            expect(colaboradorRepository.buscarConPaginacion).toHaveBeenCalledWith(undefined, undefined, {}, { cuentaGit: 1, _id: 1 });
         });
     });
 

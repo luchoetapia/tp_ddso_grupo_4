@@ -19,6 +19,10 @@ const { BadRequestError, ConflictError, NotFoundError } = require('../../src/err
 const ID = '507f1f77bcf86cd799439051';
 const colectivo = { id: ID, nombre: 'Tech For Good', descripcion: 'desc', ubicacion: 'Córdoba', tipo: 'fundacion', proyectos: [] };
 
+// Resultado paginado como lo devuelven los services
+const paginaDe = (colectivos, extra = {}) => ({ colectivos, total: colectivos.length, pagina: 1, limite: 10, totalPaginas: 1, ...extra });
+const paginacionDefault = { pagina: 1, limite: 10 };
+
 describe('Endpoints /colectivos', () => {
     beforeAll(() => {
         jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -29,27 +33,28 @@ describe('Endpoints /colectivos', () => {
 
     describe('GET /colectivos', () => {
         test('devuelve la lista de colectivos', async () => {
-            colectivoService.obtenerTodos.mockResolvedValue([colectivo]);
+            colectivoService.obtenerTodos.mockResolvedValue(paginaDe([colectivo]));
 
             const res = await request(app).get('/colectivos');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colectivo]);
+            expect(res.body).toEqual({ data: [colectivo], paginacion: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 } });
+            expect(colectivoService.obtenerTodos).toHaveBeenCalledWith(paginacionDefault);
         });
 
         test('con activos=true devuelve solo los activos', async () => {
-            colectivoService.obtenerActivos.mockResolvedValue([colectivo]);
+            colectivoService.obtenerActivos.mockResolvedValue(paginaDe([colectivo]));
 
-            const res = await request(app).get('/colectivos?activos=true');
+            const res = await request(app).get('/colectivos?activos=true&limite=20');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colectivo]);
-            expect(colectivoService.obtenerActivos).toHaveBeenCalled();
+            expect(res.body.data).toEqual([colectivo]);
+            expect(colectivoService.obtenerActivos).toHaveBeenCalledWith({ pagina: 1, limite: 20 });
             expect(colectivoService.obtenerTodos).not.toHaveBeenCalled();
         });
 
         test('con activos=false devuelve todos', async () => {
-            colectivoService.obtenerTodos.mockResolvedValue([colectivo]);
+            colectivoService.obtenerTodos.mockResolvedValue(paginaDe([colectivo]));
 
             const res = await request(app).get('/colectivos?activos=false');
 

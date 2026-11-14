@@ -1,4 +1,5 @@
 jest.mock('../../../src/repositories/colaboracionRepository.js', () => ({
+    buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
     findActiva: jest.fn(),
     findById: jest.fn(),
@@ -40,10 +41,12 @@ describe('ColaboracionService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodas', () => {
-        test('devuelve todas las colaboraciones', async () => {
-            colaboracionRepository.findAll.mockResolvedValue([{ id: ID_COLABORACION }]);
+        test('pagina en la BD, las más recientes primero', async () => {
+            const pagina = { colaboraciones: [{ id: ID_COLABORACION }], total: 1, pagina: 1, limite: 10, totalPaginas: 1 };
+            colaboracionRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            await expect(colaboracionService.obtenerTodas()).resolves.toHaveLength(1);
+            await expect(colaboracionService.obtenerTodas({ pagina: 1, limite: 10 })).resolves.toBe(pagina);
+            expect(colaboracionRepository.buscarConPaginacion).toHaveBeenCalledWith(1, 10, {}, { inicio: -1, _id: -1 });
         });
     });
 

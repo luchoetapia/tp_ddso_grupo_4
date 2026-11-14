@@ -38,6 +38,10 @@ const colaborador = {
     habilidades: [], pronombres: 'él', presentacion: 'Hola', deseaSerContactado: true,
 };
 
+// Resultado paginado como lo devuelven los services
+const paginaDe = (colaboradores, extra = {}) => ({ colaboradores, total: colaboradores.length, pagina: 1, limite: 10, totalPaginas: 1, ...extra });
+const paginacionDefault = { pagina: 1, limite: 10 };
+
 describe('Endpoints /colaboradores', () => {
     beforeAll(() => {
         jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -48,12 +52,13 @@ describe('Endpoints /colaboradores', () => {
 
     describe('GET /colaboradores', () => {
         test('devuelve la lista de colaboradores', async () => {
-            colaboradorService.obtenerTodos.mockResolvedValue([colaborador]);
+            colaboradorService.obtenerTodos.mockResolvedValue(paginaDe([colaborador]));
 
             const res = await request(app).get('/colaboradores');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colaborador]);
+            expect(res.body).toEqual({ data: [colaborador], paginacion: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 } });
+            expect(colaboradorService.obtenerTodos).toHaveBeenCalledWith(paginacionDefault);
         });
     });
 
@@ -176,14 +181,26 @@ describe('Endpoints /colaboradores', () => {
             const ID_HAB_2 = '507f1f77bcf86cd799439022';
             // Las habilidades pueden venir populadas o como ids
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ cuentaGit: 'juanp', habilidades: [{ _id: ID_HAB }, ID_HAB_2] });
-            proyectoService.buscarPotencialesProyectos.mockResolvedValue([{ id: ID_PROY }]);
+            proyectoService.buscarPotencialesProyectos.mockResolvedValue({
+                proyectos: [{ id: ID_PROY }], total: 6, pagina: 2, limite: 5, totalPaginas: 2
+            });
 
-            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos');
+            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos?pagina=2&limite=5');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([{ id: ID_PROY, perfiles: [] }]);
+            expect(res.body).toEqual({
+                data: [{ id: ID_PROY, perfiles: [] }],
+                paginacion: { pagina: 2, limite: 5, total: 6, totalPaginas: 2 }
+            });
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
-            expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2]);
+            expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2], { pagina: 2, limite: 5 });
+        });
+
+        test('responde 400 con un límite inválido', async () => {
+            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos?limite=abc');
+
+            expect(res.status).toBe(400);
+            expect(proyectoService.buscarPotencialesProyectos).not.toHaveBeenCalled();
         });
 
         test('responde 404 si el colaborador no existe', async () => {
@@ -221,7 +238,7 @@ describe('Endpoints /colaboradores', () => {
 
     describe('POST /colaboradores/llenarDatosPrueba', () => {
         test('crea los colaboradores por defecto usando las habilidades existentes', async () => {
-            habilidadService.obtenerTodas.mockResolvedValue([{ id: ID_HAB }]);
+            habilidadService.obtenerTodas.mockResolvedValue({ habilidades: [{ id: ID_HAB }] });
             crearUsuarioDeSemilla.mockImplementation(async (cuentaGit) => ({ id: `usr-${cuentaGit}` }));
             colaboradorService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 

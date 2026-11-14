@@ -54,7 +54,7 @@ paths:
 
   /proyectos:
     get:
-      summary: Obtiene todos los proyectos
+      summary: Obtiene los proyectos (paginado)
       description: >
         Si se envía `texto`, devuelve solo los proyectos cuyo título o
         descripción lo contengan (sin distinguir mayúsculas).
@@ -67,15 +67,24 @@ paths:
             type: string
           description: Texto a buscar en el título o la descripción del proyecto
           example: aula
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de proyectos (con sus perfiles completos)
+          description: Página de proyectos (con sus perfiles completos), los más recientes primero
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Proyecto"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Proyecto"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
     post:
       summary: Crea un nuevo proyecto
       description: >
@@ -261,17 +270,28 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPath"
         - $ref: "#/components/parameters/IdPerfilPath"
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de colaboradoras compatibles (puede ser vacía)
+          description: Página de colaboradoras compatibles (puede ser vacía), ordenadas por cuenta de Git
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Colaborador"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Colaborador"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
         "400":
-          $ref: "#/components/responses/IdInvalido"
+          description: Id inválido o parámetros de paginación inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Proyecto no encontrado, o el perfil no pertenece al proyecto
           content:
@@ -663,17 +683,34 @@ paths:
 
   /colectivos:
     get:
-      summary: Obtiene todos los colectivos
+      summary: Obtiene los colectivos (paginado)
       tags: [Colectivos]
+      parameters:
+        - in: query
+          name: activos
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Si es `true`, devuelve solo los colectivos activos
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de colectivos (con sus proyectos completos)
+          description: Página de colectivos (con sus proyectos completos), ordenados por nombre
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Colectivo"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Colectivo"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
     post:
       summary: Crea un nuevo colectivo
       description: >
@@ -780,17 +817,27 @@ paths:
 
   /habilidades:
     get:
-      summary: Obtiene todas las habilidades
+      summary: Obtiene las habilidades (paginado)
       tags: [Habilidades]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de habilidades
+          description: Página de habilidades, ordenadas por título
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Habilidad"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Habilidad"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
     post:
       summary: Crea una nueva habilidad
       description: No se permiten campos adicionales a los declarados en el schema.
@@ -892,18 +939,28 @@ paths:
 
   /colaboradores:
     get:
-      summary: Obtiene todas las colaboradoras/es
+      summary: Obtiene las colaboradoras/es (paginado)
       description: No incluye los medios de contacto (son internos).
       tags: [Colaboradores]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de colaboradoras/es (con sus habilidades completas)
+          description: Página de colaboradoras/es (con sus habilidades completas), ordenadas por cuenta de Git
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Colaborador"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Colaborador"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
     post:
       summary: Crea una nueva colaboradora/colaborador
       description: >
@@ -1074,19 +1131,29 @@ paths:
       summary: Busca potenciales proyectos para una colaboradora/colaborador
       description: >
         Devuelve los proyectos no finalizados que tienen al menos un perfil
-        cuyas habilidades requeridas posee en su totalidad la colaboradora.
+        cuyas habilidades requeridas posee en su totalidad la colaboradora,
+        ordenados por cantidad de perfiles que cumple y luego por habilidades cumplidas.
       tags: [Colaboradores]
       parameters:
         - $ref: "#/components/parameters/CuentaGitPath"
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de proyectos compatibles (puede ser vacía)
+          description: Página de proyectos compatibles (puede ser vacía)
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Proyecto"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Proyecto"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
         "404":
           description: Colaboradora no encontrada
           content:
@@ -1119,17 +1186,27 @@ paths:
 
   /colaboraciones:
     get:
-      summary: Obtiene todas las colaboraciones
+      summary: Obtiene las colaboraciones (paginado)
       tags: [Colaboraciones]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
       responses:
         "200":
-          description: Lista de colaboraciones
+          description: Página de colaboraciones, las más recientes primero
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Colaboracion"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Colaboracion"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
     post:
       summary: Crea una colaboración
       description: >
@@ -1210,6 +1287,25 @@ components:
       schema:
         type: string
         example: noeaversa
+    PaginaQuery:
+      in: query
+      name: pagina
+      required: false
+      description: Número de página (empieza en 1)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimiteQuery:
+      in: query
+      name: limite
+      required: false
+      description: Cantidad de elementos por página
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
 
   responses:
     DatosInvalidos:
@@ -1226,6 +1322,23 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    Paginacion:
+      type: object
+      properties:
+        pagina:
+          type: integer
+          example: 1
+        limite:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          description: Cantidad total de elementos que cumplen el filtro
+          example: 23
+        totalPaginas:
+          type: integer
+          example: 3
+
     ObjectId:
       type: string
       pattern: "^[0-9a-fA-F]{24}$"
