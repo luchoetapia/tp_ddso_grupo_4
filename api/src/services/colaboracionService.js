@@ -5,6 +5,9 @@ const colectivoService = require("./colectivoService.js");
 const { roles } = require('../auth/models/usuario.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 
+// Orden de los listados: más recientes primero (el _id desempata para que el orden sea estable entre páginas)
+const ORDEN_LISTADO = { inicio: -1, _id: -1 };
+
 class ColaboracionService {
     constructor() {
         this.colaboracionRepository = colaboracionRepository;
@@ -13,9 +16,8 @@ class ColaboracionService {
         this.colectivoService = colectivoService;
     }
 
-    obtenerTodas = async () => {
-        const colaboraciones = await this.colaboracionRepository.findAll();
-        return colaboraciones;
+    obtenerTodas = async ({ pagina, limite } = {}) => {
+        return await this.colaboracionRepository.buscarConPaginacion(pagina, limite, {}, ORDEN_LISTADO);
     }
 
     crear = async (colaboracionData) => {

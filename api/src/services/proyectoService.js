@@ -5,6 +5,9 @@ const colaboradorService = require('./colaboradorService.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
+// Orden de los listados: más recientes primero (el _id de Mongo crece con la fecha de creación)
+const ORDEN_LISTADO = { _id: -1 };
+
 class ProyectoService {
     constructor() {
         this.proyectoRepository = proyectoRepository;
@@ -13,12 +16,11 @@ class ProyectoService {
         this.colectivoRepository = colectivoRepository;
     }
 
-    obtenerTodos = async () => {
-        const proyectos = await this.proyectoRepository.findAll();
-        return proyectos;
+    obtenerTodos = async ({ pagina, limite } = {}) => {
+        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, {}, ORDEN_LISTADO);
     }
 
-    buscarPorTexto = async (texto) => {
+    buscarPorTexto = async (texto, { pagina, limite } = {}) => {
         // Escapo caracteres especiales para que el texto se busque literal y no como regex
         const textoRegex = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const coincide = { $regex: textoRegex, $options: 'i' };
@@ -30,7 +32,7 @@ class ProyectoService {
             ]
         };
 
-        return await this.proyectoRepository.findByCondition(condicion);
+        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, condicion, ORDEN_LISTADO);
     }
 
     crear = async (datos, idUsuario = null) => {
@@ -131,7 +133,9 @@ class ProyectoService {
         })
     }
 
-    buscarPotencialesProyectos = async (idsHabilidades) => {
+    // Se pagina en memoria (no en la BD) porque el orden depende de un ranking calculado en JS
+    // (perfiles que cumple y habilidades cumplidas): hay que traer todos los candidatos, ordenarlos y recién ahí cortar la página
+    buscarPotencialesProyectos = async (idsHabilidades, { pagina = 1, limite = 10 } = {}) => {
         const condicion = {
             finalizado: false,
             perfiles: {
@@ -143,8 +147,17 @@ class ProyectoService {
             }
         }
         
-        const proyectos = await this.proyectoRepository.findByCondition(condicion);
-        return this.ordenarPorCantidadHabilidadesCumplidas(proyectos, idsHabilidades);
+        const candidatos = await this.proyectoRepository.findByCondition(condicion);
+        const ordenados = this.ordenarPorCantidadHabilidadesCumplidas(candidatos, idsHabilidades);
+
+        const inicio = (pagina - 1) * limite;
+        return {
+            proyectos: ordenados.slice(inicio, inicio + limite),
+            total: ordenados.length,
+            pagina,
+            limite,
+            totalPaginas: Math.ceil(ordenados.length / limite)
+        };
     }
 
     perfilPerteneceAProyecto = async (idProyecto, idPerfil) => {
@@ -154,11 +167,10 @@ class ProyectoService {
         return perfil;
     }
 
-    buscarPotencialesColaboradores = async (idProyecto, idPerfil) => {
+    buscarPotencialesColaboradores = async (idProyecto, idPerfil, paginacion = {}) => {
         const perfil = await this.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
-        const colaboradores = await this.colaboradorService.obtenerColaboradoresPotenciales([perfil]);
-        return colaboradores;
+        return await this.colaboradorService.obtenerColaboradoresPotenciales([perfil], paginacion);
     }
 
     // ---------- Perfiles (subdocumentos del proyecto) ----------

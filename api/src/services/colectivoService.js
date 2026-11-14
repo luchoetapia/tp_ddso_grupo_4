@@ -3,6 +3,9 @@ const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const proyectoService = require('./proyectoService.js');
 
+// Orden de los listados: alfabético por nombre (el _id desempata para que el orden sea estable entre páginas)
+const ORDEN_LISTADO = { nombre: 1, _id: 1 };
+
 const MENSAJE_USUARIO_CON_COLECTIVO = "El usuario ya tiene un colectivo asociado";
 
 class ColectivoService {
@@ -11,14 +14,12 @@ class ColectivoService {
         this.proyectoService = proyectoService;
     }
 
-    obtenerTodos = async () => {
-        const colectivos = await this.colectivoRepository.findAll();
-        return colectivos;
+    obtenerTodos = async ({ pagina, limite } = {}) => {
+        return await this.colectivoRepository.buscarConPaginacion(pagina, limite, {}, ORDEN_LISTADO);
     }
 
-    obtenerActivos = async () => {
-        const colectivos = await this.colectivoRepository.findBy({ active: true });
-        return colectivos;
+    obtenerActivos = async ({ pagina, limite } = {}) => {
+        return await this.colectivoRepository.buscarConPaginacion(pagina, limite, { active: true }, ORDEN_LISTADO);
     }
 
     // idUsuario: usuario de la sesión que crea el colectivo (queda como su cuenta)
