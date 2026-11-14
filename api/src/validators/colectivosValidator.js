@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { objectId, alMenosUnCampo } = require('./comunes.js');
+const { objectId, alMenosUnCampo, paginacion } = require('./comunes.js');
 const { TipoColectivo } = require('../models/colectivo.js');
 
 const campos = {
@@ -27,6 +27,7 @@ const validarIdsColectivo = z.object({
 
 const validarFiltrosColectivo = z.object({
     activos: z.enum(['true', 'false'], { error: "El filtro 'activos' debe ser 'true' o 'false'" }).optional(),
+    ...paginacion,
 });
 
 module.exports = {

@@ -3,6 +3,7 @@ const { ColaboracionController } = require('../controllers/colaboracionControlle
 
 // Import de validaciones
 const validar = require('../middlewares/validar.js')
+const { validarPaginacion } = require('../validators/comunes.js')
 //const { validarCreacionColaboracion } = require('../validators/colaboracionValidator.js')
 
 const autenticar = require('../middlewares/autenticar.js')
@@ -13,7 +14,10 @@ const colaboracionController = new ColaboracionController()
 const router = express.Router()
 
 router.route('/')
-    .get((req, res) => colaboracionController.obtenerColaboraciones(req, res))
+    .get(
+        validar(validarPaginacion, 'query'),
+        (req, res) => colaboracionController.obtenerColaboraciones(req, res)
+    )
     .post(
         validar(validarCreacionColaboracion, 'body'),
         (req, res) => colaboracionController.crearColaboracion(req, res)

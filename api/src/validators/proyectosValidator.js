@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { objectId, alMenosUnCampo } = require('./comunes.js');
+const { objectId, alMenosUnCampo, paginacion } = require('./comunes.js');
 const { Periodo } = require('../models/proyecto.js');
 
 const enlace = (mensaje) => z.url({ error: mensaje }).nullable();
@@ -68,6 +68,7 @@ const validarActualizacionProyecto = z.object({
 
 const validarFiltrosProyecto = z.object({
     texto: z.string({ error: "El filtro 'texto' debe ser un texto" }).trim().optional(),
+    ...paginacion,
 });
 
 const validarFinalizacionProyecto = z.object({

@@ -3,13 +3,17 @@ const { HabilidadController } = require('../controllers/habilidadController.js')
 
 // Import de validaciones
 const validar = require('../middlewares/validar.js')
+const { validarPaginacion } = require('../validators/comunes.js')
 const { validarCreacionHabilidad, validarIdsHabilidad } = require('../validators/habilidadesValidator.js')
 
 const habilidadController = new HabilidadController()
 const router = express.Router()
 
 router.route('/')
-    .get((req, res) => habilidadController.obtenerHabilidades(req, res))
+    .get(
+        validar(validarPaginacion, 'query'),
+        (req, res) => habilidadController.obtenerHabilidades(req, res)
+    )
     .post(
         validar(validarCreacionHabilidad, 'body'),
         (req, res) => habilidadController.crearHabilidad(req, res)
