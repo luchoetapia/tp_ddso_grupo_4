@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import apiQuery from '@/services/api/apiQuery'
+import alertas from '@/services/alertas'
 
-const registrar = () => {
+const Registrar = () => {
   const [tipoRegistro, setTipoRegistro] = useState('Colectivo');
 
   const [nombreOrg, setNombreOrg] = useState('');
@@ -23,57 +25,38 @@ const registrar = () => {
   const [password, setPassword] = useState('');
 
   const registrarUsuario = async (rol) => {
-    const res = await fetch('/api/auth/registro', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password, rol }),
-    });
-
-    if (!res.ok) {
-        const data = await res.json();
-        alert('Error al crear el usuario: ' + data.message);
+    // Si falla, apiQuery ya muestra la alerta con el error
+    try {
+        await apiQuery.post('/auth/registro', { username, email, password, rol }, { mensajeError: 'No se pudo crear el usuario.' });
+        return true;
+    } catch {
+        return false;
     }
-
-    return res.ok;
   };
 
   const registrarColectivo = async (e) => {
     e.preventDefault();
     if (!(await registrarUsuario('colectivo'))) return;
 
-    const res = await fetch('/api/colectivos', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    try {
+        await apiQuery.post('/colectivos', {
             nombre: nombreOrg,
             tipo: tipoOrg,
             descripcion: descripcionOrg,
             ubicacion: ubicacionOrg,
-        }),
-    });
-    const data = await res.json();
-
-    if (res.ok)
-        alert('Organización registrada exitosamente');
-
-    else
-        alert('Error al registrar la organización: ' + data.message);
+        }, { mensajeError: 'No se pudo registrar la organización.' });
+        alertas.exito('Organización registrada exitosamente');
+    } catch {
+        // apiQuery ya mostró la alerta de error
+    }
     };
 
     const registrarColaborador = async (e) => {
         e.preventDefault();
         if (!(await registrarUsuario('colaborador'))) return;
 
-        const res = await fetch('/api/colaboradores', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        try {
+            await apiQuery.post('/colaboradores', {
                 nombre: nombreColaborador,
                 apellido: apellidoColaborador,
                 nombreFantasia: nombreFantasia || undefined,
@@ -81,14 +64,11 @@ const registrar = () => {
                 pronombres: pronombres || undefined,
                 presentacion: presentacion || undefined,
                 deseaSerContactado: deseaSerContactado,
-            }),
-        });
-        const data = await res.json();
-
-        if(res.ok)
-            alert('Colaborador registrado exitosamente');
-        else
-            alert('Error al registrar el colaborador: ' + data.message);
+            }, { mensajeError: 'No se pudo registrar el colaborador.' });
+            alertas.exito('Colaborador registrado exitosamente');
+        } catch {
+            // apiQuery ya mostró la alerta de error
+        }
     };
 
   const estiloLabel = 'flex flex-col gap-[3px] text-[13px] text-muted';
@@ -179,4 +159,4 @@ const registrar = () => {
   );
 };
 
-export default registrar;
+export default Registrar;

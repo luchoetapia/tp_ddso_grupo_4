@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import apiQuery from '@/services/api/apiQuery'
 
 const Ingresar = () => {
     const [accessKey, setAccessKey] = useState('');
@@ -11,23 +12,14 @@ const Ingresar = () => {
     const ingresarUsuario = async (e) => {
         e.preventDefault();
 
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ accessKey, password }),
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-            alert('Error al ingresar: ' + data.message);
+        try {
+            // Si falla, apiQuery ya muestra la alerta con el error
+            const data = await apiQuery.post('/auth/login', { accessKey, password }, { mensajeError: 'No se pudo ingresar.' });
+            router.push('/');
+            return data.usuario;
+        } catch {
             return null;
         }
-
-        router.push('/');
-        return data.usuario;
     };
 
     const estiloLabel = 'flex flex-col gap-[3px] text-[13px] text-muted';
