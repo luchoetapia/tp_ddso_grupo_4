@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const paginable = require('../plugins/paginable');
 const { TipoCompromiso, ModalidadColaboracion, Proyecto, Periodo, Logro, Perfil } = require('../../models/proyecto');
 const Schema = mongoose.Schema;
 
@@ -57,5 +58,7 @@ modalidadColaboracionSchema.loadClass(ModalidadColaboracion);
 logroSchema.loadClass(Logro);
 perfilSchema.loadClass(Perfil);
 proyectoSchema.loadClass(Proyecto);
+
+proyectoSchema.plugin(paginable);
 
 module.exports = mongoose.model('Proyecto', proyectoSchema);
