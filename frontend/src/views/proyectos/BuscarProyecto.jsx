@@ -16,7 +16,9 @@ const BuscarProyecto = () => {
 
         // Si falla, apiQuery ya muestra la alerta con el error
         try {
-            return await apiQuery.get('/proyectos', { params: { texto }, mensajeError: 'No se pudieron buscar los proyectos.' });
+            // El listado viene paginado: { data, paginacion }
+            const { data } = await apiQuery.get('/proyectos', { params: { texto }, mensajeError: 'No se pudieron buscar los proyectos.' });
+            return data;
         } catch {
             return [];
         }
@@ -34,10 +36,10 @@ const BuscarProyecto = () => {
 
         let data;
         try {
-            data = await apiQuery.get(
+            ({ data } = await apiQuery.get(
                 `/colaboradores/${encodeURIComponent(cuentaGit)}/buscarPotencialesProyectos`,
                 { mensajeError: 'No se pudieron buscar los proyectos.' }
-            );
+            ));
         } catch {
             return [];
         }

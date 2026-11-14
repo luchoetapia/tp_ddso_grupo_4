@@ -17,8 +17,9 @@ const BuscarColaboradoras = () => {
     useEffect(() => {
         // Los errores los muestra apiQuery como alerta
         apiQuery
-            .get("/proyectos", { mensajeError: "No se pudieron cargar los proyectos." })
-            .then((data) => setProyectos(data.filter((p) => !p.finalizado)))
+            // TEMPORAL: el listado viene paginado; para el select se pide la página más grande permitida
+            .get("/proyectos", { params: { limite: 10 }, mensajeError: "No se pudieron cargar los proyectos." })
+            .then(({ data }) => setProyectos(data.filter((p) => !p.finalizado)))
             .catch(() => {});
     }, []);
 
@@ -44,7 +45,7 @@ const BuscarColaboradoras = () => {
     const sigueVigente = () => numero === ultimaBusqueda.current;
     setCargando(true);
     try {
-            const data = await apiQuery.get(
+            const { data } = await apiQuery.get(
                 `/proyectos/${idProyecto}/perfiles/${id}/buscarPotencialesColaboradores`,
                 { mensajeError: "No se pudo realizar la búsqueda." }
             );
