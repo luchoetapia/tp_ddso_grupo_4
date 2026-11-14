@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import alertas from './alertas';
+import alertas from '@/services/alertas';
 
 describe('alertas', () => {
     beforeEach(() => {

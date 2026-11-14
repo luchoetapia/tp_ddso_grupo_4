@@ -1,8 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import alertas from '@/services/alertas';
-import ContenedorAlertas from './ContenedorAlertas';
-import Toast from './Toast';
+import ContenedorAlertas from '@/components/common/ContenedorAlertas';
+import Toast from '@/components/common/Toast';
 
 describe('ContenedorAlertas', () => {
     beforeEach(() => {

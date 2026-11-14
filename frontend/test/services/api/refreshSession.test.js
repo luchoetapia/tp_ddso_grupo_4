@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import alertas from '@/services/alertas';
-import refreshSession from './refreshSession';
+import refreshSession from '@/services/api/refreshSession';
 
 describe('refreshSession.redirigirALogin', () => {
     afterEach(() => {

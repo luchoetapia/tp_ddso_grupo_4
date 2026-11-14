@@ -4,6 +4,9 @@ export const DURACION_MS = 10000;
 export const MAX_VISIBLES = 3;
 export const TIPOS = ['info', 'error', 'aviso', 'exito'];
 
+// Clave de sessionStorage para alertas que tienen que sobrevivir a una recarga (ej.: redirect al login)
+const CLAVE_DIFERIDAS = 'alertasDiferidas';
+
 class Alertas {
     constructor() {
         this.lista = [];          // se reemplaza en cada cambio: obtener() devuelve una referencia estable
@@ -30,6 +33,39 @@ class Alertas {
     };
 
     obtener = () => this.lista;
+
+    // Guarda una alerta para mostrarla después de una navegación con recarga completa
+    diferir = (tipo, mensaje) => {
+        try {
+            const pendientes = this.leerDiferidas();
+            pendientes.push({ tipo, mensaje });
+            sessionStorage.setItem(CLAVE_DIFERIDAS, JSON.stringify(pendientes));
+        } catch {
+            // sin sessionStorage (server, modo privado): no hay nada que hacer
+        }
+    };
+
+    // La llama <ContenedorAlertas /> al montarse: muestra las diferidas y las borra
+    recuperarDiferidas = () => {
+        const pendientes = this.leerDiferidas();
+        try {
+            sessionStorage.removeItem(CLAVE_DIFERIDAS);
+        } catch {
+            return;
+        }
+        pendientes
+            .filter(({ tipo }) => TIPOS.includes(tipo))
+            .forEach(({ tipo, mensaje }) => this.agregar(tipo, mensaje));
+    };
+
+    leerDiferidas = () => {
+        try {
+            const pendientes = JSON.parse(sessionStorage.getItem(CLAVE_DIFERIDAS) ?? '[]');
+            return Array.isArray(pendientes) ? pendientes : [];
+        } catch {
+            return [];
+        }
+    };
 
     agregar = (tipo, mensaje) => {
         if (typeof mensaje !== 'string' || !mensaje.trim()) return null;

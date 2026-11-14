@@ -1,8 +1,8 @@
 import axios, { AxiosError } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import alertas from '@/services/alertas';
-import apiQuery from './apiQuery';
-import refreshSession from './refreshSession';
+import apiQuery from '@/services/api/apiQuery';
+import refreshSession from '@/services/api/refreshSession';
 
 // Adapter de axios que responde con un error HTTP sin salir a la red
 const responderError = (status, data = {}) => (config) =>

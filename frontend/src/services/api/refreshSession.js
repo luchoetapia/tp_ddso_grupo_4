@@ -1,4 +1,5 @@
 import axios from 'axios';
+import alertas from '../alertas';
 
 const LOGIN_PATH = '/ingresar';
 
@@ -40,6 +41,9 @@ class RefreshSession {
 
         const { pathname, search } = window.location;
         if (pathname === LOGIN_PATH) return;
+
+        // La página se recarga entera: la alerta tiene que sobrevivir a la navegación
+        alertas.diferir('error', 'Tenés que iniciar sesión para continuar.');
 
         // Guardo a dónde volver después de loguearse
         const volverA = encodeURIComponent(pathname + search);
