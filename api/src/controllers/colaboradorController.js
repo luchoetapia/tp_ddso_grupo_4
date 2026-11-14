@@ -23,9 +23,9 @@ class ColaboradorController {
     }
 
     obtenerColaboradores = async (req, res) => {
-        const { pagina, limite } = req.query;
+        const { pagina, limite, orden, direccion } = req.query;
 
-        const resultado = await this.colaboradorService.obtenerTodos({ pagina, limite });
+        const resultado = await this.colaboradorService.obtenerTodos({ pagina, limite, orden, direccion });
         res.status(200).json(Paginado.desde(resultado.colaboradores, resultado, ColaboradorPublic))
     }
 
@@ -94,9 +94,9 @@ class ColaboradorController {
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit);
         const idsHabilidades = colaborador.habilidades.map(h => (h._id ?? h).toString());
 
-        const { pagina, limite } = req.query;
+        const { pagina, limite, orden, direccion } = req.query;
 
-        const resultado = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades, { pagina, limite });
+        const resultado = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades, { pagina, limite, orden, direccion });
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
 

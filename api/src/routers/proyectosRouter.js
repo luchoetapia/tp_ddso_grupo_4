@@ -3,7 +3,7 @@ const { ProyectoController } = require('../controllers/proyectoController.js')
 
 // Import de validaciones
 const validar = require('../middlewares/validar.js')
-const { validarPaginacion } = require('../validators/comunes.js')
+const { validarListado } = require('../validators/comunes.js')
 const { validarCreacionLogro, validarActualizacionLogro, validarIdsLogro } = require('../validators/logrosValidator.js')
 const {
     validarCreacionProyecto,
@@ -78,7 +78,7 @@ router.route('/:id/perfiles/:idPerfil')
 router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')
     .get(
         validar(validarIdsPerfilDeProyecto, 'params'),
-        validar(validarPaginacion, 'query'),
+        validar(validarListado, 'query'),
         (req, res) => proyectoController.buscarPotencialesColaboradores(req, res)
     );
 

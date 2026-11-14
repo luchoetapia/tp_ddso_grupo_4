@@ -37,12 +37,25 @@ describe('ColaboradorService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodos', () => {
-        test('pagina en la BD ordenando por cuenta de Git', async () => {
+        test('pagina en la BD, por defecto alfabético por cuenta de Git', async () => {
             const pagina = { colaboradores: [colaboradorDoc()], total: 1, pagina: 1, limite: 10, totalPaginas: 1 };
             colaboradorRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
             await expect(colaboradorService.obtenerTodos({ pagina: 1, limite: 10 })).resolves.toBe(pagina);
             expect(colaboradorRepository.buscarConPaginacion).toHaveBeenCalledWith(1, 10, {}, { cuentaGit: 1, _id: 1 });
+        });
+
+        test('ordena por la clave elegida y desempata por cuenta de Git e id', async () => {
+            colaboradorRepository.buscarConPaginacion.mockResolvedValue({ colaboradores: [] });
+
+            await colaboradorService.obtenerTodos({ orden: 'nombre', direccion: 'desc' });
+
+            expect(colaboradorRepository.buscarConPaginacion).toHaveBeenCalledWith(undefined, undefined, {}, { nombre: -1, cuentaGit: 1, _id: 1 });
+        });
+
+        test('rechaza una clave de orden que no existe', async () => {
+            await expect(colaboradorService.obtenerTodos({ orden: 'contactos' })).rejects.toThrow(BadRequestError);
+            expect(colaboradorRepository.buscarConPaginacion).not.toHaveBeenCalled();
         });
     });
 

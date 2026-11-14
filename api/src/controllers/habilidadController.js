@@ -11,9 +11,9 @@ class HabilidadController {
     }
 
     obtenerHabilidades = async (req, res) => {
-        const { pagina, limite } = req.query;
+        const { pagina, limite, orden, direccion } = req.query;
 
-        const resultado = await this.habilidadService.obtenerTodas({ pagina, limite });
+        const resultado = await this.habilidadService.obtenerTodas({ pagina, limite, orden, direccion });
         res.status(200).json(Paginado.desde(resultado.habilidades, resultado, HabilidadPublic))
     }
 

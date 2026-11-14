@@ -93,7 +93,18 @@ describe('Endpoints /proyectos', () => {
             expect(res.body.paginacion).toEqual({ pagina: 3, limite: 5, total: 12, totalPaginas: 3 });
         });
 
+        test('pasa ?orden y ?direccion al service', async () => {
+            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([]));
+
+            const res = await request(app).get('/proyectos?orden=titulo&direccion=desc');
+
+            expect(res.status).toBe(200);
+            expect(proyectoService.obtenerTodos).toHaveBeenCalledWith({ pagina: 1, limite: 10, orden: 'titulo', direccion: 'desc' });
+        });
+
         test.each([
+            ['direccion=arriba'],
+            ['orden=titulo;drop'],
             ['pagina=0'],
             ['pagina=abc'],
             ['limite=0'],

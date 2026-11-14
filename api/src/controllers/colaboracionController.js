@@ -8,9 +8,9 @@ class ColaboracionController {
     }
 
     obtenerColaboraciones = async (req, res) => {
-        const { pagina, limite } = req.query;
+        const { pagina, limite, orden, direccion } = req.query;
 
-        const resultado = await this.colaboracionService.obtenerTodas({ pagina, limite })
+        const resultado = await this.colaboracionService.obtenerTodas({ pagina, limite, orden, direccion })
         res.status(200).json(Paginado.desde(resultado.colaboraciones, resultado, ColaboracionPublic))
     }
 

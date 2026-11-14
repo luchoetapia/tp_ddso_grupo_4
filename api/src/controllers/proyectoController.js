@@ -22,11 +22,11 @@ class ProyectoController {
 
     obtenerProyectos = async (req, res) => {
         // req.query ya viene validado: texto recortado y pagina/limite como números
-        const { texto, pagina, limite } = req.query;
+        const { texto, pagina, limite, orden, direccion } = req.query;
 
         const resultado = texto
-            ? await this.proyectoService.buscarPorTexto(texto, { pagina, limite })
-            : await this.proyectoService.obtenerTodos({ pagina, limite });
+            ? await this.proyectoService.buscarPorTexto(texto, { pagina, limite, orden, direccion })
+            : await this.proyectoService.obtenerTodos({ pagina, limite, orden, direccion });
 
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
@@ -134,9 +134,9 @@ class ProyectoController {
     buscarPotencialesColaboradores = async (req, res) => {
         const { id, idPerfil } = req.params;
 
-        const { pagina, limite } = req.query;
+        const { pagina, limite, orden, direccion } = req.query;
 
-        const resultado = await this.proyectoService.buscarPotencialesColaboradores(id, idPerfil, { pagina, limite });
+        const resultado = await this.proyectoService.buscarPotencialesColaboradores(id, idPerfil, { pagina, limite, orden, direccion });
         res.status(200).json(Paginado.desde(resultado.colaboradores, resultado, ColaboradorPublic));
     }
 

@@ -18,11 +18,23 @@ const paginacion = {
         .default(10),
 };
 
-const validarPaginacion = z.object(paginacion);
+// Ordenamiento de los listados (?orden=&direccion=). 'orden' es la clave de un campo (ej. 'titulo', 'fechaCreacion'):
+// acá solo se valida el formato; qué claves existen para cada listado lo define su service
+const ordenamiento = {
+    orden: z.string({ error: "El orden debe ser un texto" })
+        .trim()
+        .regex(/^[a-zA-Z]+$/, "El orden debe ser la clave de un campo (solo letras)")
+        .optional(),
+    direccion: z.enum(['asc', 'desc'], { error: "La dirección debe ser 'asc' o 'desc'" }).optional(),
+};
+
+// Query de un listado: paginación + ordenamiento
+const validarListado = z.object({ ...paginacion, ...ordenamiento });
 
 module.exports = {
     objectId,
     alMenosUnCampo,
     paginacion,
-    validarPaginacion,
+    ordenamiento,
+    validarListado,
 };

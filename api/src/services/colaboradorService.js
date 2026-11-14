@@ -3,8 +3,17 @@ const colaboradorRepository = require('../repositories/colaboradorRepository.js'
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const habilidadService = require("./habilidadService.js");
 
-// Orden de los listados: alfabético por cuenta de Git (el _id desempata para que el orden sea estable entre páginas)
-const ORDEN_LISTADO = { cuentaGit: 1, _id: 1 };
+const { construirOrden } = require('./ordenamiento.js');
+
+// Claves por las que el front puede ordenar las colaboradoras (2° criterio: cuenta de Git, 3°: _id)
+const ORDENAMIENTO = {
+    campos: {
+        cuentaGit: 'cuentaGit',
+        nombre: 'nombre',
+    },
+    campoNombre: 'cuentaGit',
+    porDefecto: { orden: 'cuentaGit', direccion: 'asc' },
+};
 
 const MENSAJE_USUARIO_CON_COLABORADOR = "El usuario ya tiene un perfil de colaborador asociado";
 
@@ -14,8 +23,9 @@ class ColaboradorService {
         this.habilidadService = habilidadService;
     }
 
-    obtenerTodos = async ({ pagina, limite } = {}) => {
-        return await this.colaboradorRepository.buscarConPaginacion(pagina, limite, {}, ORDEN_LISTADO);
+    obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.colaboradorRepository.buscarConPaginacion(pagina, limite, {}, sort);
     }
 
     // idUsuario: usuario de la sesión que crea el perfil (queda como su cuenta)
@@ -81,7 +91,7 @@ class ColaboradorService {
 
     // A diferencia de la búsqueda de potenciales proyectos, acá el filtro se expresa entero en la query
     // y no hay un ranking en JS: se puede paginar directo en la BD
-    obtenerColaboradoresPotenciales = async (perfiles, { pagina, limite } = {}) => {
+    obtenerColaboradoresPotenciales = async (perfiles, { pagina, limite, orden, direccion } = {}) => {
         const habilidadesRequeridas = perfiles
             .filter(perfil => perfil.habilidadesRequeridas && perfil.habilidadesRequeridas.length > 0)
             .map(
@@ -94,7 +104,8 @@ class ColaboradorService {
             ? { $or: habilidadesRequeridas.map(conjunto => ({ habilidades: { $all: conjunto } })) }
             : {}
         
-        return await this.colaboradorRepository.buscarConPaginacion(pagina, limite, condicion, ORDEN_LISTADO)
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.colaboradorRepository.buscarConPaginacion(pagina, limite, condicion, sort)
     }
 
     buscarPorUsuario = async (idUsuario) => {

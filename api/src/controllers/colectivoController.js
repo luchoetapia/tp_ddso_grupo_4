@@ -13,11 +13,11 @@ class ColectivoController {
     }
 
     obtenerColectivos = async (req, res) => {
-        const { activos, pagina, limite } = req.query;
+        const { activos, pagina, limite, orden, direccion } = req.query;
 
         const resultado = activos === 'true'
-            ? await this.colectivoService.obtenerActivos({ pagina, limite })
-            : await this.colectivoService.obtenerTodos({ pagina, limite });
+            ? await this.colectivoService.obtenerActivos({ pagina, limite, orden, direccion })
+            : await this.colectivoService.obtenerTodos({ pagina, limite, orden, direccion });
 
         res.status(200).json(Paginado.desde(resultado.colectivos, resultado, ColectivoPublic))
     }

@@ -4,9 +4,21 @@ const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { construirOrden } = require('./ordenamiento.js');
 
-// Orden de los listados: más recientes primero (el _id de Mongo crece con la fecha de creación)
-const ORDEN_LISTADO = { _id: -1 };
+// Claves por las que el front puede ordenar los proyectos (2° criterio: título, 3°: _id)
+const ORDENAMIENTO = {
+    campos: {
+        titulo: 'titulo',
+        fechaCreacion: 'createdAt',
+        porcentajeFinalizado: 'porcentajeFinalizado',
+    },
+    campoNombre: 'titulo',
+    porDefecto: { orden: 'fechaCreacion', direccion: 'desc' },
+};
+
+// Orden extra de la búsqueda de potenciales proyectos: ranking calculado en JS (no es un campo del documento)
+const ORDEN_RELEVANCIA = 'relevancia';
 
 class ProyectoService {
     constructor() {
@@ -16,11 +28,12 @@ class ProyectoService {
         this.colectivoRepository = colectivoRepository;
     }
 
-    obtenerTodos = async ({ pagina, limite } = {}) => {
-        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, {}, ORDEN_LISTADO);
+    obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, {}, sort);
     }
 
-    buscarPorTexto = async (texto, { pagina, limite } = {}) => {
+    buscarPorTexto = async (texto, { pagina, limite, orden, direccion } = {}) => {
         // Escapo caracteres especiales para que el texto se busque literal y no como regex
         const textoRegex = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const coincide = { $regex: textoRegex, $options: 'i' };
@@ -32,7 +45,8 @@ class ProyectoService {
             ]
         };
 
-        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, condicion, ORDEN_LISTADO);
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, condicion, sort);
     }
 
     crear = async (datos, idUsuario = null) => {
@@ -116,26 +130,31 @@ class ProyectoService {
         return perfiles.length > 0;
     }
 
-    ordenarPorCantidadHabilidadesCumplidas = (proyectos, idsHabilidades) => {
-        // Ordena los proyectos por la cantidad de perfiles que cumplen con las habilidades dadas. 
-        // En caso de empate, por la cantidad total de habilidades cumplidas
+    // Ranking de relevancia: 1° cantidad de perfiles que cumple, 2° cantidad de habilidades cumplidas
+    // (ambos según la dirección; desc = más relevantes primero). Empates: título alfabético y después id
+    ordenarPorCantidadHabilidadesCumplidas = (proyectos, idsHabilidades, direccion = 'desc') => {
+        const sentido = direccion === 'asc' ? 1 : -1;
+
         return proyectos.sort((a, b) => {
             const perfilesA = a.obtenerPerfilesQueCumplen(idsHabilidades);
             const perfilesB = b.obtenerPerfilesQueCumplen(idsHabilidades);
 
-            if (perfilesA.length !== perfilesB.length) 
-                return perfilesB.length - perfilesA.length; // Orden descendente por cantidad de perfiles que cumplen
+            if (perfilesA.length !== perfilesB.length)
+                return sentido * (perfilesA.length - perfilesB.length);
 
             const cantidadA = a.obtenerCantidadHabilidadesCumplidas(idsHabilidades, perfilesA);
             const cantidadB = b.obtenerCantidadHabilidadesCumplidas(idsHabilidades, perfilesB);
+            if (cantidadA !== cantidadB)
+                return sentido * (cantidadA - cantidadB);
 
-            return cantidadB - cantidadA; // Orden descendente
+            return (a.titulo ?? '').localeCompare(b.titulo ?? '') || String(a.id).localeCompare(String(b.id));
         })
     }
 
-    // Se pagina en memoria (no en la BD) porque el orden depende de un ranking calculado en JS
-    // (perfiles que cumple y habilidades cumplidas): hay que traer todos los candidatos, ordenarlos y recién ahí cortar la página
-    buscarPotencialesProyectos = async (idsHabilidades, { pagina = 1, limite = 10 } = {}) => {
+    // Con orden 'relevancia' (default) se pagina en memoria: el ranking se calcula en JS, así que hay que traer
+    // todos los candidatos, ordenarlos y recién ahí cortar la página.
+    // Con cualquier otro orden el filtro y el orden se expresan en la query: se pagina directo en la BD.
+    buscarPotencialesProyectos = async (idsHabilidades, { pagina = 1, limite = 10, orden = ORDEN_RELEVANCIA, direccion } = {}) => {
         const condicion = {
             finalizado: false,
             perfiles: {
@@ -146,9 +165,14 @@ class ProyectoService {
                 }
             }
         }
-        
+
+        if (orden !== ORDEN_RELEVANCIA) {
+            const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+            return await this.proyectoRepository.buscarConPaginacion(pagina, limite, condicion, sort);
+        }
+
         const candidatos = await this.proyectoRepository.findByCondition(condicion);
-        const ordenados = this.ordenarPorCantidadHabilidadesCumplidas(candidatos, idsHabilidades);
+        const ordenados = this.ordenarPorCantidadHabilidadesCumplidas(candidatos, idsHabilidades, direccion);
 
         const inicio = (pagina - 1) * limite;
         return {

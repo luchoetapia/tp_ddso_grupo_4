@@ -64,12 +64,20 @@ describe('ProyectoService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodos', () => {
-        test('pagina en la BD, los más recientes primero', async () => {
+        test('pagina en la BD, por defecto los más recientes primero', async () => {
             const pagina = { proyectos: [proyectoDoc()], total: 1, pagina: 2, limite: 5, totalPaginas: 1 };
             proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
             await expect(proyectoService.obtenerTodos({ pagina: 2, limite: 5 })).resolves.toBe(pagina);
-            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(2, 5, {}, { _id: -1 });
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(2, 5, {}, { createdAt: -1, titulo: 1, _id: 1 });
+        });
+
+        test('ordenar por título no repite el título como segundo criterio', async () => {
+            proyectoRepository.buscarConPaginacion.mockResolvedValue({ proyectos: [] });
+
+            await proyectoService.obtenerTodos({ orden: 'titulo', direccion: 'desc' });
+
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(undefined, undefined, {}, { titulo: -1, _id: 1 });
         });
     });
 
@@ -82,7 +90,7 @@ describe('ProyectoService', () => {
 
             const coincide = { $regex: 'c\\+\\+', $options: 'i' };
             expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(
-                1, 10, { $or: [{ titulo: coincide }, { descripcion: coincide }] }, { _id: -1 }
+                1, 10, { $or: [{ titulo: coincide }, { descripcion: coincide }] }, { createdAt: -1, titulo: 1, _id: 1 }
             );
         });
     });
@@ -289,6 +297,30 @@ describe('ProyectoService', () => {
 
             expect(resultado.proyectos.map(p => p.id)).toEqual(['unPerfil']);
             expect(resultado).toMatchObject({ total: 3, pagina: 2, limite: 2, totalPaginas: 2 });
+        });
+
+        test("con orden 'relevancia' y dirección asc pone primero los menos relevantes", async () => {
+            const unPerfil = proyecto('unPerfil', [perfil([ID_HAB])]);
+            const unPerfilConOpcional = proyecto('unPerfilConOpcional', [perfil([ID_HAB], [ID_HAB_2])]);
+            const dosPerfiles = proyecto('dosPerfiles', [perfil([ID_HAB]), perfil([])]);
+            proyectoRepository.findByCondition.mockResolvedValue([dosPerfiles, unPerfil, unPerfilConOpcional]);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB, ID_HAB_2], { orden: 'relevancia', direccion: 'asc' });
+
+            expect(resultado.proyectos.map(p => p.id)).toEqual(['unPerfil', 'unPerfilConOpcional', 'dosPerfiles']);
+        });
+
+        test('con otro orden pagina directo en la BD con el mismo filtro', async () => {
+            const pagina = { proyectos: [], total: 0, pagina: 2, limite: 5, totalPaginas: 0 };
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB], { pagina: 2, limite: 5, orden: 'porcentajeFinalizado', direccion: 'desc' });
+
+            expect(resultado).toBe(pagina);
+            expect(proyectoRepository.findByCondition).not.toHaveBeenCalled();
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(
+                2, 5, expect.objectContaining({ finalizado: false }), { porcentajeFinalizado: -1, titulo: 1, _id: 1 }
+            );
         });
 
         test('usa página 1 y límite 10 por defecto', async () => {
