@@ -2,6 +2,7 @@ import axios from 'axios';
 import timeout from './timeout';
 import refreshSession from './refreshSession';
 import manejoErrores from './manejoErrores';
+import alertas from '../alertas';
 
 // Todas las rutas son relativas a /api (Next las reescribe al back).
 // withCredentials: las cookies httpOnly de sesión viajan en cada request.
@@ -35,13 +36,23 @@ const request = async ({ mensajeError, ...config }, reintentado = false) => {
     }
 };
 
+// Muestra el error al usuario una sola vez por llamada (aunque request se reintente por el refresh).
+// No alerta si la request se canceló o si quien llama pasó { alertarError: false }.
+const conAlerta = (promesa, alertarError) =>
+    promesa.catch((error) => {
+        if (alertarError && !error.cancelado) alertas.error(error.mensaje);
+        throw error;
+    });
+
+const llamar = ({ alertarError = true, ...config }) => conAlerta(request(config), alertarError);
+
 // Solo esto queda expuesto a las vistas
 const apiQuery = {
-    get: (url, opciones = {}) => request({ ...opciones, method: 'get', url }),
-    post: (url, data, opciones = {}) => request({ ...opciones, method: 'post', url, data }),
-    put: (url, data, opciones = {}) => request({ ...opciones, method: 'put', url, data }),
-    patch: (url, data, opciones = {}) => request({ ...opciones, method: 'patch', url, data }),
-    delete: (url, opciones = {}) => request({ ...opciones, method: 'delete', url }),
+    get: (url, opciones = {}) => llamar({ ...opciones, method: 'get', url }),
+    post: (url, data, opciones = {}) => llamar({ ...opciones, method: 'post', url, data }),
+    put: (url, data, opciones = {}) => llamar({ ...opciones, method: 'put', url, data }),
+    patch: (url, data, opciones = {}) => llamar({ ...opciones, method: 'patch', url, data }),
+    delete: (url, opciones = {}) => llamar({ ...opciones, method: 'delete', url }),
 };
 
 export default apiQuery;
