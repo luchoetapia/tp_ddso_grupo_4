@@ -10,8 +10,7 @@ class ProyectoRepository {
         const [proyectos, total] = await Promise.all([
             ProyectoModel.find(filtros, datosNecesarios)
                 .paginar({ pagina, limite, orden })
-                .paginar({ pagina, limite, orden })
-                .populate(REFERENCIAS),.populate(HABILIDADES_PERFILES),
+                .populate(HABILIDADES_PERFILES),
             ProyectoModel.countDocuments(filtros)
         ]);
 
