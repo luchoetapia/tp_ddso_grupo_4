@@ -1,5 +1,6 @@
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import Navegacion from "@/components/layout/Navegacion";
 
 const fraunces = Fraunces({
     subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
     return (
         <html lang="es" className={`${fraunces.variable} ${jakarta.variable}`}>
             <body>
+                <Navegacion />
                 <main className="main">{children}</main>
             </body>
         </html>
