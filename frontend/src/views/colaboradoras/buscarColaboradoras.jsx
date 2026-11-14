@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
-import { Button, Card, Select, Skeleton, Tag, Toast } from "@/components/common";
-
-const mensajeDeError = (e, porDefecto) => e?.response?.data?.message ?? porDefecto;
+import { Button, Card, Select, Skeleton, Tag } from "@/components/common";
+import apiQuery from "@/services/api/apiQuery";
+import alertas from "@/services/alertas";
 
 const BuscarColaboradoras = () => {
     const [proyectos, setProyectos] = useState([]);
@@ -12,16 +11,15 @@ const BuscarColaboradoras = () => {
     const [idPerfil, setIdPerfil] = useState("");
     const [colaboradoras, setColaboradoras] = useState(null); 
     const [cargando, setCargando] = useState(false);
-    const [error, setError] = useState(null);
-    const [aviso, setAviso] = useState(null);
     const [aContactar, setAContactar] = useState(null);
     const ultimaBusqueda = useRef(0);
 
     useEffect(() => {
-        axios
-            .get("/api/proyectos")
-            .then(({ data }) => setProyectos(data.filter((p) => !p.finalizado)))
-            .catch((e) => setError(mensajeDeError(e, "No se pudieron cargar los proyectos.")));
+        // Los errores los muestra apiQuery como alerta
+        apiQuery
+            .get("/proyectos", { mensajeError: "No se pudieron cargar los proyectos." })
+            .then((data) => setProyectos(data.filter((p) => !p.finalizado)))
+            .catch(() => {});
     }, []);
 
     const proyecto = proyectos.find((p) => p.id === idProyecto);
@@ -32,14 +30,10 @@ const BuscarColaboradoras = () => {
         setIdPerfil("");
         setColaboradoras(null);
         setCargando(false);
-        setError(null);
-        setAviso(null);
     };
     
     const cambiarPerfil = async (id) => {
         setIdPerfil(id);
-        setAviso(null);
-        setError(null);
         if (!id) {
             ultimaBusqueda.current++;
             setColaboradoras(null);
@@ -50,12 +44,13 @@ const BuscarColaboradoras = () => {
     const sigueVigente = () => numero === ultimaBusqueda.current;
     setCargando(true);
     try {
-            const { data } = await axios.get(
-                `/api/proyectos/${idProyecto}/perfiles/${id}/buscarPotencialesColaboradores`
+            const data = await apiQuery.get(
+                `/proyectos/${idProyecto}/perfiles/${id}/buscarPotencialesColaboradores`,
+                { mensajeError: "No se pudo realizar la búsqueda." }
             );
             if (sigueVigente()) setColaboradoras(data);
-        } catch (e) {
-            if (sigueVigente()) setError(mensajeDeError(e, "No se pudo realizar la búsqueda."));
+        } catch {
+            // apiQuery ya mostró la alerta de error
         } finally {
             if (sigueVigente()) setCargando(false);
         }
@@ -63,7 +58,7 @@ const BuscarColaboradoras = () => {
       
      const alEnviar = (texto) => {
         setAContactar(null);
-        setAviso(texto);
+        alertas.exito(texto);
     };
 
 return (
@@ -95,13 +90,6 @@ return (
                 </Select>
             </div>
 
-        {error && (
-                <p role="alert" className="text-error">
-                    {error}
-                </p>
-            )}
-
-            <div aria-live="polite">{aviso && <Toast>{aviso}</Toast>}</div>
         
         <div aria-busy={cargando}>
                 {cargando && (

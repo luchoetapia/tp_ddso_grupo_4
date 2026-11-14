@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import apiQuery from '@/services/api/apiQuery'
 
 const BuscarProyecto = () => {
 
@@ -13,20 +14,12 @@ const BuscarProyecto = () => {
     const busquedaNormal = async (e) => {
         e.preventDefault();
 
-        const res = await fetch(`/api/proyectos?texto=${encodeURIComponent(texto)}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-            alert('Error al buscar proyectos: ' + data.message);
+        // Si falla, apiQuery ya muestra la alerta con el error
+        try {
+            return await apiQuery.get('/proyectos', { params: { texto }, mensajeError: 'No se pudieron buscar los proyectos.' });
+        } catch {
             return [];
         }
-
-        return data;
     }
 
     const buscarProyectos = async (e) => {
@@ -39,17 +32,13 @@ const BuscarProyecto = () => {
     const busquedaPorHabilidades = async (e) => {
         e.preventDefault();
 
-        const res = await fetch(`/api/colaboradores/${encodeURIComponent(cuentaGit)}/buscarPotencialesProyectos`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-            alert('Error al buscar proyectos: ' + data.message);
+        let data;
+        try {
+            data = await apiQuery.get(
+                `/colaboradores/${encodeURIComponent(cuentaGit)}/buscarPotencialesProyectos`,
+                { mensajeError: 'No se pudieron buscar los proyectos.' }
+            );
+        } catch {
             return [];
         }
 
