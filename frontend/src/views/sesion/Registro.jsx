@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import apiQuery from "@/services/api/apiQuery"
 import alertas from "@/services/alertas"
 import Link from "next/link"
@@ -11,6 +10,7 @@ import PasoTipoCuenta from "@/components/registro/PasoTipoCuenta"
 import PasoContrasena, { LARGO_MINIMO_CONTRASENA } from "@/components/registro/PasoContrasena"
 import PasoDatosColaborador, { REGEX_CUENTA_GIT } from "@/components/registro/PasoDatosColaborador"
 import PasoDatosColectivo from "@/components/registro/PasoDatosColectivo"
+import RegistroExitoso from "@/components/registro/RegistroExitoso"
 
 const modelo_usuario = {
     username: null,
@@ -45,8 +45,8 @@ export function Registro() {
     const [colaborador, setColaborador] = useState(modelo_colaborador);
     const [colectivo, setColectivo] = useState(modelo_colectivo);
     const [paso, setPaso] = useState(1);
+    const [registrado, setRegistrado] = useState(false);
 
-    const router = useRouter();
     const CANT_PASOS = 3;
 
     const sinVacios = (datos) =>
@@ -111,8 +111,7 @@ export function Registro() {
                 { mensajeError: esColectivo ? 'No se pudo registrar la organización.' : 'No se pudo registrar el colaborador.' }
             );
 
-            alertas.exito(esColectivo ? 'Organización registrada exitosamente' : 'Colaborador registrado exitosamente');
-            router.push('/');
+            setRegistrado(true);
             return true;
         } catch {
             // apiQuery ya mostró la alerta con el error
@@ -145,6 +144,17 @@ export function Registro() {
     };
 
     const esUltimoPaso = paso === CANT_PASOS;
+
+    if (registrado) {
+        return (
+            <div className="mx-auto w-full max-w-[680px] py-4">
+                <RegistroExitoso
+                    nombre={esColectivo ? colectivo.nombre : colaborador.nombre}
+                    rol={esColectivo ? 'colectivo' : 'colaborador'}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto flex w-full max-w-[680px] flex-col gap-[18px] py-4">
