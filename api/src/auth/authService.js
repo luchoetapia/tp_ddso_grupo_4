@@ -38,6 +38,8 @@ class AuthService {
     }
 
     async registrarUsuario(username, password, email, rol, activo = true) {
+        this.validar(username, email);
+
         const body = {
             username,
             password: this._encriptarPassword(password),
@@ -49,13 +51,27 @@ class AuthService {
         try {
             return await this.repositorio.crearUsuario(body)
         } catch (err) {
-            if (err.code === 11000) {
-                const campo = Object.keys(err.keyPattern)[0];   // 'username' o 'email'
-                throw new ConflictError(`El ${campo} ya está en uso`);
-            }
-
             throw err;
         }
+    }
+
+    async verificarUsernameYEmail(username, email) {
+        const [usernameEnUso, emailEnUso] = await Promise.all([
+            this.repositorio.usernameEnUso(username),
+            this.repositorio.emailEnUso(email),
+        ]);
+
+        const enUso = [];
+        if (usernameEnUso) enUso.push('Nombre de usuario')
+        if (emailEnUso) enUso.push('Email')
+        
+        if (enUso.length)
+            throw new ConflictError(enUso.length === 1
+                ? `El campo ${enUso[0]} ya está en uso`
+                : `Los campos ${enUso.join(' y ')} ya están en uso`
+            )
+
+        return true;
     }
 }
 

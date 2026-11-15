@@ -87,6 +87,15 @@ class AuthController {
 
         res.status(200).json({ usuario: UsuarioPublic.desde(usuario) });
     }
+
+    validar = async (req, res) => {
+        const username = req.query.username.trim();
+        const email = req.query.email;
+
+        await this.service.verificarUsernameYEmail(username, email);
+
+        res.status(200).json({ disponible: true });
+    }
 }
 
 module.exports = { AuthController };

@@ -1,7 +1,7 @@
 const express = require('express')
 const { AuthController } = require('./authController.js')
 const validar = require('../middlewares/validar.js')
-const { validarLogin, validarRegistro } = require('./authValidator.js')
+const { validarLogin, validarRegistro, validarDisponibilidad } = require('./authValidator.js')
 const autenticar = require('../middlewares/autenticar.js')
 
 const authController = new AuthController()
@@ -15,6 +15,11 @@ router.post('/login',
 router.post('/registro',
     validar(validarRegistro, 'body'),
     (req, res) => authController.registro(req, res)
+)
+
+router.get('/validar',
+    validar(validarDisponibilidad, 'query'),
+    (req, res) => authController.validar(req, res)
 )
 
 router.post('/refresh',
