@@ -104,6 +104,11 @@ class ColaboradorController {
     const notificaciones = await this.notificacionService.obtenerPropias(req.usuario.id);
     res.status(200).json(notificaciones.map(NotificacionPublic.desde));
     }
+
+     obtenerMiPerfil = async (req, res) => {
+    const colaborador = await this.colaboradorService.obtenerPorUsuario(req.usuario.id)
+    res.status(200).json(ColaboradorPublic.desde(colaborador))
+    }
 }
 
 module.exports = { ColaboradorController };
