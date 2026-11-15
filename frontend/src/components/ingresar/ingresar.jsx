@@ -9,9 +9,7 @@ const Ingresar = () => {
     const [accessKey, setAccessKey] = useState('');
     const [password, setPassword] = useState('');
     const [cargando, setCargando] = useState(false);
-
-    // Con cacheComponents, Next oculta la página en vez de desmontarla y el estado sobrevive.
-    // Esta limpieza corre al salir de /ingresar y deja el formulario vacío para la próxima vez.
+    
     useLayoutEffect(() => () => {
         setAccessKey('');
         setPassword('');

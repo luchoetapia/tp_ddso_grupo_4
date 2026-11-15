@@ -122,8 +122,6 @@ export function Registro() {
 
     const [enviando, setEnviando] = useState(false);
 
-    // Con cacheComponents, Next oculta la página en vez de desmontarla y el estado sobrevive.
-    // Al salir de /registro se vuelve todo al estado inicial (incluida la contraseña).
     useLayoutEffect(() => () => {
         setUsuario(modelo_usuario);
         setColaborador(modelo_colaborador);
@@ -133,9 +131,29 @@ export function Registro() {
         setEnviando(false);
     }, []);
 
+    // GET /auth/validar: 200 si están libres, 409 con el campo en uso (apiQuery muestra la alerta)
+    const usuarioYEmailDisponibles = async () => {
+        setEnviando(true);
+        try {
+            await apiQuery.get('/auth/validar', {
+                params: { username: usuario.username.trim(), email: usuario.email.trim() },
+                mensajeError: 'No se pudo validar el usuario y el email.',
+            });
+            return true;
+        } catch {
+            return false;
+        } finally {
+            setEnviando(false);
+        }
+    };
+
     const handlerSiguiente = async (e) => {
         e.preventDefault();
-        if (!pasoCompleto()) return;
+        if (!pasoCompleto() || enviando) return;
+
+        // Antes de seguir, se chequea que el usuario y el email no estén en uso,
+        // así el error aparece acá y no recién al crear la cuenta en el último paso
+        if (paso === 1 && !(await usuarioYEmailDisponibles())) return;
 
         if (paso < CANT_PASOS) {
             setPaso((anterior) => anterior + 1);
@@ -198,7 +216,7 @@ export function Registro() {
                             )}
                         </div>
                         <Button type="submit" variant="primary" disabled={!pasoCompleto()} cargando={enviando} className="min-h-11 px-[22px]">
-                            {esUltimoPaso ? (enviando ? 'Creando cuenta…' : 'Crear cuenta') : 'Siguiente'}
+                            {esUltimoPaso ? (enviando ? 'Creando cuenta…' : 'Crear cuenta') : (enviando ? 'Validando…' : 'Siguiente')}
                             {!enviando && (
                                 <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
