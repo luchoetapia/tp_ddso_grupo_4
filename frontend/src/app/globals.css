@@ -14,6 +14,35 @@
     color-scheme: light;
 }
 
+/* Oscuro: elegido a mano (data-theme) o por el dispositivo si no se eligió "claro" */
+[data-theme="oscuro"] {
+    --bg: #0e1a18;
+    --card: #132421;
+    --sf: #162824;
+    --border: #26403a;
+    --text: #eaf3f0;
+    --muted: #a3b8b2;
+    --accent: #5eead4;
+    --on-accent: #06201c;
+    --error: #fda4af;
+    color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="claro"]) {
+        --bg: #0e1a18;
+        --card: #132421;
+        --sf: #162824;
+        --border: #26403a;
+        --text: #eaf3f0;
+        --muted: #a3b8b2;
+        --accent: #5eead4;
+        --on-accent: #06201c;
+        --error: #fda4af;
+        color-scheme: dark;
+    }
+}
+
 @theme inline {
     --color-bg: var(--bg);
     --color-card: var(--card);
