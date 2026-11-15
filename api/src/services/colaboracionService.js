@@ -31,6 +31,10 @@ class ColaboracionService {
         return await this.colaboracionRepository.buscarConPaginacion(pagina, limite, {}, sort);
     }
 
+    obtenerPorProyectoId = async (idProyecto) => {
+        const colaboraciones = await this.colaboracionRepository.findByProyectoID(idProyecto);
+    }
+
     crear = async (colaboracionData) => {
         const proyecto = await this.proyectoService.obtenerPorId(colaboracionData.idProyecto);
         const colaborador = await this.colaboradorService.obtenerPorId(colaboracionData.idColaborador);
