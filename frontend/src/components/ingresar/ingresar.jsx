@@ -26,7 +26,7 @@ const Ingresar = () => {
     const estiloControl = 'w-full rounded-[10px] border border-border bg-bg p-2.5 text-[15px] text-text';
 
     return (
-        <section className="mx-auto flex w-full max-w-[440px] flex-col gap-3 rounded-[14px] border border-border bg-card p-[18px] shadow-[0_1px_2px_rgba(22,48,43,0.06)]">
+        <section className="flex w-full flex-col justify-center gap-3 rounded-[14px] border border-border bg-card p-[18px] shadow-[0_1px_2px_rgba(22,48,43,0.06)]">
             <h2 className="text-[18px] font-semibold text-text">Ingresar</h2>
             <form onSubmit={ingresarUsuario} className="flex flex-col gap-2">
                 <label className={estiloLabel}>Usuario o email:
