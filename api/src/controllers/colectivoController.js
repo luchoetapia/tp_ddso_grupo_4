@@ -3,6 +3,8 @@ const { TipoColectivo } = require('../models/colectivo.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
 const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
+const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
+const { roles } = require('../auth/models/usuario.js');
 
 class ColectivoController {
     constructor() {
@@ -23,7 +25,7 @@ class ColectivoController {
     }
 
     crearColectivo = async (req, res) => {
-        const colectivoNuevo = await this.colectivoService.crear(req.body)
+        const colectivoNuevo = await this.colectivoService.crear(req.body, req.usuario.id)
         res.status(201).json({ message: 'Colectivo creado exitosamente', data: ColectivoPublic.desde(colectivoNuevo) })
     }
 
@@ -65,7 +67,8 @@ class ColectivoController {
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos", resultado.error.issues)
             }
-            creados.push(await this.colectivoService.crear(resultado.data));
+            const usuario = await crearUsuarioDeSemilla(resultado.data.nombre, roles.COLECTIVO)
+            creados.push(await this.colectivoService.crear(resultado.data, usuario.id));
         }
 
         return res.status(201).json({ status: "success", data: creados.map(ColectivoPublic.desde) });

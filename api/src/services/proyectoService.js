@@ -3,6 +3,7 @@ const proyectoRepository = require('../repositories/proyectoRepository.js');
 const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
 const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
+const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 class ProyectoService {
@@ -10,6 +11,7 @@ class ProyectoService {
         this.proyectoRepository = proyectoRepository;
         this.habilidadService = habilidadService;
         this.colaboradorService = colaboradorService;
+        this.colectivoRepository = colectivoRepository;
     }
 
     obtenerTodos = async () => {
@@ -17,10 +19,32 @@ class ProyectoService {
         return proyectos;
     }
 
-    crear = async (datos) => {
+    buscarPorTexto = async (texto) => {
+        // Escapo caracteres especiales para que el texto se busque literal y no como regex
+        const textoRegex = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const coincide = { $regex: textoRegex, $options: 'i' };
+
+        const condicion = {
+            $or: [
+                { titulo: coincide },
+                { descripcion: coincide },
+            ]
+        };
+
+        return await this.proyectoRepository.findByCondition(condicion);
+    }
+
+    crear = async (datos, idUsuario = null) => {
         const existente = await this.proyectoRepository.findByTitulo(datos.titulo)
         if (existente) {
             throw new ConflictError("Ya existe un proyecto con ese título")
+        }
+
+        let colectivo = null;
+        if (idUsuarioColectivo) {
+        colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo);
+        if (!colectivo)
+            throw new NotFoundError("El usuario no tiene un colectivo registrado");
         }
 
         // Los perfiles se embeben en el proyecto: solo hay que validar que existan sus habilidades
@@ -46,6 +70,9 @@ class ProyectoService {
         }
 
         const creado = await this.proyectoRepository.save(payload);
+
+        if (colectivo)
+            await this.colectivoRepository.update(colectivo.id, { $push: { proyectos: creado.id } });
 
         return creado;
     }
@@ -119,15 +146,15 @@ class ProyectoService {
     }
 
     buscarPotencialesProyectos = async (idsHabilidades) => {
-        // Busco proyectos activos que tengan perfiles que requieran las habilidades dadas
         const condicion = {
             finalizado: false,
-            perfiles: { 
+            perfiles: {
                 $elemMatch: {
                     busquedaAbierta: true,
+                    $or: [{ fechaFinBusqueda: null }, { fechaFinBusqueda: { $gt: new Date() } }],
                     habilidadesRequeridas: { $not: { $elemMatch: { $nin: idsHabilidades } } }
-                } 
-            } 
+                }
+            }
         }
         
         const proyectos = await this.proyectoRepository.findByCondition(condicion);

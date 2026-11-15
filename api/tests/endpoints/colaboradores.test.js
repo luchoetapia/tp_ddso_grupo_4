@@ -1,3 +1,6 @@
+jest.mock('../../src/auth/usuarioSemilla.js', () => ({
+    crearUsuarioDeSemilla: jest.fn(),
+}));
 jest.mock('../../src/services/colaboradorService.js', () => ({
     obtenerTodos: jest.fn(),
     crear: jest.fn(),
@@ -18,6 +21,8 @@ jest.mock('../../src/services/notificacionService.js', () => ({
 
 const request = require('supertest');
 const app = require('../../src/app.js');
+const { crearUsuarioDeSemilla } = require('../../src/auth/usuarioSemilla.js');
+const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 const colaboradorService = require('../../src/services/colaboradorService.js');
 const colaboracionService = require('../../src/services/colaboracionService.js');
 const habilidadService = require('../../src/services/habilidadService.js');
@@ -61,15 +66,15 @@ describe('Endpoints /colaboradores', () => {
         test('crea el colaborador aplicando defaults', async () => {
             colaboradorService.crear.mockResolvedValue(colaborador);
 
-            const res = await request(app).post('/colaboradores').send(body);
+            const res = await request(app).post('/colaboradores').set('Cookie', cookieDeSesion('colaborador')).send(body);
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colaboradora creada exitosamente', data: colaborador });
-            expect(colaboradorService.crear).toHaveBeenCalledWith({ ...body, deseaSerContactado: false });
+            expect(colaboradorService.crear).toHaveBeenCalledWith({ ...body, deseaSerContactado: false }, ID_USUARIO);
         });
 
         test('responde 400 con una cuenta de Git inválida', async () => {
-            const res = await request(app).post('/colaboradores').send({ ...body, cuentaGit: 'juan perez!' });
+            const res = await request(app).post('/colaboradores').set('Cookie', cookieDeSesion('colaborador')).send({ ...body, cuentaGit: 'juan perez!' });
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Cuenta de Git inválida');
@@ -78,6 +83,7 @@ describe('Endpoints /colaboradores', () => {
 
         test('responde 400 con un medio de contacto inválido', async () => {
             const res = await request(app).post('/colaboradores')
+                .set('Cookie', cookieDeSesion('colaborador'))
                 .send({ ...body, contactos: [{ medio: 'Fax', valor: '123' }] });
 
             expect(res.status).toBe(400);
@@ -86,9 +92,23 @@ describe('Endpoints /colaboradores', () => {
         test('responde 409 si la cuenta de Git ya existe', async () => {
             colaboradorService.crear.mockRejectedValue(new ConflictError('Ya existe un colaborador con esa cuenta de Git'));
 
-            const res = await request(app).post('/colaboradores').send(body);
+            const res = await request(app).post('/colaboradores').set('Cookie', cookieDeSesion('colaborador')).send(body);
 
             expect(res.status).toBe(409);
+        });
+    
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).post('/colaboradores').send(body);
+
+            expect(res.status).toBe(401);
+            expect(colaboradorService.crear).not.toHaveBeenCalled();
+        });
+
+        test('responde 403 si el usuario no tiene rol colaborador', async () => {
+            const res = await request(app).post('/colaboradores').set('Cookie', cookieDeSesion('colectivo')).send(body);
+
+            expect(res.status).toBe(403);
+            expect(colaboradorService.crear).not.toHaveBeenCalled();
         });
     });
 
@@ -202,13 +222,15 @@ describe('Endpoints /colaboradores', () => {
     describe('POST /colaboradores/llenarDatosPrueba', () => {
         test('crea los colaboradores por defecto usando las habilidades existentes', async () => {
             habilidadService.obtenerTodas.mockResolvedValue([{ id: ID_HAB }]);
+            crearUsuarioDeSemilla.mockImplementation(async (cuentaGit) => ({ id: `usr-${cuentaGit}` }));
             colaboradorService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
             const res = await request(app).post('/colaboradores/llenarDatosPrueba');
 
             expect(res.status).toBe(201);
             expect(res.body.data.map(c => c.cuentaGit)).toEqual(['juanperez', 'mariagomez']);
-            expect(colaboradorService.crear).toHaveBeenCalledWith(expect.objectContaining({ habilidades: [ID_HAB] }));
+            expect(crearUsuarioDeSemilla).toHaveBeenCalledWith('juanperez', 'colaborador');
+            expect(colaboradorService.crear).toHaveBeenCalledWith(expect.objectContaining({ habilidades: [ID_HAB] }), 'usr-juanperez');
         });
 
         test('responde 400 si algún elemento es inválido', async () => {

@@ -7,6 +7,10 @@ class Colaboracion {
         this.fin = fin || null;
         this.perfil = perfil;
     }
+
+    estaActiva() {
+    return !this.fin;
+    }
 }
 
 module.exports = { Colaboracion }

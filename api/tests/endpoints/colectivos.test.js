@@ -1,3 +1,6 @@
+jest.mock('../../src/auth/usuarioSemilla.js', () => ({
+    crearUsuarioDeSemilla: jest.fn(),
+}));
 jest.mock('../../src/services/colectivoService.js', () => ({
     obtenerTodos: jest.fn(),
     crear: jest.fn(),
@@ -9,6 +12,8 @@ jest.mock('../../src/services/colectivoService.js', () => ({
 const request = require('supertest');
 const app = require('../../src/app.js');
 const colectivoService = require('../../src/services/colectivoService.js');
+const { crearUsuarioDeSemilla } = require('../../src/auth/usuarioSemilla.js');
+const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
 
 const ID = '507f1f77bcf86cd799439051';
@@ -66,22 +71,22 @@ describe('Endpoints /colectivos', () => {
         test('crea el colectivo aplicando defaults del validador', async () => {
             colectivoService.crear.mockResolvedValue(colectivo);
 
-            const res = await request(app).post('/colectivos').send({ nombre: 'Tech For Good', tipo: 'fundacion' });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'Tech For Good', tipo: 'fundacion' });
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colectivo creado exitosamente', data: colectivo });
-            expect(colectivoService.crear).toHaveBeenCalledWith({ nombre: 'Tech For Good', tipo: 'fundacion', proyectos: [] });
+            expect(colectivoService.crear).toHaveBeenCalledWith({ nombre: 'Tech For Good', tipo: 'fundacion', proyectos: [] }, ID_USUARIO);
         });
 
         test('responde 400 con un tipo inválido', async () => {
-            const res = await request(app).post('/colectivos').send({ nombre: 'X', tipo: 'club' });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'club' });
 
             expect(res.status).toBe(400);
             expect(colectivoService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 400 con ids de proyectos inválidos', async () => {
-            const res = await request(app).post('/colectivos').send({ nombre: 'X', tipo: 'ong', proyectos: ['123'] });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong', proyectos: ['123'] });
 
             expect(res.status).toBe(400);
         });
@@ -89,9 +94,36 @@ describe('Endpoints /colectivos', () => {
         test('responde 409 si ya existe', async () => {
             colectivoService.crear.mockRejectedValue(new ConflictError('Ya existe un colectivo con ese nombre'));
 
-            const res = await request(app).post('/colectivos').send({ nombre: 'X', tipo: 'ong' });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong' });
 
             expect(res.status).toBe(409);
+        });
+    
+        test('el colectivo se asocia al usuario de la sesión y no a uno enviado en el body', async () => {
+            colectivoService.crear.mockResolvedValue(colectivo);
+
+            const res = await request(app).post('/colectivos')
+                .set('Cookie', cookieDeSesion('colectivo'))
+                .send({ nombre: 'X', tipo: 'ong', usuario: 'otro' });
+
+            expect(res.status).toBe(400); // el validador es strict: no admite "usuario" en el body
+            expect(colectivoService.crear).not.toHaveBeenCalled();
+        });
+
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).post('/colectivos').send({ nombre: 'X', tipo: 'ong' });
+
+            expect(res.status).toBe(401);
+            expect(colectivoService.crear).not.toHaveBeenCalled();
+        });
+
+        test('responde 403 si el usuario no tiene rol colectivo', async () => {
+            const res = await request(app).post('/colectivos')
+                .set('Cookie', cookieDeSesion('colaborador'))
+                .send({ nombre: 'X', tipo: 'ong' });
+
+            expect(res.status).toBe(403);
+            expect(colectivoService.crear).not.toHaveBeenCalled();
         });
     });
 
@@ -160,13 +192,18 @@ describe('Endpoints /colectivos', () => {
     });
 
     describe('POST /colectivos/llenarDatosPrueba', () => {
-        test('crea los colectivos por defecto', async () => {
+        test('crea los colectivos por defecto, cada uno con su usuario', async () => {
+            crearUsuarioDeSemilla.mockImplementation(async (nombre) => ({ id: `usr-${nombre}` }));
             colectivoService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
             const res = await request(app).post('/colectivos/llenarDatosPrueba');
 
             expect(res.status).toBe(201);
             expect(res.body.data.map(c => c.nombre)).toEqual(['Colectivo Software Libre', 'Tech For Good']);
+            expect(crearUsuarioDeSemilla).toHaveBeenCalledWith('Colectivo Software Libre', 'colectivo');
+            expect(colectivoService.crear).toHaveBeenCalledWith(
+                expect.objectContaining({ nombre: 'Tech For Good' }), 'usr-Tech For Good'
+            );
         });
 
         test('responde 400 si algún elemento es inválido', async () => {

@@ -1,5 +1,6 @@
 class Colaborador {
-    constructor(nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion, deseaSerContactado, contactos) {
+    constructor(usuario, nombre, apellido, nombreFantasia, cuentaGit, habilidades, pronombres, presentacion, deseaSerContactado, contactos) {
+        this.usuario = usuario
         this.nombre = nombre
         this.apellido = apellido
         this.nombreFantasia = nombreFantasia

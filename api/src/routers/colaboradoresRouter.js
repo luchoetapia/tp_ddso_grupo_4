@@ -3,6 +3,8 @@ const { ColaboradorController } = require('../controllers/colaboradorController.
 
 // Import de validaciones
 const validar = require('../middlewares/validar.js')
+const autenticar = require('../middlewares/autenticar.js')
+const { roles } = require('../auth/models/usuario.js')
 const {
     validarCreacionColaborador,
     validarCuentaGitColaborador,
@@ -15,6 +17,7 @@ const router = express.Router()
 router.route('/')
     .get((req, res) => colaboradorController.obtenerColaboradores(req, res))
     .post(
+        autenticar(roles.COLABORADOR),
         validar(validarCreacionColaborador, 'body'),
         (req, res) => colaboradorController.crearColaborador(req, res)
     )

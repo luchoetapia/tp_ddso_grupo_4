@@ -15,6 +15,11 @@ class ColaboracionController {
         const colaboracionNueva = await this.colaboracionService.crear(req.body)
         res.status(201).json({ message: 'Colaboracion creada exitosamente', data: ColaboracionPublic.desde(colaboracionNueva) })
     }
+
+    desanotarColaboracion = async (req, res) => {
+    const colaboracion = await this.colaboracionService.desanotar(req.params.id, req.usuario)
+    res.status(200).json({ message: 'Colaboración dada de baja exitosamente', data: ColaboracionPublic.desde(colaboracion) })
+    }
 }
 
 module.exports = { ColaboracionController };

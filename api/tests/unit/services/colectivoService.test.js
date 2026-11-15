@@ -1,6 +1,7 @@
 jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
     findAll: jest.fn(),
     findByNombre: jest.fn(),
+    findByUsuario: jest.fn(),
     findById: jest.fn(),
     findBy: jest.fn(),
     save: jest.fn(),
@@ -19,6 +20,7 @@ const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/
 
 const ID_COLECTIVO = '507f1f77bcf86cd799439051';
 const ID_PROY = '507f1f77bcf86cd799439041';
+const ID_USUARIO = '507f1f77bcf86cd7994390aa';
 
 const colectivoDoc = (extra = {}) => ({
     id: ID_COLECTIVO,
@@ -59,10 +61,11 @@ describe('ColectivoService', () => {
             proyectoService.obtenerPorListaId.mockResolvedValue([{ _id: ID_PROY }]);
             colectivoRepository.save.mockResolvedValue(colectivoDoc());
 
-            const resultado = await colectivoService.crear(datos);
+            const resultado = await colectivoService.crear(datos, ID_USUARIO);
 
             expect(proyectoService.obtenerPorListaId).toHaveBeenCalledWith([ID_PROY]);
             expect(colectivoRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+                usuario: ID_USUARIO,
                 nombre: 'Tech For Good',
                 tipo: 'fundacion',
                 proyectos: [ID_PROY],
@@ -75,7 +78,7 @@ describe('ColectivoService', () => {
             proyectoService.obtenerPorListaId.mockResolvedValue([]);
             colectivoRepository.save.mockResolvedValue(colectivoDoc());
 
-            await colectivoService.crear({ nombre: 'x', tipo: 'ong' });
+            await colectivoService.crear({ nombre: 'x', tipo: 'ong' }, ID_USUARIO);
 
             expect(proyectoService.obtenerPorListaId).toHaveBeenCalledWith([]);
         });
@@ -83,8 +86,33 @@ describe('ColectivoService', () => {
         test('lanza ConflictError si ya existe uno con ese nombre', async () => {
             colectivoRepository.findByNombre.mockResolvedValue(colectivoDoc());
 
-            await expect(colectivoService.crear(datos)).rejects.toThrow(ConflictError);
+            await expect(colectivoService.crear(datos, ID_USUARIO)).rejects.toThrow(ConflictError);
             expect(colectivoRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('lanza ConflictError si el usuario ya tiene un colectivo', async () => {
+            colectivoRepository.findByNombre.mockResolvedValue(null);
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDoc());
+
+            await expect(colectivoService.crear(datos, ID_USUARIO)).rejects.toThrow('El usuario ya tiene un colectivo asociado');
+            expect(colectivoRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(colectivoRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('traduce el error de índice único de usuario a ConflictError', async () => {
+            colectivoRepository.findByNombre.mockResolvedValue(null);
+            proyectoService.obtenerPorListaId.mockResolvedValue([]);
+            colectivoRepository.save.mockRejectedValue(Object.assign(new Error('E11000'), { code: 11000, keyPattern: { usuario: 1 } }));
+
+            await expect(colectivoService.crear(datos, ID_USUARIO)).rejects.toThrow(ConflictError);
+        });
+
+        test('propaga otros errores de la base sin transformarlos', async () => {
+            colectivoRepository.findByNombre.mockResolvedValue(null);
+            proyectoService.obtenerPorListaId.mockResolvedValue([]);
+            colectivoRepository.save.mockRejectedValue(new Error('se cayó la base'));
+
+            await expect(colectivoService.crear(datos, ID_USUARIO)).rejects.toThrow('se cayó la base');
         });
     });
 

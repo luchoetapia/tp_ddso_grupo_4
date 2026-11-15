@@ -243,7 +243,8 @@ describe('ProyectoService', () => {
                 finalizado: false,
                 perfiles: { 
                     $elemMatch: { 
-                        busquedaAbierta: true, 
+                        busquedaAbierta: true,
+                        $or: [{ fechaFinBusqueda: null }, { fechaFinBusqueda: { $gt: expect.any(Date) } }],
                         habilidadesRequeridas: { $not: { $elemMatch: { $nin: [ID_HAB] } } } 
                     } 
                 },

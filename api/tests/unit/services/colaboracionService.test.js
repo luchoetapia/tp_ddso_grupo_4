@@ -1,6 +1,8 @@
 jest.mock('../../../src/repositories/colaboracionRepository.js', () => ({
     findAll: jest.fn(),
     findActiva: jest.fn(),
+    findById: jest.fn(),
+    cerrar: jest.fn(),
     save: jest.fn(),
 }));
 jest.mock('../../../src/services/proyectoService.js', () => ({
@@ -8,14 +10,24 @@ jest.mock('../../../src/services/proyectoService.js', () => ({
 }));
 jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerPorId: jest.fn(),
+    buscarPorUsuario: jest.fn(),
 }));
+jest.mock('../../../src/services/colectivoService.js', () => ({ 
+    buscarPorUsuario: jest.fn() 
+}));
+
+const colectivoService = require('../../../src/services/colectivoService.js');
+const { Colaboracion } = require('../../../src/models/colaboracion.js');
+const { roles } = require('../../../src/auth/models/usuario.js');
+const { ConflictError, ForbiddenError, NotFoundError } = require('../../../src/errors/AppError.js');
+const ID_USUARIO = '507f1f77bcf86cd7994390aa';
 
 const colaboracionRepository = require('../../../src/repositories/colaboracionRepository.js');
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colaboracionService = require('../../../src/services/colaboracionService.js');
 const { Perfil } = require('../../../src/models/proyecto.js');
-const { ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
+
 
 const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_COLAB = '507f1f77bcf86cd799439011';
@@ -85,5 +97,93 @@ describe('ColaboracionService', () => {
 
             await expect(colaboracionService.crear(datos)).rejects.toThrow(NotFoundError);
         });
+    });
+
+    describe('desanotar', () => {
+    const colaboracion = (fin = null) => Object.assign(
+        new Colaboracion(), { id: ID_COLABORACION, colaborador: { id: ID_COLAB }, proyecto: { id: ID_PROY }, inicio: new Date(), fin }
+    );
+    const sesionColaborador = { id: ID_USUARIO, rol: roles.COLABORADOR };
+    const sesionColectivo = { id: ID_USUARIO, rol: roles.COLECTIVO };
+
+        test('la propia colaboradora se da de baja: se cierra la colaboración con fecha de fin', async () => {
+            colaboracionRepository.findById.mockResolvedValue(colaboracion());
+            colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_COLAB });
+            colaboracionRepository.cerrar.mockImplementation(async (id, fin) => ({ id, fin }));
+
+        const resultado = await colaboracionService.desanotar(ID_COLABORACION, sesionColaborador);
+
+        expect(colaboracionRepository.cerrar).toHaveBeenCalledWith(ID_COLABORACION, expect.any(Date));
+        expect(resultado.fin).toBeInstanceOf(Date);
+    });
+
+    test('el colectivo dueño del proyecto puede desasociar a la colaboradora', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion());
+        colectivoService.buscarPorUsuario.mockResolvedValue({ proyectos: [{ _id: ID_PROY }] });
+        colaboracionRepository.cerrar.mockResolvedValue({ id: ID_COLABORACION });
+
+        await colaboracionService.desanotar(ID_COLABORACION, sesionColectivo);
+
+        expect(colaboracionRepository.cerrar).toHaveBeenCalledWith(ID_COLABORACION, expect.any(Date));
+    });
+
+    test('lanza NotFoundError si la colaboración no existe', async () => {
+        colaboracionRepository.findById.mockResolvedValue(null);
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColaborador)).rejects.toThrow(NotFoundError);
+    });
+
+    test('lanza ConflictError si la colaboración ya fue dada de baja', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion(new Date()));
+        colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_COLAB });
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColaborador)).rejects.toThrow(/ya fue dada de baja/);
+        expect(colaboracionRepository.cerrar).not.toHaveBeenCalled();
+    });
+
+    test('lanza ConflictError si otro pedido la cerró en el medio (cierre atómico)', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion());
+        colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_COLAB });
+        colaboracionRepository.cerrar.mockResolvedValue(null);
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColaborador)).rejects.toThrow(ConflictError);
+    });
+
+    test('a quien no tiene permiso no se le revela si ya estaba dada de baja', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion(new Date()));
+        colaboradorService.buscarPorUsuario.mockResolvedValue({ id: 'otra-persona' });
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColaborador)).rejects.toThrow(ForbiddenError);
+    });
+
+    test('lanza ForbiddenError si la referencia al colaborador está rota', async () => {
+        colaboracionRepository.findById.mockResolvedValue({ ...colaboracion(), colaborador: null, estaActiva: () => true });
+        colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_COLAB });
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColaborador)).rejects.toThrow(ForbiddenError);
+    });
+
+    test('lanza ForbiddenError si otra colaboradora intenta darla de baja', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion());
+        colaboradorService.buscarPorUsuario.mockResolvedValue({ id: 'otra-persona' });
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColaborador)).rejects.toThrow(ForbiddenError);
+        expect(colaboracionRepository.cerrar).not.toHaveBeenCalled();
+    });
+
+    test('lanza ForbiddenError si el colectivo no es dueño del proyecto', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion());
+        colectivoService.buscarPorUsuario.mockResolvedValue({ proyectos: [{ _id: 'otro-proyecto' }] });
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColectivo)).rejects.toThrow(ForbiddenError);
+        expect(colaboracionRepository.cerrar).not.toHaveBeenCalled();
+    });
+
+    test('lanza ForbiddenError si el usuario no tiene colectivo asociado', async () => {
+        colaboracionRepository.findById.mockResolvedValue(colaboracion());
+        colectivoService.buscarPorUsuario.mockResolvedValue(null);
+
+        await expect(colaboracionService.desanotar(ID_COLABORACION, sesionColectivo)).rejects.toThrow(ForbiddenError);
+    });
     });
 });

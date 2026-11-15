@@ -55,7 +55,18 @@ paths:
   /proyectos:
     get:
       summary: Obtiene todos los proyectos
+      description: >
+        Si se envía `texto`, devuelve solo los proyectos cuyo título o
+        descripción lo contengan (sin distinguir mayúsculas).
       tags: [Proyectos]
+      parameters:
+        - in: query
+          name: texto
+          required: false
+          schema:
+            type: string
+          description: Texto a buscar en el título o la descripción del proyecto
+          example: aula
       responses:
         "200":
           description: Lista de proyectos (con sus perfiles completos)

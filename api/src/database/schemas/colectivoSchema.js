@@ -8,6 +8,7 @@ const valuesTipoColectivo = Object.values(TipoColectivo);
 const colectivoSchema = new Schema({
     nombre: { type: String, required: true },
     active: { type: Boolean, default: true },
+    usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     descripcion: { type: String, default: "" },
     ubicacion: { type: String, default: null },
     tipo: { type: String, enum: valuesTipoColectivo, required: true },
@@ -21,6 +22,8 @@ const colectivoSchema = new Schema({
 colectivoSchema.index({ nombre: 1 });
 // Listado de colectivos activos
 colectivoSchema.index({ active: 1 });
+// Un usuario tiene como máximo un colectivo (parcial: ignora documentos viejos sin usuario)
+colectivoSchema.index({ usuario: 1 }, { unique: true, partialFilterExpression: { usuario: { $exists: true } } });
 
 colectivoSchema.loadClass(Colectivo);
 

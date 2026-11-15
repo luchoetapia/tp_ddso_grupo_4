@@ -2,6 +2,7 @@ jest.mock('../../../src/repositories/colaboradorRepository.js', () => ({
     findAll: jest.fn(),
     findById: jest.fn(),
     findByCuentaGit: jest.fn(),
+    findByUsuario: jest.fn(),
     save: jest.fn(),
 }));
 jest.mock('../../../src/services/habilidadService.js', () => ({
@@ -15,6 +16,7 @@ const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/
 
 const ID_COLAB = '507f1f77bcf86cd799439011';
 const ID_HAB = '507f1f77bcf86cd799439021';
+const ID_USUARIO = '507f1f77bcf86cd7994390aa';
 
 const colaboradorDoc = (extra = {}) => ({
     id: ID_COLAB,
@@ -52,10 +54,11 @@ describe('ColaboradorService', () => {
             habilidadService.obtenerPorListaId.mockResolvedValue([{ id: ID_HAB }]);
             colaboradorRepository.save.mockResolvedValue(colaboradorDoc());
 
-            const resultado = await colaboradorService.crear(datos);
+            const resultado = await colaboradorService.crear(datos, ID_USUARIO);
 
             expect(habilidadService.obtenerPorListaId).toHaveBeenCalledWith([ID_HAB]);
             expect(colaboradorRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+                usuario: ID_USUARIO,
                 cuentaGit: 'juanp',
                 habilidades: [ID_HAB],
                 deseaSerContactado: false,
@@ -69,7 +72,7 @@ describe('ColaboradorService', () => {
             habilidadService.obtenerPorListaId.mockResolvedValue([]);
             colaboradorRepository.save.mockResolvedValue(colaboradorDoc());
 
-            await colaboradorService.crear({ nombre: 'J', apellido: 'P', cuentaGit: 'jp' });
+            await colaboradorService.crear({ nombre: 'J', apellido: 'P', cuentaGit: 'jp' }, ID_USUARIO);
 
             expect(habilidadService.obtenerPorListaId).toHaveBeenCalledWith([]);
         });
@@ -77,15 +80,32 @@ describe('ColaboradorService', () => {
         test('lanza ConflictError si la cuenta de Git ya existe', async () => {
             colaboradorRepository.findByCuentaGit.mockResolvedValue(colaboradorDoc());
 
-            await expect(colaboradorService.crear(datos)).rejects.toThrow(ConflictError);
+            await expect(colaboradorService.crear(datos, ID_USUARIO)).rejects.toThrow(ConflictError);
             expect(colaboradorRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('lanza ConflictError si el usuario ya tiene un perfil de colaborador', async () => {
+            colaboradorRepository.findByCuentaGit.mockResolvedValue(null);
+            colaboradorRepository.findByUsuario.mockResolvedValue(colaboradorDoc());
+
+            await expect(colaboradorService.crear(datos, ID_USUARIO)).rejects.toThrow('El usuario ya tiene un perfil de colaborador asociado');
+            expect(colaboradorRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(colaboradorRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('traduce el error de índice único de usuario a ConflictError', async () => {
+            colaboradorRepository.findByCuentaGit.mockResolvedValue(null);
+            habilidadService.obtenerPorListaId.mockResolvedValue([]);
+            colaboradorRepository.save.mockRejectedValue(Object.assign(new Error('E11000'), { code: 11000, keyPattern: { usuario: 1 } }));
+
+            await expect(colaboradorService.crear(datos, ID_USUARIO)).rejects.toThrow(ConflictError);
         });
 
         test('propaga el error si alguna habilidad no existe', async () => {
             colaboradorRepository.findByCuentaGit.mockResolvedValue(null);
             habilidadService.obtenerPorListaId.mockRejectedValue(new NotFoundError('Habilidades no encontradas'));
 
-            await expect(colaboradorService.crear(datos)).rejects.toThrow(NotFoundError);
+            await expect(colaboradorService.crear(datos, ID_USUARIO)).rejects.toThrow(NotFoundError);
             expect(colaboradorRepository.save).not.toHaveBeenCalled();
         });
     });

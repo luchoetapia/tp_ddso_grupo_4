@@ -1,5 +1,6 @@
 jest.mock('../../src/services/proyectoService.js', () => ({
     obtenerTodos: jest.fn(),
+    buscarPorTexto: jest.fn(),
     crear: jest.fn(),
     obtenerPorId: jest.fn(),
     buscarPotencialesColaboradores: jest.fn(),
@@ -72,6 +73,34 @@ describe('Endpoints /proyectos', () => {
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual([proyectoPublico]);
+        });
+
+        test('con ?texto busca proyectos por texto', async () => {
+            proyectoService.buscarPorTexto.mockResolvedValue([proyecto]);
+
+            const res = await request(app).get('/proyectos?texto=aula');
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([proyectoPublico]);
+            expect(proyectoService.buscarPorTexto).toHaveBeenCalledWith('aula');
+            expect(proyectoService.obtenerTodos).not.toHaveBeenCalled();
+        });
+
+        test('con ?texto vacío devuelve todos los proyectos', async () => {
+            proyectoService.obtenerTodos.mockResolvedValue([proyecto]);
+
+            const res = await request(app).get('/proyectos?texto=%20%20');
+
+            expect(res.status).toBe(200);
+            expect(proyectoService.obtenerTodos).toHaveBeenCalled();
+            expect(proyectoService.buscarPorTexto).not.toHaveBeenCalled();
+        });
+
+        test('rechaza ?texto repetido con 400', async () => {
+            const res = await request(app).get('/proyectos?texto=a&texto=b');
+
+            expect(res.status).toBe(400);
+            expect(proyectoService.buscarPorTexto).not.toHaveBeenCalled();
         });
 
         test('resume los perfiles de cada proyecto', async () => {

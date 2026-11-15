@@ -9,6 +9,8 @@ const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
 const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
 const { ProyectoPublic } = require('../dtos/proyectoPublic.js');
 const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
+const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
+const { roles } = require('../auth/models/usuario.js');
 
 class ColaboradorController {
     constructor() {
@@ -25,7 +27,7 @@ class ColaboradorController {
     }
 
     crearColaborador = async (req, res) => {
-        const colaboradoraNueva = await this.colaboradorService.crear(req.body)
+        const colaboradoraNueva = await this.colaboradorService.crear(req.body, req.usuario.id)
         res.status(201).json({ message: 'Colaboradora creada exitosamente', data: ColaboradorPublic.desde(colaboradoraNueva) })
     }
 
@@ -77,7 +79,8 @@ class ColaboradorController {
             if (resultado.error) {
                 throw new BadRequestError("Datos inválidos", resultado.error.issues)
             }
-            creados.push(await this.colaboradorService.crear(resultado.data));
+            const usuario = await crearUsuarioDeSemilla(resultado.data.cuentaGit, roles.COLABORADOR)
+            creados.push(await this.colaboradorService.crear(resultado.data, usuario.id));
         }
 
         return res.status(201).json({ status: "success", data: creados.map(ColaboradorPublic.desde) });
