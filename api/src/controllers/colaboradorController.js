@@ -106,10 +106,10 @@ class ColaboradorController {
     }
 
     obtenerMiPerfil = async (req, res) => {
-    const colaborador = await this.colaboradorService.obtenerPorUsuario(req.usuario.id)
+    const colaborador = await this.colaboradorService.buscarPorUsuario(req.usuario.id)
     res.status(200).json(ColaboradorPublic.desde(colaborador))
     }
-    
+
 }
 
 module.exports = { ColaboradorController };
