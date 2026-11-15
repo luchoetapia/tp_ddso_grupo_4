@@ -4,6 +4,19 @@ const ProyectoModel = require('../database/schemas/proyectoSchema.js');
 const HABILIDADES_PERFILES = ['perfiles.habilidadesRequeridas', 'perfiles.habilidadesOpcionales'];
 
 class ProyectoRepository {
+    async buscarConPaginacion(pagina = 1, limite = 10, filtros = {}, orden = {}, datosNecesarios = null) {
+        limite = Math.min(limite, 100); // Tope de documentos por página
+
+        const [proyectos, total] = await Promise.all([
+            ProyectoModel.find(filtros, datosNecesarios)
+                .paginar({ pagina, limite, orden })
+                .populate(HABILIDADES_PERFILES),
+            ProyectoModel.countDocuments(filtros)
+        ]);
+
+        return { proyectos, total, pagina, limite, totalPaginas: Math.ceil(total / limite) };
+    }
+
     async findAll() {
         return await ProyectoModel.find().populate(HABILIDADES_PERFILES);
     }

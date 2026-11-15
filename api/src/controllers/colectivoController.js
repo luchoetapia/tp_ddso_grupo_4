@@ -3,6 +3,7 @@ const { TipoColectivo } = require('../models/colectivo.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
 const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
+const { Paginado } = require('../dtos/paginado.js');
 const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
 const { roles } = require('../auth/models/usuario.js');
 
@@ -12,16 +13,13 @@ class ColectivoController {
     }
 
     obtenerColectivos = async (req, res) => {
-        const { activos } = req.query;
+        const { activos, pagina, limite, orden, direccion } = req.query;
 
-        if (activos === 'true') {
-            const colectivosActivos = await this.colectivoService.obtenerActivos();
-            return res.status(200).json(colectivosActivos.map(ColectivoPublic.desde));
-        }
+        const resultado = activos === 'true'
+            ? await this.colectivoService.obtenerActivos({ pagina, limite, orden, direccion })
+            : await this.colectivoService.obtenerTodos({ pagina, limite, orden, direccion });
 
-        // Default: obtener todos los colectivos
-        const colectivos = await this.colectivoService.obtenerTodos();
-        res.status(200).json(colectivos.map(ColectivoPublic.desde))
+        res.status(200).json(Paginado.desde(resultado.colectivos, resultado, ColectivoPublic))
     }
 
     crearColectivo = async (req, res) => {

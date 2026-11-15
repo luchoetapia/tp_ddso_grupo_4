@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const paginable = require('../plugins/paginable');
 const { TipoHabilidad, Habilidad } = require('../../models/habilidad')
 
 const Schema = mongoose.Schema;
@@ -17,5 +18,7 @@ const habilidadSchema = new Schema({
 habilidadSchema.index({ titulo: 1 });
 
 habilidadSchema.loadClass(Habilidad)
+
+habilidadSchema.plugin(paginable);
 
 module.exports = mongoose.model('Habilidad', habilidadSchema);

@@ -3,6 +3,18 @@ const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const proyectoService = require('./proyectoService.js');
 
+const { construirOrden } = require('./ordenamiento.js');
+
+// Claves por las que el front puede ordenar los colectivos (2° criterio: nombre, 3°: _id)
+const ORDENAMIENTO = {
+    campos: {
+        nombre: 'nombre',
+        tipo: 'tipo',
+    },
+    campoNombre: 'nombre',
+    porDefecto: { orden: 'nombre', direccion: 'asc' },
+};
+
 const MENSAJE_USUARIO_CON_COLECTIVO = "El usuario ya tiene un colectivo asociado";
 
 class ColectivoService {
@@ -11,14 +23,14 @@ class ColectivoService {
         this.proyectoService = proyectoService;
     }
 
-    obtenerTodos = async () => {
-        const colectivos = await this.colectivoRepository.findAll();
-        return colectivos;
+    obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.colectivoRepository.buscarConPaginacion(pagina, limite, {}, sort);
     }
 
-    obtenerActivos = async () => {
-        const colectivos = await this.colectivoRepository.findBy({ active: true });
-        return colectivos;
+    obtenerActivos = async ({ pagina, limite, orden, direccion } = {}) => {
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.colectivoRepository.buscarConPaginacion(pagina, limite, { active: true }, sort);
     }
 
     // idUsuario: usuario de la sesión que crea el colectivo (queda como su cuenta)

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const paginable = require('../plugins/paginable');
 const { Colaborador } = require('../../models/colaborador')
 const { MedioDeContacto } = require('../../models/Contacto');
 const Schema = mongoose.Schema;
@@ -34,5 +35,7 @@ colaboradorSchema.index({ habilidades: 1 });
 colaboradorSchema.index({ usuario: 1 }, { unique: true, partialFilterExpression: { usuario: { $exists: true } } });
 
 colaboradorSchema.loadClass(Colaborador);
+
+colaboradorSchema.plugin(paginable);
 
 module.exports = mongoose.model('Colaborador', colaboradorSchema);

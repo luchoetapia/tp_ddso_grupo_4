@@ -1,4 +1,5 @@
 jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
+    buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
     findByNombre: jest.fn(),
     findByUsuario: jest.fn(),
@@ -37,19 +38,22 @@ describe('ColectivoService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodos', () => {
-        test('devuelve todos los colectivos', async () => {
-            colectivoRepository.findAll.mockResolvedValue([colectivoDoc()]);
+        test('pagina en la BD ordenando por nombre', async () => {
+            const pagina = { colectivos: [colectivoDoc()], total: 1, pagina: 1, limite: 10, totalPaginas: 1 };
+            colectivoRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            await expect(colectivoService.obtenerTodos()).resolves.toHaveLength(1);
+            await expect(colectivoService.obtenerTodos({ pagina: 1, limite: 10 })).resolves.toBe(pagina);
+            expect(colectivoRepository.buscarConPaginacion).toHaveBeenCalledWith(1, 10, {}, { nombre: 1, _id: 1 });
         });
     });
 
     describe('obtenerActivos', () => {
-        test('filtra los colectivos activos', async () => {
-            colectivoRepository.findBy.mockResolvedValue([colectivoDoc()]);
+        test('filtra los colectivos activos y pagina en la BD', async () => {
+            const pagina = { colectivos: [colectivoDoc()], total: 1, pagina: 2, limite: 5, totalPaginas: 1 };
+            colectivoRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            await expect(colectivoService.obtenerActivos()).resolves.toHaveLength(1);
-            expect(colectivoRepository.findBy).toHaveBeenCalledWith({ active: true });
+            await expect(colectivoService.obtenerActivos({ pagina: 2, limite: 5 })).resolves.toBe(pagina);
+            expect(colectivoRepository.buscarConPaginacion).toHaveBeenCalledWith(2, 5, { active: true }, { nombre: 1, _id: 1 });
         });
     });
 

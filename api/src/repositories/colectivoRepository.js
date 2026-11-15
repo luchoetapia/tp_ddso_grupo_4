@@ -1,6 +1,19 @@
 const ColectivoModel = require('../database/schemas/colectivoSchema.js');
 
 class ColectivoRepository {
+    async buscarConPaginacion(pagina = 1, limite = 10, filtros = {}, orden = {}, datosNecesarios = null) {
+        limite = Math.min(limite, 100); // Tope de documentos por página
+
+        const [colectivos, total] = await Promise.all([
+            ColectivoModel.find(filtros, datosNecesarios)
+                .paginar({ pagina, limite, orden })
+                .populate('proyectos'),
+            ColectivoModel.countDocuments(filtros)
+        ]);
+
+        return { colectivos, total, pagina, limite, totalPaginas: Math.ceil(total / limite) };
+    }
+
     async findAll() {
         return await ColectivoModel.find().populate('proyectos');
     }

@@ -11,6 +11,19 @@ class ColaboracionRepository {
         this.model = ColaboracionModel;
     }
 
+    async buscarConPaginacion(pagina = 1, limite = 10, filtros = {}, orden = {}, datosNecesarios = null) {
+        limite = Math.min(limite, 100); // Tope de documentos por página
+
+        const [colaboraciones, total] = await Promise.all([
+            this.model.find(filtros, datosNecesarios)
+                .paginar({ pagina, limite, orden })
+                .populate(REFERENCIAS),
+            this.model.countDocuments(filtros)
+        ]);
+
+        return { colaboraciones, total, pagina, limite, totalPaginas: Math.ceil(total / limite) };
+    }
+
     async findAll() {
         return await ColaboracionModel.find().populate(REFERENCIAS);
     }

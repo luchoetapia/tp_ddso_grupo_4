@@ -5,6 +5,19 @@ const colectivoService = require("./colectivoService.js");
 const { roles } = require('../auth/models/usuario.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 
+const { construirOrden } = require('./ordenamiento.js');
+
+// Claves por las que el front puede ordenar las colaboraciones.
+// La colaboración no tiene título/nombre propio (solo referencias a proyecto y colaborador): 2° criterio directo el _id
+const ORDENAMIENTO = {
+    campos: {
+        inicio: 'inicio',
+        fin: 'fin',
+    },
+    campoNombre: null,
+    porDefecto: { orden: 'inicio', direccion: 'desc' },
+};
+
 class ColaboracionService {
     constructor() {
         this.colaboracionRepository = colaboracionRepository;
@@ -13,9 +26,9 @@ class ColaboracionService {
         this.colectivoService = colectivoService;
     }
 
-    obtenerTodas = async () => {
-        const colaboraciones = await this.colaboracionRepository.findAll();
-        return colaboraciones;
+    obtenerTodas = async ({ pagina, limite, orden, direccion } = {}) => {
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.colaboracionRepository.buscarConPaginacion(pagina, limite, {}, sort);
     }
 
     crear = async (colaboracionData) => {

@@ -1,4 +1,5 @@
 jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
+    buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
     findByTitulo: jest.fn(),
     findById: jest.fn(),
@@ -63,10 +64,34 @@ describe('ProyectoService', () => {
     beforeEach(() => jest.resetAllMocks());
 
     describe('obtenerTodos', () => {
-        test('devuelve todos los proyectos', async () => {
-            proyectoRepository.findAll.mockResolvedValue([proyectoDoc()]);
+        test('pagina en la BD, por defecto los más recientes primero', async () => {
+            const pagina = { proyectos: [proyectoDoc()], total: 1, pagina: 2, limite: 5, totalPaginas: 1 };
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            await expect(proyectoService.obtenerTodos()).resolves.toHaveLength(1);
+            await expect(proyectoService.obtenerTodos({ pagina: 2, limite: 5 })).resolves.toBe(pagina);
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(2, 5, {}, { createdAt: -1, titulo: 1, _id: 1 });
+        });
+
+        test('ordenar por título no repite el título como segundo criterio', async () => {
+            proyectoRepository.buscarConPaginacion.mockResolvedValue({ proyectos: [] });
+
+            await proyectoService.obtenerTodos({ orden: 'titulo', direccion: 'desc' });
+
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(undefined, undefined, {}, { titulo: -1, _id: 1 });
+        });
+    });
+
+    describe('buscarPorTexto', () => {
+        test('busca por título o descripción (texto literal, sin regex) y pagina en la BD', async () => {
+            const pagina = { proyectos: [], total: 0, pagina: 1, limite: 10, totalPaginas: 0 };
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
+
+            await expect(proyectoService.buscarPorTexto('c++', { pagina: 1, limite: 10 })).resolves.toBe(pagina);
+
+            const coincide = { $regex: 'c\\+\\+', $options: 'i' };
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(
+                1, 10, { $or: [{ titulo: coincide }, { descripcion: coincide }] }, { createdAt: -1, titulo: 1, _id: 1 }
+            );
         });
     });
 
@@ -259,7 +284,51 @@ describe('ProyectoService', () => {
 
             const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB, ID_HAB_2]);
 
-            expect(resultado.map(p => p.id)).toEqual(['dosPerfiles', 'unPerfilConOpcional', 'unPerfil']);
+            expect(resultado.proyectos.map(p => p.id)).toEqual(['dosPerfiles', 'unPerfilConOpcional', 'unPerfil']);
+        });
+
+        test('pagina en memoria después de ordenar', async () => {
+            const unPerfil = proyecto('unPerfil', [perfil([ID_HAB])]);
+            const unPerfilConOpcional = proyecto('unPerfilConOpcional', [perfil([ID_HAB], [ID_HAB_2])]);
+            const dosPerfiles = proyecto('dosPerfiles', [perfil([ID_HAB]), perfil([])]);
+            proyectoRepository.findByCondition.mockResolvedValue([unPerfil, unPerfilConOpcional, dosPerfiles]);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB, ID_HAB_2], { pagina: 2, limite: 2 });
+
+            expect(resultado.proyectos.map(p => p.id)).toEqual(['unPerfil']);
+            expect(resultado).toMatchObject({ total: 3, pagina: 2, limite: 2, totalPaginas: 2 });
+        });
+
+        test("con orden 'relevancia' y dirección asc pone primero los menos relevantes", async () => {
+            const unPerfil = proyecto('unPerfil', [perfil([ID_HAB])]);
+            const unPerfilConOpcional = proyecto('unPerfilConOpcional', [perfil([ID_HAB], [ID_HAB_2])]);
+            const dosPerfiles = proyecto('dosPerfiles', [perfil([ID_HAB]), perfil([])]);
+            proyectoRepository.findByCondition.mockResolvedValue([dosPerfiles, unPerfil, unPerfilConOpcional]);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB, ID_HAB_2], { orden: 'relevancia', direccion: 'asc' });
+
+            expect(resultado.proyectos.map(p => p.id)).toEqual(['unPerfil', 'unPerfilConOpcional', 'dosPerfiles']);
+        });
+
+        test('con otro orden pagina directo en la BD con el mismo filtro', async () => {
+            const pagina = { proyectos: [], total: 0, pagina: 2, limite: 5, totalPaginas: 0 };
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB], { pagina: 2, limite: 5, orden: 'porcentajeFinalizado', direccion: 'desc' });
+
+            expect(resultado).toBe(pagina);
+            expect(proyectoRepository.findByCondition).not.toHaveBeenCalled();
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(
+                2, 5, expect.objectContaining({ finalizado: false }), { porcentajeFinalizado: -1, titulo: 1, _id: 1 }
+            );
+        });
+
+        test('usa página 1 y límite 10 por defecto', async () => {
+            proyectoRepository.findByCondition.mockResolvedValue([]);
+
+            const resultado = await proyectoService.buscarPotencialesProyectos([ID_HAB]);
+
+            expect(resultado).toEqual({ proyectos: [], total: 0, pagina: 1, limite: 10, totalPaginas: 0 });
         });
     });
 
@@ -283,12 +352,13 @@ describe('ProyectoService', () => {
         test('busca colaboradores para el perfil indicado', async () => {
             const p = perfil([ID_HAB]);
             proyectoRepository.obtenerPerfil.mockResolvedValue(p);
-            colaboradorService.obtenerColaboradoresPotenciales.mockResolvedValue([{ cuentaGit: 'juanp' }]);
+            const pagina = { colaboradores: [{ cuentaGit: 'juanp' }], total: 1, pagina: 1, limite: 5, totalPaginas: 1 };
+            colaboradorService.obtenerColaboradoresPotenciales.mockResolvedValue(pagina);
 
-            const resultado = await proyectoService.buscarPotencialesColaboradores(ID_PROY, ID_PERFIL);
+            const resultado = await proyectoService.buscarPotencialesColaboradores(ID_PROY, ID_PERFIL, { pagina: 1, limite: 5 });
 
-            expect(colaboradorService.obtenerColaboradoresPotenciales).toHaveBeenCalledWith([p]);
-            expect(resultado).toEqual([{ cuentaGit: 'juanp' }]);
+            expect(colaboradorService.obtenerColaboradoresPotenciales).toHaveBeenCalledWith([p], { pagina: 1, limite: 5 });
+            expect(resultado).toBe(pagina);
         });
 
         test('lanza NotFoundError si el perfil no pertenece al proyecto', async () => {

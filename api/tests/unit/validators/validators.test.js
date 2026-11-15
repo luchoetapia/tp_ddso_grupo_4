@@ -1,4 +1,4 @@
-const { objectId, alMenosUnCampo } = require('../../../src/validators/comunes.js');
+const { objectId, alMenosUnCampo, validarListado } = require('../../../src/validators/comunes.js');
 const { validarCreacionColaboracion, validarActualizacionColaboracion } = require('../../../src/validators/colaboracionValidator.js');
 const {
     validarCreacionColaborador, validarActualizacionColaborador, validarCuentaGitColaborador, validarAnotacionAProyecto,
@@ -37,6 +37,36 @@ describe('Validadores', () => {
             expect(predicado({})).toBe(false);
             expect(predicado({ a: 1 })).toBe(true);
             expect(mensaje).toMatch(/al menos un campo/);
+        });
+
+        test('paginación usa página 1 y límite 10 por defecto', () => {
+            expect(validarListado.parse({})).toEqual({ pagina: 1, limite: 10 });
+        });
+
+        test('paginación convierte a número los valores de la query', () => {
+            expect(validarListado.parse({ pagina: '3', limite: '25' })).toEqual({ pagina: 3, limite: 25 });
+        });
+
+        test.each([
+            [{ pagina: '0' }],
+            [{ pagina: '1.5' }],
+            [{ pagina: 'abc' }],
+            [{ limite: '0' }],
+            [{ limite: '101' }],
+        ])('paginación rechaza %p', (query) => {
+            expect(esValido(validarListado, query)).toBe(false);
+        });
+
+        test('ordenamiento acepta una clave y la dirección asc/desc', () => {
+            expect(validarListado.parse({ orden: 'fechaCreacion', direccion: 'desc' })).toMatchObject({ orden: 'fechaCreacion', direccion: 'desc' });
+        });
+
+        test.each([
+            [{ orden: 'titulo.$ne' }],
+            [{ orden: '' }],
+            [{ direccion: 'arriba' }],
+        ])('ordenamiento rechaza %p', (query) => {
+            expect(esValido(validarListado, query)).toBe(false);
         });
     });
 

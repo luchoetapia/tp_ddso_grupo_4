@@ -1,6 +1,19 @@
 const ColaboradorModel = require('../database/schemas/colaboradorSchema.js');
 
 class ColaboradorRepository {
+    async buscarConPaginacion(pagina = 1, limite = 10, filtros = {}, orden = {}, datosNecesarios = null) {
+        limite = Math.min(limite, 100); // Tope de documentos por página
+
+        const [colaboradores, total] = await Promise.all([
+            ColaboradorModel.find(filtros, datosNecesarios)
+                .paginar({ pagina, limite, orden })
+                .populate('habilidades'),
+            ColaboradorModel.countDocuments(filtros)
+        ]);
+
+        return { colaboradores, total, pagina, limite, totalPaginas: Math.ceil(total / limite) };
+    }
+
     async findAll() {
         return await ColaboradorModel.find().populate('habilidades');
     }

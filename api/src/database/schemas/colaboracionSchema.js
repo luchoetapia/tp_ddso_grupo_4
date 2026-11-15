@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const paginable = require('../plugins/paginable');
 const { Colaboracion } = require('../../models/colaboracion.js');
 
 const Schema = mongoose.Schema;
@@ -18,5 +19,7 @@ const colaboracionSchema = new Schema({
 colaboracionSchema.index({ colaborador: 1, proyecto: 1, fin: 1 });
 
 colaboracionSchema.loadClass(Colaboracion);
+
+colaboracionSchema.plugin(paginable);
 
 module.exports = mongoose.model('Colaboracion', colaboracionSchema);

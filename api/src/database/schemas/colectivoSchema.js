@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const paginable = require('../plugins/paginable');
 const { TipoColectivo, Colectivo } = require('../../models/colectivo')
 
 const Schema = mongoose.Schema;
@@ -26,5 +27,7 @@ colectivoSchema.index({ active: 1 });
 colectivoSchema.index({ usuario: 1 }, { unique: true, partialFilterExpression: { usuario: { $exists: true } } });
 
 colectivoSchema.loadClass(Colectivo);
+
+colectivoSchema.plugin(paginable);
 
 module.exports = mongoose.model('Colectivo', colectivoSchema);

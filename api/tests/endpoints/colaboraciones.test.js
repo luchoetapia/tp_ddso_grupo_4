@@ -26,6 +26,10 @@ const colaboracion = {
     proyecto: { ...colaboracionPublica.proyecto, descripcion: 'desc' },
 };
 
+// Resultado paginado como lo devuelven los services
+const paginaDe = (colaboraciones, extra = {}) => ({ colaboraciones, total: colaboraciones.length, pagina: 1, limite: 10, totalPaginas: 1, ...extra });
+const paginacionDefault = { pagina: 1, limite: 10 };
+
 describe('Endpoints /colaboraciones', () => {
     beforeAll(() => {
         jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -36,21 +40,22 @@ describe('Endpoints /colaboraciones', () => {
 
     describe('GET /colaboraciones', () => {
         test('devuelve la lista de colaboraciones', async () => {
-            colaboracionService.obtenerTodas.mockResolvedValue([colaboracion]);
+            colaboracionService.obtenerTodas.mockResolvedValue(paginaDe([colaboracion]));
 
             const res = await request(app).get('/colaboraciones');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual([colaboracionPublica]);
+            expect(res.body).toEqual({ data: [colaboracionPublica], paginacion: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 } });
+            expect(colaboracionService.obtenerTodas).toHaveBeenCalledWith(paginacionDefault);
         });
 
         test('oculta al colaborador si la colaboración es anónima', async () => {
-            colaboracionService.obtenerTodas.mockResolvedValue([{ ...colaboracion, esAnonima: true }]);
+            colaboracionService.obtenerTodas.mockResolvedValue(paginaDe([{ ...colaboracion, esAnonima: true }]));
 
             const res = await request(app).get('/colaboraciones');
 
-            expect(res.body[0].colaborador).toBeNull();
-            expect(res.body[0].esAnonima).toBe(true);
+            expect(res.body.data[0].colaborador).toBeNull();
+            expect(res.body.data[0].esAnonima).toBe(true);
         });
     });
 

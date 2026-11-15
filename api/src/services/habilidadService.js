@@ -2,14 +2,26 @@ const mongoose = require('mongoose');
 const habilidadRepository = require('../repositories/habilidadRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
+const { construirOrden } = require('./ordenamiento.js');
+
+// Claves por las que el front puede ordenar las habilidades (2° criterio: título, 3°: _id)
+const ORDENAMIENTO = {
+    campos: {
+        titulo: 'titulo',
+        tipoHabilidad: 'tipoHabilidad',
+    },
+    campoNombre: 'titulo',
+    porDefecto: { orden: 'titulo', direccion: 'asc' },
+};
+
 class HabilidadService {
     constructor() {
         this.habilidadRepository = habilidadRepository;
     }
 
-    obtenerTodas = async () => {
-        const habilidades = await this.habilidadRepository.findAll();
-        return habilidades;
+    obtenerTodas = async ({ pagina, limite, orden, direccion } = {}) => {
+        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
+        return await this.habilidadRepository.buscarConPaginacion(pagina, limite, {}, sort);
     }
 
     crear = async (datos) => {
