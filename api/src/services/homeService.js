@@ -2,6 +2,9 @@ const colaboracionRepository = require('../repositories/colaboracionRepository')
 const colectivoRepository = require('../repositories/colectivoRepository');
 const proyectoRepository = require('../repositories/proyectoRepository');
 
+// Cantidad de habilidades que muestra el ranking del home
+const TOP_HABILIDADES = 5;
+
 class HomeService {
     constructor() {
         this.colaboracionRepository = colaboracionRepository;
@@ -18,6 +21,10 @@ class HomeService {
         ]);
 
         return { totalColectivos, proyectosActivos, colaboradores, habilidadesBuscadas };
+    }
+
+    async rankingHabilidades() {
+        return await this.proyectoRepository.rankingHabilidades(TOP_HABILIDADES);
     }
 }
 

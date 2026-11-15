@@ -1,4 +1,5 @@
 const ProyectoModel = require('../database/schemas/proyectoSchema.js');
+const HabilidadModel = require('../database/schemas/habilidadSchema.js');
 
 // Habilidades de los perfiles embebidos, necesarias para armar la vista pública del proyecto y sus perfiles
 const HABILIDADES_PERFILES = ['perfiles.habilidadesRequeridas', 'perfiles.habilidadesOpcionales'];
@@ -187,6 +188,36 @@ class ProyectoRepository {
             { $count: 'total' }
         ]);
         return resultado?.total ?? 0;
+    }
+
+    async rankingHabilidades(limite) {
+        return await ProyectoModel.aggregate([
+            { $match: { finalizado: false } },
+            {
+                $project: {
+                    habilidades: {
+                        $reduce: {
+                            input: '$perfiles',
+                            initialValue: [],
+                            in: {
+                                $setUnion: [
+                                    '$$value',
+                                    { $ifNull: ['$$this.habilidadesRequeridas', []] },
+                                    { $ifNull: ['$$this.habilidadesOpcionales', []] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            { $unwind: '$habilidades' },
+            { $group: { _id: '$habilidades', proyectos: { $sum: 1 } } },
+            { $lookup: { from: HabilidadModel.collection.name, localField: '_id', foreignField: '_id', as: 'habilidad' } },
+            { $unwind: '$habilidad' }, // descarta referencias a habilidades que ya no existen
+            { $sort: { proyectos: -1, 'habilidad.titulo': 1 } },
+            { $limit: limite },
+            { $project: { _id: 0, id: { $toString: '$_id' }, titulo: '$habilidad.titulo', proyectos: 1 } }
+        ]);
     }
 }
 

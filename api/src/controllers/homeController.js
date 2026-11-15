@@ -13,6 +13,11 @@ class HomeController {
         res.status(200).json(contadores);
     }
 
+    obtenerRankingHabilidades = async (req, res) => {
+        const ranking = await this.homeService.rankingHabilidades();
+        res.status(200).json(ranking);
+    }
+
     obtenerDestacados = async (req, res) => {
         const destacados = await this.proyectoService.proyectosDestacados();
         res.status(200).json(destacados.map(ProyectoPublic.desde));

@@ -7,6 +7,9 @@ const router = express.Router()
 router.route('/contadores')
     .get((req, res) => homeController.obtenerContadores(req, res))
 
+router.route('/rankingHabilidades')
+    .get((req, res) => homeController.obtenerRankingHabilidades(req, res))
+
 router.route('/destacados')
     .get((req, res) => homeController.obtenerDestacados(req, res))
 
