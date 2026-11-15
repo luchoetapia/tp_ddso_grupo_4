@@ -5,9 +5,11 @@ import apiQuery from '@/services/api/apiQuery'
 import HeroInicio from '@/components/home/HeroInicio'
 import ContadoresPlataforma from '@/components/home/ContadoresPlataforma'
 import ProyectosDestacados from '@/components/home/ProyectosDestacados'
+import RankingHabilidades from '@/components/home/RankingHabilidades'
 
 const pedirContadores = (signal) => apiQuery.get('/home/contadores', { signal, alertarError: false });
 const pedirDestacados = (signal) => apiQuery.get('/home/destacados', { signal, alertarError: false });
+const pedirRanking = (signal) => apiQuery.get('/home/rankingHabilidades', { signal, alertarError: false });
 
 const INICIAL = { cargando: true, error: false, datos: null };
 
@@ -37,12 +39,14 @@ export default function Home() {
     // Las consultas se disparan en paralelo y cada sección carga a su ritmo
     const contadores = useConsulta(pedirContadores);
     const destacados = useConsulta(pedirDestacados);
+    const ranking = useConsulta(pedirRanking);
 
     return (
         <>
             <HeroInicio />
             <ContadoresPlataforma {...contadores} />
             <ProyectosDestacados {...destacados} />
+            <RankingHabilidades {...ranking} />
         </>
     );
 }
