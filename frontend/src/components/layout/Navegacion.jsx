@@ -32,7 +32,7 @@ export default function Navegacion() {
                     ))}
                     <li>
                         <Link href="/ingresar" className="nav-enlace nav-cta">
-                            Registrar
+                            Ingresar
                         </Link>
                     </li>
                 </ul>
