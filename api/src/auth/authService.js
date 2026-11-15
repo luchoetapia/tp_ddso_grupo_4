@@ -38,6 +38,8 @@ class AuthService {
     }
 
     async registrarUsuario(username, password, email, rol, activo = true) {
+        this.validar(username, email);
+
         const body = {
             username,
             password: this._encriptarPassword(password),
@@ -49,11 +51,6 @@ class AuthService {
         try {
             return await this.repositorio.crearUsuario(body)
         } catch (err) {
-            if (err.code === 11000) {
-                const campo = Object.keys(err.keyPattern)[0];   // 'username' o 'email'
-                throw new ConflictError(`El ${campo} ya está en uso`);
-            }
-
             throw err;
         }
     }
