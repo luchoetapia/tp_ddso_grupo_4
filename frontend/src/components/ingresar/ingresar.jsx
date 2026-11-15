@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
+import { InputContrasena } from '@/components/common'
 
 const Ingresar = () => {
     const [accessKey, setAccessKey] = useState('');
@@ -32,9 +33,7 @@ const Ingresar = () => {
                 <label className={estiloLabel}>Usuario o email:
                     <input type="text" name="accessKey" value={accessKey} onChange={(e) => setAccessKey(e.target.value)} required autoComplete="username" className={estiloControl} />
                 </label>
-                <label className={estiloLabel}>Contraseña:
-                    <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className={estiloControl} />
-                </label>
+                <InputContrasena label="Contraseña:" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
                 <button type="submit" className="mt-1 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-accent bg-accent px-[18px] py-2 font-semibold text-on-accent hover:opacity-90">
                     Ingresar
                 </button>
