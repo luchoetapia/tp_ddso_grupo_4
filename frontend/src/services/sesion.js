@@ -28,7 +28,7 @@ const obtenerUsuario = async () => {
 };
 
 const cerrarSesion = () =>
-    apiQuery.post('/auth/logout', null, { mensajeError: 'No se pudo cerrar la sesión.' });
+    apiQuery.post('/auth/logout', {}, { mensajeError: 'No se pudo cerrar la sesión.' });
 
 const sesion = { obtenerUsuario, cerrarSesion };
 
