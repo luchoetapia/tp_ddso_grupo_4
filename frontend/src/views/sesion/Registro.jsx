@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useLayoutEffect, useState } from "react"
 import apiQuery from "@/services/api/apiQuery"
 import alertas from "@/services/alertas"
 import Link from "next/link"
@@ -121,6 +121,17 @@ export function Registro() {
 
 
     const [enviando, setEnviando] = useState(false);
+
+    // Con cacheComponents, Next oculta la página en vez de desmontarla y el estado sobrevive.
+    // Al salir de /registro se vuelve todo al estado inicial (incluida la contraseña).
+    useLayoutEffect(() => () => {
+        setUsuario(modelo_usuario);
+        setColaborador(modelo_colaborador);
+        setColectivo(modelo_colectivo);
+        setPaso(1);
+        setRegistrado(false);
+        setEnviando(false);
+    }, []);
 
     const handlerSiguiente = async (e) => {
         e.preventDefault();

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import FormField, { controlClass } from "./FormField";
 
 const ojoAbierto = "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z";
@@ -9,6 +9,9 @@ const ojoTachado = "M3 3l18 18M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17.
 // Input de contraseña con botón para mostrarla u ocultarla
 export default function InputContrasena({ label, error, className, ...props }) {
     const [visible, setVisible] = useState(false);
+
+    // Al ocultarse la página (cacheComponents), la contraseña vuelve a quedar oculta
+    useLayoutEffect(() => () => setVisible(false), []);
 
     return (
         <FormField label={label} error={error} className={className}>

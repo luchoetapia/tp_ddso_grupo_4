@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
 import { Button, InputContrasena } from '@/components/common'
@@ -9,6 +9,14 @@ const Ingresar = () => {
     const [accessKey, setAccessKey] = useState('');
     const [password, setPassword] = useState('');
     const [cargando, setCargando] = useState(false);
+
+    // Con cacheComponents, Next oculta la página en vez de desmontarla y el estado sobrevive.
+    // Esta limpieza corre al salir de /ingresar y deja el formulario vacío para la próxima vez.
+    useLayoutEffect(() => () => {
+        setAccessKey('');
+        setPassword('');
+        setCargando(false);
+    }, []);
     const router = useRouter();
 
     const ingresarUsuario = async (e) => {
