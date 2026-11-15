@@ -51,11 +51,14 @@ class NotificacionService {
         }
     }
 
-    obtenerPorColaborador = async (cuentaGit) => {
-        const colaborador = await this.obtenerColaborador(cuentaGit);
-        const notificaciones = await this.notificacionRepository.findByDestinatario(colaborador.id);
-        return notificaciones;
+    //obtiene las notis proias del usuario - se identifica por la sesion
+    obtenerPropias = async (idUsuario) => {
+    const colaborador = await this.colaboradorService.buscarPorUsuario(idUsuario);
+    if (!colaborador)
+        throw new NotFoundError("El usuario no tiene un perfil de colaboradora");
+    return await this.notificacionRepository.findByDestinatario(colaborador.id);
     }
 }
+
 
 module.exports = new NotificacionService();

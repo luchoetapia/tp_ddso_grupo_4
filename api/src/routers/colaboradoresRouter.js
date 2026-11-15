@@ -43,10 +43,10 @@ router.route('/:cuentaGit/buscarPotencialesProyectos')
         (req, res) => colaboradorController.buscarPotencialesProyectos(req, res)
     )
 
-router.route('/:cuentaGit/notificaciones')
+router.route('/me/notificaciones')
     .get(
-        validar(validarCuentaGitColaborador, 'params'),
-        (req, res) => colaboradorController.obtenerNotificaciones(req, res)
+        autenticar(roles.COLABORADOR),
+        (req, res) => colaboradorController.obtenerMisNotificaciones(req, res)
     )
 
 module.exports = router

@@ -15,9 +15,7 @@ jest.mock('../../src/services/habilidadService.js', () => ({
 jest.mock('../../src/services/proyectoService.js', () => ({
     buscarPotencialesProyectos: jest.fn(),
 }));
-jest.mock('../../src/services/notificacionService.js', () => ({
-    obtenerPorColaborador: jest.fn(),
-}));
+
 
 const request = require('supertest');
 const app = require('../../src/app.js');
@@ -196,28 +194,6 @@ describe('Endpoints /colaboradores', () => {
         });
     });
 
-    describe('GET /colaboradores/:cuentaGit/notificaciones', () => {
-        test('devuelve las notificaciones del colaborador', async () => {
-            const notificacion = {
-                id: 'n1', mensaje: 'Hola', fecha: '2024-01-01T00:00:00.000Z',
-                proyecto: { id: ID_PROY, titulo: 'Aula' }, perfil: { id: 'p1', descripcion: 'Backend' },
-            };
-            notificacionService.obtenerPorColaborador.mockResolvedValue([{ ...notificacion, destinatario: ID }]);
-
-            const res = await request(app).get('/colaboradores/juanp/notificaciones');
-
-            expect(res.status).toBe(200);
-            expect(res.body).toEqual([notificacion]);
-        });
-
-        test('responde 404 si el colaborador no existe', async () => {
-            notificacionService.obtenerPorColaborador.mockRejectedValue(new NotFoundError('Colaborador no encontrado'));
-
-            const res = await request(app).get('/colaboradores/nadie/notificaciones');
-
-            expect(res.status).toBe(404);
-        });
-    });
 
     describe('POST /colaboradores/llenarDatosPrueba', () => {
         test('crea los colaboradores por defecto usando las habilidades existentes', async () => {
