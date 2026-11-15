@@ -1,10 +1,7 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import apiQuery from '@/services/api/apiQuery'
 import { formatearEntero } from '@/helpers/formatos'
 import { Button, Card, Skeleton } from '@/components/common'
 
+// Orden y textos de las cards; "clave" es el campo que devuelve GET /home/contadores
 const contadores = [
     { clave: 'totalColectivos', titulo: 'Colectivos', detalle: 'confían en nosotros' },
     { clave: 'proyectosActivos', titulo: 'Proyectos activos', detalle: 'en desarrollo' },
@@ -14,30 +11,7 @@ const contadores = [
 
 const grilla = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3';
 
-// Sin alerta: si falla, se muestra el aviso dentro de la sección
-const pedirContadores = (signal) => apiQuery.get('/home/contadores', { signal, alertarError: false });
-
-const ContadoresPlataforma = () => {
-    const [estado, setEstado] = useState({ cargando: true, error: false, datos: null });
-    const [intento, setIntento] = useState(0);
-
-    useEffect(() => {
-        const controlador = new AbortController();
-        pedirContadores(controlador.signal)
-            .then((datos) => setEstado({ cargando: false, error: false, datos }))
-            .catch((err) => {
-                if (!err.cancelado) setEstado({ cargando: false, error: true, datos: null });
-            });
-        return () => controlador.abort();
-    }, [intento]);
-
-    const reintentar = () => {
-        setEstado({ cargando: true, error: false, datos: null });
-        setIntento((n) => n + 1);
-    };
-
-    const { cargando, error, datos } = estado;
-
+const ContadoresPlataforma = ({ cargando, error, datos, reintentar }) => {
     return (
         <section aria-labelledby="numeros-titulo" aria-busy={cargando} className="flex flex-col gap-3">
             <h2 id="numeros-titulo" className="m-0 text-[26px]">La plataforma en números</h2>
