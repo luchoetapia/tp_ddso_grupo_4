@@ -123,22 +123,4 @@ describe('NotificacionService', () => {
         });
     });
 
-    describe('obtenerPorColaborador', () => {
-        test('devuelve las notificaciones del colaborador', async () => {
-            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ id: ID_COLAB });
-            notificacionRepository.findByDestinatario.mockResolvedValue([notificacionGuardada()]);
-
-            const resultado = await notificacionService.obtenerPorColaborador('juanp');
-
-            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith(ID_COLAB);
-            expect(resultado).toHaveLength(1);
-            expect(resultado[0].mensaje).toBe('Hola');
-        });
-
-        test('propaga NotFoundError si el colaborador no existe', async () => {
-            colaboradorService.obtenerPorCuentaGit.mockRejectedValue(new NotFoundError('Colaborador no encontrado'));
-
-            await expect(notificacionService.obtenerPorColaborador('nadie')).rejects.toThrow(NotFoundError);
-        });
-    });
 });

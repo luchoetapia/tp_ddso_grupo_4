@@ -100,9 +100,9 @@ class ColaboradorController {
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
 
-    obtenerNotificaciones = async (req, res) => {
-        const notificaciones = await this.notificacionService.obtenerPorColaborador(req.params.cuentaGit);
-        res.status(200).json(notificaciones.map(NotificacionPublic.desde));
+    obtenerMisNotificaciones = async (req, res) => {
+    const notificaciones = await this.notificacionService.obtenerPropias(req.usuario.id);
+    res.status(200).json(notificaciones.map(NotificacionPublic.desde));
     }
 }
 
