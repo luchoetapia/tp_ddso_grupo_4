@@ -45,6 +45,11 @@ class ColaboracionRepository {
         return await ColaboracionModel.findOneAndUpdate({ _id: id, fin: null }, { fin }, { new: true }).populate(REFERENCIAS);
     }
 
+    async totalColaboradoresDistintos() {
+        const colaboradores = await ColaboracionModel.distinct('colaborador');
+        return colaboradores.length || 0;
+    }
+
 }
 
 module.exports = new ColaboracionRepository();

@@ -89,6 +89,13 @@ class ProyectoRepository {
         );
     }
 
+    async totalActivos() {
+        return await ProyectoModel.countDocuments({ finalizado: false })
+    }
+
+
+    // Perfiles
+
     async agregarPerfil(idProyecto, perfil) {
         return await ProyectoModel.findByIdAndUpdate(
             idProyecto,
@@ -145,6 +152,19 @@ class ProyectoRepository {
             { $pull: { perfiles: { _id: { $in: idsPerfiles } } } },
             { new: true }
         );
+    }
+
+    // Cantidad de habilidades distintas (requeridas u opcionales) pedidas en los perfiles de proyectos activos
+    async totalHabilidadesBuscadas() {
+        const [resultado] = await ProyectoModel.aggregate([
+            { $match: { finalizado: false } },
+            { $unwind: '$perfiles' },
+            { $project: { habilidades: { $setUnion: ['$perfiles.habilidadesRequeridas', '$perfiles.habilidadesOpcionales'] } } },
+            { $unwind: '$habilidades' },
+            { $group: { _id: '$habilidades' } },
+            { $count: 'total' }
+        ]);
+        return resultado?.total ?? 0;
     }
 }
 
