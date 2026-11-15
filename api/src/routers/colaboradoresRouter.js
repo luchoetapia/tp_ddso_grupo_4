@@ -26,6 +26,12 @@ router.route('/')
         (req, res) => colaboradorController.crearColaborador(req, res)
     )
 
+router.route('/me')
+    .get(
+        autenticar(roles.COLABORADOR),
+        (req, res) => colaboradorController.obtenerMiPerfil(req, res)
+    )
+
 router.route('/:cuentaGit')
     .get(
         validar(validarCuentaGitColaborador, 'params'),
