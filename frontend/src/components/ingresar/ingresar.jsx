@@ -3,15 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
-import { InputContrasena } from '@/components/common'
+import { Button, InputContrasena } from '@/components/common'
 
 const Ingresar = () => {
     const [accessKey, setAccessKey] = useState('');
     const [password, setPassword] = useState('');
+    const [cargando, setCargando] = useState(false);
     const router = useRouter();
 
     const ingresarUsuario = async (e) => {
         e.preventDefault();
+        setCargando(true);
 
         try {
             // Si falla, apiQuery ya muestra la alerta con el error
@@ -19,6 +21,7 @@ const Ingresar = () => {
             router.push('/');
             return data.usuario;
         } catch {
+            setCargando(false);
             return null;
         }
     };
@@ -34,9 +37,9 @@ const Ingresar = () => {
                     <input type="text" name="accessKey" value={accessKey} onChange={(e) => setAccessKey(e.target.value)} required autoComplete="username" className={estiloControl} />
                 </label>
                 <InputContrasena label="Contraseña:" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-                <button type="submit" className="mt-1 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-accent bg-accent px-[18px] py-2 font-semibold text-on-accent hover:opacity-90">
-                    Ingresar
-                </button>
+                <Button type="submit" variant="primary" cargando={cargando} className="mt-1 hover:opacity-90">
+                    {cargando ? 'Ingresando…' : 'Ingresar'}
+                </Button>
             </form>
         </section>
     );

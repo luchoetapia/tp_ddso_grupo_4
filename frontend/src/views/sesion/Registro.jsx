@@ -168,7 +168,7 @@ export function Registro() {
                     <div className="flex flex-wrap-reverse items-center justify-between gap-2.5">
                         <div>
                             {puedoVolverAtras() && (
-                                <Button onClick={handlerAtras} disabled={enviando} className="min-h-11 gap-1.5">
+                                <Button onClick={handlerAtras} disabled={enviando} className="min-h-11">
                                     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
@@ -176,11 +176,13 @@ export function Registro() {
                                 </Button>
                             )}
                         </div>
-                        <Button type="submit" variant="primary" disabled={!pasoCompleto() || enviando} className="min-h-11 gap-1.5 px-[22px]">
+                        <Button type="submit" variant="primary" disabled={!pasoCompleto()} cargando={enviando} className="min-h-11 px-[22px]">
                             {esUltimoPaso ? (enviando ? 'Creando cuenta…' : 'Crear cuenta') : 'Siguiente'}
-                            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                            {!enviando && (
+                                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            )}
                         </Button>
                     </div>
                 </form>
