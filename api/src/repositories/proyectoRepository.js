@@ -93,6 +93,28 @@ class ProyectoRepository {
         return await ProyectoModel.countDocuments({ finalizado: false })
     }
 
+    async masReciente(fechaLimite) {
+        return await ProyectoModel.findOne({ finalizado: false, createdAt: { $gte: fechaLimite } })
+            .sort({ createdAt: -1 })
+            .populate(HABILIDADES_PERFILES);
+    }
+
+    async mayorProgreso(fechaLimite) {
+        return await ProyectoModel.findOne({ finalizado: false, createdAt: { $gte: fechaLimite } })
+            .sort({ porcentajeFinalizado: -1, updatedAt: -1 })
+            .populate(HABILIDADES_PERFILES);
+    }
+
+    async masPerfiles(fechaLimite) {
+        const [mayor] = await ProyectoModel.aggregate([
+            { $match: { finalizado: false, createdAt: { $gte: fechaLimite } } },
+            { $project: { cantidadPerfiles: { $size: '$perfiles' }, createdAt: 1 } },
+            { $sort: { cantidadPerfiles: -1, createdAt: -1 } },
+            { $limit: 1 }
+        ]);
+        return mayor ? await this.findById(mayor._id) : null;
+    }
+
 
     // Perfiles
 
