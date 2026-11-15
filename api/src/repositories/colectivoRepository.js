@@ -43,6 +43,10 @@ class ColectivoRepository {
     async update(id, cambios) {
         return await ColectivoModel.findByIdAndUpdate(id, cambios, { new: true }).populate('proyectos');
     }
+
+    async totalActivos() {
+        return await ColectivoModel.countDocuments({ active: true })
+    }
 }
 
 module.exports = new ColectivoRepository();

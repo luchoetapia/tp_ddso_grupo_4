@@ -8,7 +8,9 @@
     "test:unit": "jest tests/unit",
     "test:endpoints": "jest tests/endpoints",
     "test:coverage": "jest --coverage",
-    "start": "node index.js"
+    "start": "node index.js",
+    "seed:habilidades": "node seeds/habilidades.js",
+    "seed:demo": "node seeds/demo.js"
   },
   "jest": {
     "testEnvironment": "node",

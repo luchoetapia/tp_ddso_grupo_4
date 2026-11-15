@@ -21,6 +21,9 @@ const ORDENAMIENTO = {
 // Orden extra de la búsqueda de potenciales proyectos: ranking calculado en JS (no es un campo del documento)
 const ORDEN_RELEVANCIA = 'relevancia';
 
+// Ventana para considerar "reciente" a un proyecto en los destacados del home
+const DIAS_RECIENTE = 30;
+
 class ProyectoService {
     constructor() {
         this.proyectoRepository = proyectoRepository;
@@ -261,6 +264,27 @@ class ProyectoService {
         const resultado = await this.proyectoRepository.updateMultiple(idsProyectos, setQuery);
 
         return resultado.modifiedCount;
+    }
+
+    // Destacados del home, entre los proyectos activos creados en los últimos DIAS_RECIENTE días:
+    // el más nuevo, el de mayor progreso y el de más perfiles.
+    proyectosDestacados = async (soloId = false) => {
+        const fechaLimite = new Date(Date.now() - DIAS_RECIENTE * 24 * 60 * 60 * 1000);
+
+        const [masReciente, mayorProgreso, masPerfiles] = await Promise.all([
+            this.proyectoRepository.masReciente(fechaLimite),
+            this.proyectoRepository.mayorProgreso(fechaLimite),
+            this.proyectoRepository.masPerfiles(fechaLimite)
+        ]);
+
+        // Un proyecto puede ganar más de una categoría, pero aparece una sola vez
+        const destacados = new Map();
+        for (const proyecto of [masReciente, mayorProgreso, masPerfiles]) {
+            if (proyecto) destacados.set(proyecto.id, proyecto);
+        }
+
+        const lista = [...destacados.values()];
+        return soloId ? lista.map(proyecto => proyecto.id) : lista;
     }
 }
 

@@ -38,7 +38,7 @@ class AuthService {
     }
 
     async registrarUsuario(username, password, email, rol, activo = true) {
-        this.validar(username, email);
+        await this.verificarUsernameYEmail(username, email);
 
         const body = {
             username,
