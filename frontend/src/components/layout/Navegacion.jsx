@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import sesion, { roles } from "@/services/sesion";
 import EnlacesNav from "./EnlacesNav";
 import NavegacionColaborador from "./NavegacionColaborador";
+import SelectorTema from "./SelectorTema";
 
 const enlacesPublicos = [
     { href: "/", texto: "Inicio" },
@@ -56,6 +57,9 @@ export default function Navegacion() {
                 ) : (
                     <ul className="nav-enlaces">
                         <EnlacesNav enlaces={enlacesPublicos} rutaActual={rutaActual} />
+                        <li>
+                            <SelectorTema />
+                        </li>
                         {usuario === null && (
                             <li>
                                 <Link href="/ingresar" className="nav-enlace nav-cta">

@@ -15,6 +15,13 @@ export const leerTema = () => {
     }
 };
 
+const suscriptores = new Set();
+
+export const suscribirTema = (avisar) => {
+    suscriptores.add(avisar);
+    return () => suscriptores.delete(avisar);
+};
+
 export const aplicarTema = (tema) => {
     const raiz = document.documentElement;
     try {
@@ -28,6 +35,7 @@ export const aplicarTema = (tema) => {
     } catch {
         // Sin localStorage (modo privado estricto): el tema se aplica igual, pero no se recuerda
     }
+    suscriptores.forEach((avisar) => avisar());
 };
 
 // Se inyecta en el <head>: aplica el tema guardado antes del primer pintado (evita el parpadeo)

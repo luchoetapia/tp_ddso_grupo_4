@@ -1,39 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { TEMAS, aplicarTema, leerTema } from "@/services/tema";
+import { useState } from "react";
+import { TEMAS } from "@/services/tema";
+import useDesplegable from "@/hooks/useDesplegable";
+import useTema from "@/hooks/useTema";
 import { Button } from "@/components/common";
 import { IconoFlecha, IconoUsuario } from "./iconos";
 
 export default function MenuUsuario({ nombre, onCerrarSesion }) {
-    const [abierto, setAbierto] = useState(false);
-    const [tema, setTema] = useState(leerTema);
+    const { abierto, setAbierto, ref } = useDesplegable();
+    const [tema, elegirTema] = useTema();
     const [cerrando, setCerrando] = useState(false);
-    const contenedor = useRef(null);
-
-    // Se cierra al hacer click afuera o con Escape
-    useEffect(() => {
-        if (!abierto) return;
-
-        const alClickear = (e) => {
-            if (!contenedor.current?.contains(e.target)) setAbierto(false);
-        };
-        const alTeclear = (e) => {
-            if (e.key === "Escape") setAbierto(false);
-        };
-
-        document.addEventListener("mousedown", alClickear);
-        document.addEventListener("keydown", alTeclear);
-        return () => {
-            document.removeEventListener("mousedown", alClickear);
-            document.removeEventListener("keydown", alTeclear);
-        };
-    }, [abierto]);
-
-    const elegirTema = (valor) => {
-        aplicarTema(valor);
-        setTema(valor);
-    };
 
     const cerrarSesion = async () => {
         setCerrando(true);
@@ -45,7 +22,7 @@ export default function MenuUsuario({ nombre, onCerrarSesion }) {
     };
 
     return (
-        <div ref={contenedor} className="relative">
+        <div ref={ref} className="relative">
             <button
                 type="button"
                 onClick={() => setAbierto((a) => !a)}
