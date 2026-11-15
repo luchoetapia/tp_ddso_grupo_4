@@ -20,7 +20,6 @@ class Usuario {
     registrarAcceso() { this.ultimoAcceso = new Date() }
 
     desactivar() { this.activo = false }
-    activar() { this.activo = true}
 }
 
 module.exports = { Usuario, roles };

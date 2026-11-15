@@ -17,7 +17,11 @@ const validarRegistro = z.object({
     rol: z.enum(rolesRegistrables, { error: `El rol debe ser uno de: ${rolesRegistrables.join(', ')}` }),
 }).strict();
 
+// Mismas reglas que el registro para username y email (llegan por query string)
+const validarDisponibilidad = validarRegistro.pick({ username: true, email: true });
+
 module.exports = {
     validarLogin,
-    validarRegistro
+    validarRegistro,
+    validarDisponibilidad
 };

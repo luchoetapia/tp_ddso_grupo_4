@@ -57,6 +57,25 @@ class AuthService {
             throw err;
         }
     }
+
+    async verificarUsernameYEmail(username, email) {
+        const [usernameEnUso, emailEnUso] = await Promise.all([
+            this.repositorio.usernameEnUso(username),
+            this.repositorio.emailEnUso(email),
+        ]);
+
+        const enUso = [];
+        if (usernameEnUso) enUso.push('Nombre de usuario')
+        if (emailEnUso) enUso.push('Email')
+        
+        if (enUso.length)
+            throw new ConflictError(enUso.length === 1
+                ? `El campo ${enUso[0]} ya está en uso`
+                : `Los campos ${enUso.join(' y ')} ya están en uso`
+            )
+
+        return true;
+    }
 }
 
 module.exports = AuthService
