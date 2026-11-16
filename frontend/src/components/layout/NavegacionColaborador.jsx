@@ -4,7 +4,7 @@ import MenuUsuario from "./MenuUsuario";
 import { IconoCampana } from "./iconos";
 
 const enlaces = [
-    { href: "/", texto: "Inicio" },
+    { href: "/colaboradoras/inicio", texto: "Inicio" },
     { href: "/proyectos", texto: "Proyectos" },
 ];
 
