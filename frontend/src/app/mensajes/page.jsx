@@ -1,4 +1,4 @@
-import MensajesInternos from "@/views/mensajesInternos";
+import MensajesInternos from "@/views/MensajesInternos";
 
 export default function MensajesPage() {
     return <MensajesInternos />;
