@@ -2,6 +2,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Navegacion from "@/components/layout/Navegacion";
 import ContenedorAlertas from "@/components/common/ContenedorAlertas";
+import { scriptTemaInicial } from "@/services/tema";
 
 const fraunces = Fraunces({
     subsets: ["latin"],
@@ -25,7 +26,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="es" className={`${fraunces.variable} ${jakarta.variable}`}>
+        <html lang="es" className={`${fraunces.variable} ${jakarta.variable}`} suppressHydrationWarning>
+            <head>
+                <script dangerouslySetInnerHTML={{ __html: scriptTemaInicial }} />
+            </head>
             <body>
                 <Navegacion />
                 <main className="main">{children}</main>
