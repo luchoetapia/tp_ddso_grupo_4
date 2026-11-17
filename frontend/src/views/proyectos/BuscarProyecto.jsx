@@ -8,10 +8,8 @@ const BuscarProyecto = () => {
 
     const [texto, setTexto] = useState('');
     const [soloMisHabilidades, setSoloMisHabilidades] = useState(false);
-    // null = todavía no se buscó
     const [proyectos, setProyectos] = useState(null);
     const [cargando, setCargando] = useState(false);
-    // TEMPORAL: hasta que haya un endpoint que devuelva el colaborador logueado
     const [cuentaGit, setCuentaGit] = useState('');
 
     const busquedaNormal = async () => {

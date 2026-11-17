@@ -30,7 +30,6 @@ export default function MensajesInternos() {
             });
     }, []);
 
-    // Colaboradora logueada y sus postulaciones, para saber a qué perfiles ya se postuló
     const [colaboradora, setColaboradora] = useState(null);
     const [postulaciones, setPostulaciones] = useState({});
     const [postulandoA, setPostulandoA] = useState(null);
