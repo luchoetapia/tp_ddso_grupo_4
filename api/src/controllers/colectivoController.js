@@ -71,6 +71,11 @@ class ColectivoController {
 
         return res.status(201).json({ status: "success", data: creados.map(ColectivoPublic.desde) });
     }
+
+     obtenerMiColectivo = async (req, res) => {
+        const colectivo = await this.colectivoService.buscarPorUsuario(req.usuario.id)
+        res.status(200).json(ColectivoPublic.desde(colectivo))
+    }
 }
 
 module.exports = { ColectivoController };
