@@ -9,6 +9,15 @@ jest.mock('../../../src/repositories/colaboradorRepository.js', () => ({
 jest.mock('../../../src/services/habilidadService.js', () => ({
     obtenerPorListaId: jest.fn(),
 }));
+jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
+    findByUsuario: jest.fn(),
+}));
+jest.mock('../../../src/repositories/postulacionRepository.js', () => ({
+    existeAceptadaEnProyectos: jest.fn(),
+}));
+const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
+const postulacionRepository = require('../../../src/repositories/postulacionRepository.js');
+const { ForbiddenError } = require('../../../src/errors/AppError.js');
 
 const colaboradorRepository = require('../../../src/repositories/colaboradorRepository.js');
 const habilidadService = require('../../../src/services/habilidadService.js');
@@ -199,6 +208,49 @@ describe('ColaboradorService', () => {
             colaboradorRepository.findByCuentaGit.mockResolvedValue(null);
 
             await expect(colaboradorService.obtenerContactos('nadie')).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe('obtenerContactosAutorizados', () => {
+        const contactos = [{ _id: 'x', medio: 'Email', valor: 'a@b.com' }];
+        const ID_PROYECTO = '507f1f77bcf86cd799439031';
+
+        beforeEach(() => {
+            colaboradorRepository.findByCuentaGit.mockResolvedValue(colaboradorDoc({ usuario: ID_USUARIO, contactos }));
+        });
+
+        test('la propia colaboradora ve sus contactos', async () => {
+            await expect(colaboradorService.obtenerContactosAutorizados('juanp', { id: ID_USUARIO, rol: 'colaborador' }))
+                .resolves.toEqual([{ medio: 'Email', valor: 'a@b.com' }]);
+        });
+
+        test('otra colaboradora recibe ForbiddenError', async () => {
+            await expect(colaboradorService.obtenerContactosAutorizados('juanp', { id: 'otro', rol: 'colaborador' }))
+                .rejects.toThrow(ForbiddenError);
+        });
+
+        test('un colectivo con postulación aceptada ve los contactos', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue({ proyectos: [ID_PROYECTO] });
+            postulacionRepository.existeAceptadaEnProyectos.mockResolvedValue(true);
+
+            await expect(colaboradorService.obtenerContactosAutorizados('juanp', { id: 'col', rol: 'colectivo' }))
+                .resolves.toEqual([{ medio: 'Email', valor: 'a@b.com' }]);
+            expect(postulacionRepository.existeAceptadaEnProyectos).toHaveBeenCalledWith(ID_COLAB, [ID_PROYECTO]);
+        });
+
+        test('un colectivo sin postulación aceptada recibe ForbiddenError', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue({ proyectos: [ID_PROYECTO] });
+            postulacionRepository.existeAceptadaEnProyectos.mockResolvedValue(false);
+
+            await expect(colaboradorService.obtenerContactosAutorizados('juanp', { id: 'col', rol: 'colectivo' }))
+                .rejects.toThrow(ForbiddenError);
+        });
+
+        test('lanza NotFoundError si la colaboradora no existe', async () => {
+            colaboradorRepository.findByCuentaGit.mockResolvedValue(null);
+
+            await expect(colaboradorService.obtenerContactosAutorizados('nadie', { id: ID_USUARIO, rol: 'colaborador' }))
+                .rejects.toThrow(NotFoundError);
         });
     });
 });

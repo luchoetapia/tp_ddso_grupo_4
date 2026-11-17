@@ -1083,6 +1083,45 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colaboradores/{cuentaGit}/contactos:
+    get:
+      summary: Obtiene los datos de contacto de una colaboradora/colaborador
+      description: >
+        Requiere sesión. Solo pueden verlos la propia colaboradora, un admin, o un colectivo
+        que le haya aceptado una postulación en alguno de sus proyectos. Cualquier otro recibe 403.
+      tags: [Colaboradores]
+      parameters:
+        - $ref: "#/components/parameters/CuentaGitPath"
+      responses:
+        "200":
+          description: Medios de contacto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    medio: { type: string, example: Email }
+                    valor: { type: string, example: juan@mail.com }
+        "401":
+          description: Falta el token de acceso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Sin acceso a los datos de contacto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colaboradora no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colaboradores/{cuentaGit}/anotarProyecto/{idProyecto}:
     post:
       summary: Anota a una colaboradora/colaborador a un proyecto

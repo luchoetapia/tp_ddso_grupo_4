@@ -29,6 +29,16 @@ class PostulacionRepository {
         });
     }
 
+    // ¿El colaborador tiene alguna postulación aceptada en alguno de esos proyectos?
+    async existeAceptadaEnProyectos(idColaborador, idsProyectos) {
+        const encontrada = await PostulacionModel.exists({
+            colaborador: idColaborador,
+            proyecto: { $in: idsProyectos },
+            estado: EstadoPostulacion.ACEPTADA
+        });
+        return Boolean(encontrada);
+    }
+
     async updateEstado(id, nuevoEstado) {
         return await PostulacionModel.findByIdAndUpdate(
             id,
