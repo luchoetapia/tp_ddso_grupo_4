@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Button, Card, Select, Skeleton, Tag } from "@/components/common";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
@@ -110,7 +111,11 @@ return (
                         {colaboradoras.map((c) => (
                             <Card as="li" key={c.id}>
                                 <div className="flex flex-wrap items-start justify-between gap-2">
-                                    <h2 className="font-sans text-base">{c.nombreFantasia || c.cuentaGit}</h2>
+                                    <h2 className="font-sans text-base">
+                                        <Link href={`/colaboradoras/perfil?cuentaGit=${encodeURIComponent(c.cuentaGit)}`} className="underline">
+                                            {c.nombreFantasia || c.cuentaGit}
+                                        </Link>
+                                    </h2>
                                     <div className="flex flex-wrap gap-2">
                                         {c.habilidades.map((h) => (
                                             <Tag key={h.id}>{h.titulo}</Tag>
