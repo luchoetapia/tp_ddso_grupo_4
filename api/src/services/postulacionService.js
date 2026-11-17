@@ -72,12 +72,10 @@ class PostulacionService {
 
         // 8. Evaluar postulación según la estrategia de aceptación del proyecto
         if (proyecto.estrategiaAceptacion) {
-            let estrategia = proyecto.estrategiaAceptacion;
-            if (typeof estrategia === 'string') {
-                const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
-                estrategia = obtenerEstrategia(estrategia, proyecto);
-                proyecto.estrategiaAceptacion = estrategia;
-            }
+            // En la BD la estrategia se guarda por nombre (String). No se reasigna la instancia al proyecto:
+            // en un documento de Mongoose se volvería a castear a String y se perdería el objeto.
+            const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
+            const estrategia = obtenerEstrategia(proyecto.estrategiaAceptacion, proyecto);
 
             if (!proyecto.postulaciones) {
                 const postulacionesPrevias = await this.postulacionRepository.findAll({ proyecto: proyecto.id });
@@ -87,11 +85,7 @@ class PostulacionService {
                 proyecto.postulaciones.push(nuevaPostulacion);
             }
 
-            if (typeof proyecto.evaluarPostulacion === 'function') {
-                proyecto.evaluarPostulacion(nuevaPostulacion);
-            } else {
-                estrategia.evaluarPostulacion(nuevaPostulacion);
-            }
+            estrategia.evaluarPostulacion(nuevaPostulacion);
 
             if (nuevaPostulacion.estado === EstadoPostulacion.ACEPTADA) {
                 nuevaPostulacion = await this.procesarAceptacion(nuevaPostulacion);

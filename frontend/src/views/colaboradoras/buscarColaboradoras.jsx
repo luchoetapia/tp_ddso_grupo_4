@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, Card, Select, Skeleton, Tag } from "@/components/common";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
+import ContactarColaboradora from "./ContactarColaboradora";
 
 const BuscarColaboradoras = () => {
     const [proyectos, setProyectos] = useState([]);
@@ -16,11 +17,19 @@ const BuscarColaboradoras = () => {
     const ultimaBusqueda = useRef(0);
 
     useEffect(() => {
-        // Los errores los muestra apiQuery como alerta
+        // Solo los proyectos abiertos del colectivo logueado. /colectivos/me no trae los perfiles,
+        // así que se pide el detalle de cada proyecto
+        const mensajeError = "No se pudieron cargar tus proyectos.";
         apiQuery
-            // TEMPORAL: el listado viene paginado; para el select se pide la página más grande permitida
-            .get("/proyectos", { params: { limite: 10 }, mensajeError: "No se pudieron cargar los proyectos." })
-            .then(({ data }) => setProyectos(data.filter((p) => !p.finalizado)))
+            .get("/colectivos/me", { mensajeError })
+            .then((colectivo) =>
+                Promise.all(
+                    colectivo.proyectos
+                        .filter((p) => !p.finalizado)
+                        .map((p) => apiQuery.get(`/proyectos/${p.id}`, { mensajeError }))
+                )
+            )
+            .then(setProyectos)
             .catch(() => {});
     }, []);
 
@@ -142,7 +151,15 @@ return (
                 )}
             </div>
 
-            {/* TODO lo de contactar */}
+            {aContactar && (
+                <ContactarColaboradora
+                    colaboradora={aContactar}
+                    proyecto={proyecto}
+                    perfil={proyecto.perfiles.find((p) => p.id === idPerfil)}
+                    onCerrar={() => setAContactar(null)}
+                    onEnviado={alEnviar}
+                />
+            )}
 
 </section>
 );
