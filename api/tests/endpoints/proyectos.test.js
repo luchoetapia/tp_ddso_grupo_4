@@ -1,6 +1,5 @@
 jest.mock('../../src/services/proyectoService.js', () => ({
-    obtenerTodos: jest.fn(),
-    buscarPorTexto: jest.fn(),
+    buscar: jest.fn(),
     crear: jest.fn(),
     obtenerPorId: jest.fn(),
     buscarPotencialesColaboradores: jest.fn(),
@@ -71,7 +70,7 @@ describe('Endpoints /proyectos', () => {
 
     describe('GET /proyectos', () => {
         test('devuelve la primera página de proyectos por defecto', async () => {
-            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([proyecto]));
+            proyectoService.buscar.mockResolvedValue(paginaDe([proyecto]));
 
             const res = await request(app).get('/proyectos');
 
@@ -80,26 +79,26 @@ describe('Endpoints /proyectos', () => {
                 data: [proyectoPublico],
                 paginacion: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 }
             });
-            expect(proyectoService.obtenerTodos).toHaveBeenCalledWith(paginacionDefault);
+            expect(proyectoService.buscar).toHaveBeenCalledWith({}, paginacionDefault);
         });
 
         test('pasa ?pagina y ?limite al service como números', async () => {
-            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([], { pagina: 3, limite: 5, total: 12, totalPaginas: 3 }));
+            proyectoService.buscar.mockResolvedValue(paginaDe([], { pagina: 3, limite: 5, total: 12, totalPaginas: 3 }));
 
             const res = await request(app).get('/proyectos?pagina=3&limite=5');
 
             expect(res.status).toBe(200);
-            expect(proyectoService.obtenerTodos).toHaveBeenCalledWith({ pagina: 3, limite: 5 });
+            expect(proyectoService.buscar).toHaveBeenCalledWith({}, { pagina: 3, limite: 5 });
             expect(res.body.paginacion).toEqual({ pagina: 3, limite: 5, total: 12, totalPaginas: 3 });
         });
 
         test('pasa ?orden y ?direccion al service', async () => {
-            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([]));
+            proyectoService.buscar.mockResolvedValue(paginaDe([]));
 
             const res = await request(app).get('/proyectos?orden=titulo&direccion=desc');
 
             expect(res.status).toBe(200);
-            expect(proyectoService.obtenerTodos).toHaveBeenCalledWith({ pagina: 1, limite: 10, orden: 'titulo', direccion: 'desc' });
+            expect(proyectoService.buscar).toHaveBeenCalledWith({}, { pagina: 1, limite: 10, orden: 'titulo', direccion: 'desc' });
         });
 
         test.each([
@@ -114,40 +113,61 @@ describe('Endpoints /proyectos', () => {
             const res = await request(app).get(`/proyectos?${query}`);
 
             expect(res.status).toBe(400);
-            expect(proyectoService.obtenerTodos).not.toHaveBeenCalled();
+            expect(proyectoService.buscar).not.toHaveBeenCalled();
         });
 
         test('con ?texto busca proyectos por texto', async () => {
-            proyectoService.buscarPorTexto.mockResolvedValue(paginaDe([proyecto]));
+            proyectoService.buscar.mockResolvedValue(paginaDe([proyecto]));
 
             const res = await request(app).get('/proyectos?texto=aula&pagina=2');
 
             expect(res.status).toBe(200);
             expect(res.body.data).toEqual([proyectoPublico]);
-            expect(proyectoService.buscarPorTexto).toHaveBeenCalledWith('aula', { pagina: 2, limite: 10 });
-            expect(proyectoService.obtenerTodos).not.toHaveBeenCalled();
+            expect(proyectoService.buscar).toHaveBeenCalledWith({ texto: 'aula' }, { pagina: 2, limite: 10 });
         });
 
         test('con ?texto vacío devuelve todos los proyectos', async () => {
-            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([proyecto]));
+            proyectoService.buscar.mockResolvedValue(paginaDe([proyecto]));
 
             const res = await request(app).get('/proyectos?texto=%20%20');
 
             expect(res.status).toBe(200);
-            expect(proyectoService.obtenerTodos).toHaveBeenCalled();
-            expect(proyectoService.buscarPorTexto).not.toHaveBeenCalled();
+            expect(proyectoService.buscar).toHaveBeenCalledWith({}, paginacionDefault);
+        });
+
+        test('pasa ?habilidades como lista de ids y ?finalizado como booleano', async () => {
+            const ID_HAB_2 = '507f1f77bcf86cd799439022';
+            proyectoService.buscar.mockResolvedValue(paginaDe([]));
+
+            const res = await request(app).get(`/proyectos?habilidades=${ID_HAB},${ID_HAB_2}&finalizado=false`);
+
+            expect(res.status).toBe(200);
+            expect(proyectoService.buscar).toHaveBeenCalledWith(
+                { habilidades: [ID_HAB, ID_HAB_2], finalizado: false },
+                paginacionDefault
+            );
+        });
+
+        test.each([
+            ['habilidades=no-es-un-id'],
+            ['finalizado=quizas'],
+        ])('responde 400 con ?%s', async (query) => {
+            const res = await request(app).get(`/proyectos?${query}`);
+
+            expect(res.status).toBe(400);
+            expect(proyectoService.buscar).not.toHaveBeenCalled();
         });
 
         test('rechaza ?texto repetido con 400', async () => {
             const res = await request(app).get('/proyectos?texto=a&texto=b');
 
             expect(res.status).toBe(400);
-            expect(proyectoService.buscarPorTexto).not.toHaveBeenCalled();
+            expect(proyectoService.buscar).not.toHaveBeenCalled();
         });
 
         test('resume los perfiles de cada proyecto', async () => {
             const js = { id: ID_HAB, titulo: 'JavaScript', tipoHabilidad: 'programacion' };
-            proyectoService.obtenerTodos.mockResolvedValue(paginaDe([{ ...proyecto, perfiles: [{ ...perfil, habilidadesRequeridas: [js] }] }]));
+            proyectoService.buscar.mockResolvedValue(paginaDe([{ ...proyecto, perfiles: [{ ...perfil, habilidadesRequeridas: [js] }] }]));
 
             const res = await request(app).get('/proyectos');
 

@@ -21,12 +21,13 @@ class ProyectoController {
     }
 
     obtenerProyectos = async (req, res) => {
-        // req.query ya viene validado: texto recortado y pagina/limite como números
-        const { texto, pagina, limite, orden, direccion } = req.query;
+        // req.query ya viene validado: texto recortado, habilidades como lista, finalizado booleano y pagina/limite como números
+        const { texto, habilidades, finalizado, pagina, limite, orden, direccion } = req.query;
 
-        const resultado = texto
-            ? await this.proyectoService.buscarPorTexto(texto, { pagina, limite, orden, direccion })
-            : await this.proyectoService.obtenerTodos({ pagina, limite, orden, direccion });
+        const resultado = await this.proyectoService.buscar(
+            { texto: texto || undefined, habilidades, finalizado },
+            { pagina, limite, orden, direccion }
+        );
 
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }

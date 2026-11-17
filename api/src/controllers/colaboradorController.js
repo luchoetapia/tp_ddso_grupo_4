@@ -99,9 +99,13 @@ class ColaboradorController {
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit);
         const idsHabilidades = colaborador.habilidades.map(h => (h._id ?? h).toString());
 
-        const { pagina, limite, orden, direccion } = req.query;
+        const { texto, habilidades, pagina, limite, orden, direccion } = req.query;
 
-        const resultado = await this.proyectoService.buscarPotencialesProyectos(idsHabilidades, { pagina, limite, orden, direccion });
+        const resultado = await this.proyectoService.buscarPotencialesProyectos(
+            idsHabilidades,
+            { pagina, limite, orden, direccion },
+            { texto: texto || undefined, habilidades }
+        );
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
 

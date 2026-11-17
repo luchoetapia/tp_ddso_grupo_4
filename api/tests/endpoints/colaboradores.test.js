@@ -191,7 +191,7 @@ describe('Endpoints /colaboradores', () => {
                 paginacion: { pagina: 2, limite: 5, total: 6, totalPaginas: 2 }
             });
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');
-            expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2], { pagina: 2, limite: 5 });
+            expect(proyectoService.buscarPotencialesProyectos).toHaveBeenCalledWith([ID_HAB, ID_HAB_2], { pagina: 2, limite: 5 }, {});
         });
 
         test('responde 400 con un límite inválido', async () => {
