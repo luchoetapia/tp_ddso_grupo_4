@@ -5,7 +5,7 @@ import { IconoCampana } from "./iconos";
 
 const enlaces = [
     { href: "/colaboradoras/inicio", texto: "Inicio" },
-    { href: "/proyectos", texto: "Proyectos" },
+    { href: "/colaboradoras/proyectos", texto: "Proyectos" },
 ];
 
 export default function NavegacionColaborador({ usuario, rutaActual, onCerrarSesion }) {
