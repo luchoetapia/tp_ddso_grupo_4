@@ -32,25 +32,47 @@ class ProyectoService {
         this.colectivoRepository = colectivoRepository;
     }
 
-    obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
-        const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
-        return await this.proyectoRepository.buscarConPaginacion(pagina, limite, {}, sort);
-    }
-
-    buscarPorTexto = async (texto, { pagina, limite, orden, direccion } = {}) => {
-        // Escapo caracteres especiales para que el texto se busque literal y no como regex
-        const textoRegex = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const coincide = { $regex: textoRegex, $options: 'i' };
-
-        const condicion = {
-            $or: [
-                { titulo: coincide },
-                { descripcion: coincide },
-            ]
-        };
-
+    buscar = async (filtros = {}, { pagina, limite, orden, direccion } = {}) => {
+        const condicion = await this.condicionDeFiltros(filtros);
         const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
         return await this.proyectoRepository.buscarConPaginacion(pagina, limite, condicion, sort);
+    }
+
+    condicionDeFiltros = async ({ texto, habilidades, finalizado } = {}) => {
+        const condiciones = [];
+
+        if (finalizado !== undefined) condiciones.push({ finalizado });
+
+        if (habilidades?.length) {
+            condiciones.push({
+                perfiles: {
+                    $elemMatch: {
+                        busquedaAbierta: true,
+                        $or: [
+                            { habilidadesRequeridas: { $in: habilidades } },
+                            { habilidadesOpcionales: { $in: habilidades } },
+                        ],
+                    },
+                },
+            });
+        }
+
+        if (texto) {
+            // Escapo caracteres especiales para que el texto se busque literal y no como regex
+            const coincide = { $regex: texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+            const idsHabilidades = await this.habilidadService.idsPorTitulo(texto);
+            condiciones.push({
+                $or: [
+                    { titulo: coincide },
+                    { descripcion: coincide },
+                    { 'perfiles.habilidadesRequeridas': { $in: idsHabilidades } },
+                    { 'perfiles.habilidadesOpcionales': { $in: idsHabilidades } },
+                ],
+            });
+        }
+
+        if (condiciones.length === 0) return {};
+        return condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
     }
 
     crear = async (datos, idUsuario = null) => {
@@ -171,8 +193,9 @@ class ProyectoService {
     // Con orden 'relevancia' (default) se pagina en memoria: el ranking se calcula en JS, así que hay que traer
     // todos los candidatos, ordenarlos y recién ahí cortar la página.
     // Con cualquier otro orden el filtro y el orden se expresan en la query: se pagina directo en la BD.
-    buscarPotencialesProyectos = async (idsHabilidades, { pagina = 1, limite = 10, orden = ORDEN_RELEVANCIA, direccion } = {}) => {
-        const condicion = {
+    // filtros: texto y habilidades, igual que en el listado (ver condicionDeFiltros)
+    buscarPotencialesProyectos = async (idsHabilidades, { pagina = 1, limite = 10, orden = ORDEN_RELEVANCIA, direccion } = {}, filtros = {}) => {
+        const cumplible = {
             finalizado: false,
             perfiles: {
                 $elemMatch: {
@@ -182,6 +205,9 @@ class ProyectoService {
                 }
             }
         }
+
+        const extra = await this.condicionDeFiltros({ texto: filtros.texto, habilidades: filtros.habilidades });
+        const condicion = Object.keys(extra).length ? { $and: [cumplible, extra] } : cumplible;
 
         if (orden !== ORDEN_RELEVANCIA) {
             const sort = construirOrden(ORDENAMIENTO, { orden, direccion });

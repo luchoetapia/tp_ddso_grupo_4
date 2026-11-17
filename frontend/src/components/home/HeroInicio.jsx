@@ -1,11 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const HeroInicio = () => {
-    // TODO: conectar con el listado público de proyectos cuando esté la búsqueda
+    const router = useRouter();
+
+    // Lleva al listado de proyectos con la búsqueda aplicada
     const buscarProyectos = (e) => {
         e.preventDefault();
+        const texto = new FormData(e.currentTarget).get('busqueda')?.toString().trim();
+        router.push(texto ? `/proyectos?texto=${encodeURIComponent(texto)}` : '/proyectos');
     }
 
     return (

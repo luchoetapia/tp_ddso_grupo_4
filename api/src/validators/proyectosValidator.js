@@ -68,8 +68,17 @@ const validarActualizacionProyecto = z.object({
 }).partial().strict()
     .refine(...alMenosUnCampo);
 
+// ?habilidades=id1,id2 -> ['id1', 'id2'] (cada uno tiene que ser un id válido)
+const listaDeHabilidades = z.string({ error: "El filtro 'habilidades' debe ser una lista de ids separada por comas" })
+    .transform((valor) => valor.split(',').map((id) => id.trim()).filter(Boolean))
+    .pipe(z.array(objectId("Id de habilidad inválido")));
+
 const validarFiltrosProyecto = z.object({
     texto: z.string({ error: "El filtro 'texto' debe ser un texto" }).trim().optional(),
+    habilidades: listaDeHabilidades.optional(),
+    finalizado: z.enum(['true', 'false'], { error: "El filtro 'finalizado' debe ser 'true' o 'false'" })
+        .transform((valor) => valor === 'true')
+        .optional(),
     ...paginacion,
     ...ordenamiento,
 });

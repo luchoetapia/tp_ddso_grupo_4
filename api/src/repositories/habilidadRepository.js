@@ -25,6 +25,12 @@ class HabilidadRepository {
         return await HabilidadModel.findById(id);
     }
 
+    // Ids de las habilidades cuyo título contiene el texto (sin distinguir mayúsculas)
+    async idsPorTitulo(regexTitulo) {
+        const habilidades = await HabilidadModel.find({ titulo: regexTitulo }, '_id');
+        return habilidades.map((h) => h._id);
+    }
+
     async findByIds(ids) {
         return await HabilidadModel.find({ _id: { $in: ids } });
     }

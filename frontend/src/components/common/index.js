@@ -5,6 +5,7 @@ export { default as ContenedorAlertas } from "./ContenedorAlertas";
 export { default as Input } from "./Input";
 export { default as InputContrasena } from "./InputContrasena";
 export { default as Modal } from "./Modal";
+export { default as Paginacion } from "./Paginacion";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as Select } from "./Select";
 export { default as Skeleton } from "./Skeleton";

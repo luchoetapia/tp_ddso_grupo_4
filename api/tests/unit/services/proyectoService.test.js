@@ -17,6 +17,7 @@ jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
 }));
 jest.mock('../../../src/services/habilidadService.js', () => ({
     obtenerPorListaId: jest.fn(),
+    idsPorTitulo: jest.fn(),
 }));
 jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerColaboradoresPotenciales: jest.fn(),
@@ -63,35 +64,21 @@ const perfilDatos = {
 describe('ProyectoService', () => {
     beforeEach(() => jest.resetAllMocks());
 
-    describe('obtenerTodos', () => {
+    describe('buscar: paginación y orden', () => {
         test('pagina en la BD, por defecto los más recientes primero', async () => {
             const pagina = { proyectos: [proyectoDoc()], total: 1, pagina: 2, limite: 5, totalPaginas: 1 };
             proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
 
-            await expect(proyectoService.obtenerTodos({ pagina: 2, limite: 5 })).resolves.toBe(pagina);
+            await expect(proyectoService.buscar({}, { pagina: 2, limite: 5 })).resolves.toBe(pagina);
             expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(2, 5, {}, { createdAt: -1, titulo: 1, _id: 1 });
         });
 
         test('ordenar por título no repite el título como segundo criterio', async () => {
             proyectoRepository.buscarConPaginacion.mockResolvedValue({ proyectos: [] });
 
-            await proyectoService.obtenerTodos({ orden: 'titulo', direccion: 'desc' });
+            await proyectoService.buscar({}, { orden: 'titulo', direccion: 'desc' });
 
             expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(undefined, undefined, {}, { titulo: -1, _id: 1 });
-        });
-    });
-
-    describe('buscarPorTexto', () => {
-        test('busca por título o descripción (texto literal, sin regex) y pagina en la BD', async () => {
-            const pagina = { proyectos: [], total: 0, pagina: 1, limite: 10, totalPaginas: 0 };
-            proyectoRepository.buscarConPaginacion.mockResolvedValue(pagina);
-
-            await expect(proyectoService.buscarPorTexto('c++', { pagina: 1, limite: 10 })).resolves.toBe(pagina);
-
-            const coincide = { $regex: 'c\\+\\+', $options: 'i' };
-            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(
-                1, 10, { $or: [{ titulo: coincide }, { descripcion: coincide }] }, { createdAt: -1, titulo: 1, _id: 1 }
-            );
         });
     });
 
@@ -258,6 +245,85 @@ describe('ProyectoService', () => {
         });
     });
 
+    describe('buscar', () => {
+        const paginaVacia = { proyectos: [], total: 0, pagina: 1, limite: 10, totalPaginas: 0 };
+        const perfilAbiertoQuePide = (ids) => ({
+            perfiles: {
+                $elemMatch: {
+                    busquedaAbierta: true,
+                    $or: [
+                        { habilidadesRequeridas: { $in: ids } },
+                        { habilidadesOpcionales: { $in: ids } },
+                    ],
+                },
+            },
+        });
+
+        test('sin filtros busca todos los proyectos', async () => {
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(paginaVacia);
+
+            await proyectoService.buscar({}, { pagina: 2, limite: 5 });
+
+            expect(proyectoRepository.buscarConPaginacion).toHaveBeenCalledWith(2, 5, {}, expect.any(Object));
+            expect(habilidadService.idsPorTitulo).not.toHaveBeenCalled();
+        });
+
+        test('filtra por finalizado', async () => {
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(paginaVacia);
+
+            await proyectoService.buscar({ finalizado: false });
+
+            expect(proyectoRepository.buscarConPaginacion.mock.calls[0][2]).toEqual({ finalizado: false });
+        });
+
+        test('filtra por perfiles con búsqueda abierta que piden alguna de las habilidades', async () => {
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(paginaVacia);
+
+            await proyectoService.buscar({ habilidades: [ID_HAB, ID_HAB_2] });
+
+            expect(proyectoRepository.buscarConPaginacion.mock.calls[0][2]).toEqual(perfilAbiertoQuePide([ID_HAB, ID_HAB_2]));
+        });
+
+        test('el texto busca en título, descripción y títulos de las habilidades de los perfiles', async () => {
+            habilidadService.idsPorTitulo.mockResolvedValue([ID_HAB]);
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(paginaVacia);
+
+            await proyectoService.buscar({ texto: 'react' });
+
+            const coincide = { $regex: 'react', $options: 'i' };
+            expect(habilidadService.idsPorTitulo).toHaveBeenCalledWith('react');
+            expect(proyectoRepository.buscarConPaginacion.mock.calls[0][2]).toEqual({
+                $or: [
+                    { titulo: coincide },
+                    { descripcion: coincide },
+                    { 'perfiles.habilidadesRequeridas': { $in: [ID_HAB] } },
+                    { 'perfiles.habilidadesOpcionales': { $in: [ID_HAB] } },
+                ],
+            });
+        });
+
+        test('escapa los caracteres especiales del texto', async () => {
+            habilidadService.idsPorTitulo.mockResolvedValue([]);
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(paginaVacia);
+
+            await proyectoService.buscar({ texto: 'C++' });
+
+            expect(proyectoRepository.buscarConPaginacion.mock.calls[0][2].$or[0]).toEqual({ titulo: { $regex: 'C\\+\\+', $options: 'i' } });
+        });
+
+        test('combina varios filtros con $and', async () => {
+            habilidadService.idsPorTitulo.mockResolvedValue([]);
+            proyectoRepository.buscarConPaginacion.mockResolvedValue(paginaVacia);
+
+            await proyectoService.buscar({ texto: 'aula', habilidades: [ID_HAB], finalizado: false });
+
+            const condicion = proyectoRepository.buscarConPaginacion.mock.calls[0][2];
+            expect(condicion.$and).toHaveLength(3);
+            expect(condicion.$and[0]).toEqual({ finalizado: false });
+            expect(condicion.$and[1]).toEqual(perfilAbiertoQuePide([ID_HAB]));
+        });
+    });
+
     describe('buscarPotencialesProyectos', () => {
         test('busca proyectos activos con algún perfil cumplible', async () => {
             proyectoRepository.findByCondition.mockResolvedValue([]);
@@ -274,6 +340,17 @@ describe('ProyectoService', () => {
                     } 
                 },
             });
+        });
+
+        test('suma los filtros de texto y habilidades a la condición', async () => {
+            proyectoRepository.findByCondition.mockResolvedValue([]);
+
+            await proyectoService.buscarPotencialesProyectos([ID_HAB], {}, { habilidades: [ID_HAB_2] });
+
+            const condicion = proyectoRepository.findByCondition.mock.calls[0][0];
+            expect(condicion.$and).toHaveLength(2);
+            expect(condicion.$and[0].finalizado).toBe(false);
+            expect(condicion.$and[1].perfiles.$elemMatch.$or[0]).toEqual({ habilidadesRequeridas: { $in: [ID_HAB_2] } });
         });
 
         test('ordena por perfiles cumplidos y desempata por habilidades cumplidas', async () => {

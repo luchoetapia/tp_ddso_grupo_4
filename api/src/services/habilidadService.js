@@ -19,6 +19,12 @@ class HabilidadService {
         this.habilidadRepository = habilidadRepository;
     }
 
+    // Ids de las habilidades cuyo título contiene el texto, para buscar proyectos por habilidad
+    idsPorTitulo = async (texto) => {
+        const textoLiteral = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return await this.habilidadRepository.idsPorTitulo({ $regex: textoLiteral, $options: 'i' });
+    }
+
     obtenerTodas = async ({ pagina, limite, orden, direccion } = {}) => {
         const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
         return await this.habilidadRepository.buscarConPaginacion(pagina, limite, {}, sort);

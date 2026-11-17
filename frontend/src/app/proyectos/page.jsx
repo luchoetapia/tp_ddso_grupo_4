@@ -1,5 +1,10 @@
-import BuscarProyecto from "@/views/proyectos/BuscarProyecto";
+import { Suspense } from "react";
+import ListadoProyectos from "@/views/proyectos/ListadoProyectos";
 
 export default function ProyectosPage() {
-    return <BuscarProyecto />;
+    return (
+        <Suspense>
+            <ListadoProyectos />
+        </Suspense>
+    );
 }

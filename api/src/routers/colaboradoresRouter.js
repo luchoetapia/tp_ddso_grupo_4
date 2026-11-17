@@ -4,6 +4,7 @@ const { ColaboradorController } = require('../controllers/colaboradorController.
 // Import de validaciones
 const validar = require('../middlewares/validar.js')
 const { validarListado } = require('../validators/comunes.js')
+const { validarFiltrosProyecto } = require('../validators/proyectosValidator.js')
 const autenticar = require('../middlewares/autenticar.js')
 const { roles } = require('../auth/models/usuario.js')
 const {
@@ -57,7 +58,7 @@ router.route('/llenarDatosPrueba')
 router.route('/:cuentaGit/buscarPotencialesProyectos')
     .get(
         validar(validarCuentaGitColaborador, 'params'),
-        validar(validarListado, 'query'),
+        validar(validarFiltrosProyecto, 'query'),
         (req, res) => colaboradorController.buscarPotencialesProyectos(req, res)
     )
 

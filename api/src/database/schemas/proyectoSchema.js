@@ -52,6 +52,9 @@ const proyectoSchema = new Schema({
 proyectoSchema.index({ titulo: 1 });
 // Proyectos activos (obtenerActivos y búsqueda de potenciales proyectos)
 proyectoSchema.index({ finalizado: 1 });
+// Filtro y búsqueda por habilidades (índices multikey sobre los arrays de los perfiles)
+proyectoSchema.index({ 'perfiles.habilidadesRequeridas': 1 });
+proyectoSchema.index({ 'perfiles.habilidadesOpcionales': 1 });
 
 // Cargar las clases en los esquemas para que los métodos de instancia estén disponibles
 tipoCompromisoSchema.loadClass(TipoCompromiso);
