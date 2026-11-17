@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const colaboradorRepository = require('../repositories/colaboradorRepository.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const colectivoRepository = require('../repositories/colectivoRepository.js');
+const postulacionRepository = require('../repositories/postulacionRepository.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
+const { roles } = require('../auth/models/usuario.js');
 const habilidadService = require("./habilidadService.js");
 
 const { construirOrden } = require('./ordenamiento.js');
@@ -21,6 +24,8 @@ class ColaboradorService {
     constructor() {
         this.colaboradorRepository = colaboradorRepository;
         this.habilidadService = habilidadService;
+        this.colectivoRepository = colectivoRepository;
+        this.postulacionRepository = postulacionRepository;
     }
 
     obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
@@ -87,6 +92,31 @@ class ColaboradorService {
             throw new NotFoundError("Colaborador no encontrado")
         }
         return colaborador.contactos.map(c => ({ medio: c.medio, valor: c.valor }));
+    }
+
+    obtenerContactosAutorizados = async (cuentaGit, usuario) => {
+        const colaborador = await this.obtenerPorCuentaGit(cuentaGit)
+
+        if (!(await this.puedeVerContactos(colaborador, usuario))) {
+            throw new ForbiddenError("No tenés acceso a los datos de contacto de esta colaboradora")
+        }
+        return colaborador.contactos.map(c => ({ medio: c.medio, valor: c.valor }));
+    }
+
+    puedeVerContactos = async (colaborador, usuario) => {
+        if (usuario.rol === roles.ADMIN) return true;
+
+        if (usuario.rol === roles.COLABORADOR) {
+            return colaborador.usuario?.toString() === usuario.id;
+        }
+
+        if (usuario.rol === roles.COLECTIVO) {
+            const colectivo = await this.colectivoRepository.findByUsuario(usuario.id);
+            if (!colectivo || colectivo.proyectos.length === 0) return false;
+            return await this.postulacionRepository.existeAceptadaEnProyectos(colaborador.id, colectivo.proyectos);
+        }
+
+        return false;
     }
 
     // A diferencia de la búsqueda de potenciales proyectos, acá el filtro se expresa entero en la query

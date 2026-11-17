@@ -39,6 +39,11 @@ class ColaboradorController {
         res.status(200).json(ColaboradorPublic.desde(colaborador))
     }
 
+    obtenerContactosColaborador = async (req, res) => {
+        const contactos = await this.colaboradorService.obtenerContactosAutorizados(req.params.cuentaGit, req.usuario)
+        res.status(200).json(contactos)
+    }
+
     anotarColaboradorAProyecto = async (req, res) => {
         const { cuentaGit, idProyecto } = req.params;
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit)

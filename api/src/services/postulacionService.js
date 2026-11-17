@@ -72,12 +72,8 @@ class PostulacionService {
 
         // 8. Evaluar postulación según la estrategia de aceptación del proyecto
         if (proyecto.estrategiaAceptacion) {
-            let estrategia = proyecto.estrategiaAceptacion;
-            if (typeof estrategia === 'string') {
-                const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
-                estrategia = obtenerEstrategia(estrategia, proyecto);
-                proyecto.estrategiaAceptacion = estrategia;
-            }
+            const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
+            const estrategia = obtenerEstrategia(proyecto.estrategiaAceptacion, proyecto);
 
             if (!proyecto.postulaciones) {
                 const postulacionesPrevias = await this.postulacionRepository.findAll({ proyecto: proyecto.id });
@@ -87,11 +83,7 @@ class PostulacionService {
                 proyecto.postulaciones.push(nuevaPostulacion);
             }
 
-            if (typeof proyecto.evaluarPostulacion === 'function') {
-                proyecto.evaluarPostulacion(nuevaPostulacion);
-            } else {
-                estrategia.evaluarPostulacion(nuevaPostulacion);
-            }
+            estrategia.evaluarPostulacion(nuevaPostulacion);
 
             if (nuevaPostulacion.estado === EstadoPostulacion.ACEPTADA) {
                 nuevaPostulacion = await this.procesarAceptacion(nuevaPostulacion);

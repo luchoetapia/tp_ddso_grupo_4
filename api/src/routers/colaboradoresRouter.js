@@ -38,6 +38,13 @@ router.route('/:cuentaGit')
         (req, res) => colaboradorController.obtenerColaboradorPorCuentaGit(req, res)
     )
 
+router.route('/:cuentaGit/contactos')
+    .get(
+        autenticar(),
+        validar(validarCuentaGitColaborador, 'params'),
+        (req, res) => colaboradorController.obtenerContactosColaborador(req, res)
+    )
+
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
     .post(
         validar(validarAnotacionAProyecto, 'params'),

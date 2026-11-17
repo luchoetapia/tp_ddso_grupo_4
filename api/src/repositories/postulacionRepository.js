@@ -29,6 +29,15 @@ class PostulacionRepository {
         });
     }
 
+    async existeAceptadaEnProyectos(idColaborador, idsProyectos) {
+        const encontrada = await PostulacionModel.exists({
+            colaborador: idColaborador,
+            proyecto: { $in: idsProyectos },
+            estado: EstadoPostulacion.ACEPTADA
+        });
+        return Boolean(encontrada);
+    }
+
     async updateEstado(id, nuevoEstado) {
         return await PostulacionModel.findByIdAndUpdate(
             id,

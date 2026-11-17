@@ -106,7 +106,7 @@ class ColectivoService {
     }
 
     buscarPorUsuario = async (idUsuario) => {
-        return await this.colectivoRepository.findByUsuario(idUsuario);
+        return await this.colectivoRepository.findByUsuarioConProyectos(idUsuario);
     }
 }
 
