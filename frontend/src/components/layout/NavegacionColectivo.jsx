@@ -6,7 +6,7 @@ import { IconoCampana } from "./iconos";
 const enlaces = [
     { href: "/colectivo/inicio", texto: "Inicio" },
     { href: "/proyectos", texto: "Proyectos" },
-    { href: "/colectivos/proyectos", texto: "Mis proyectos" },
+    { href: "/colectivo/misProyectos", texto: "Mis proyectos" },
     { href: "/colaboradoras", texto: "Buscar colaboradoras" },
 ];
 
