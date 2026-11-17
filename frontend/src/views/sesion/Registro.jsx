@@ -29,7 +29,8 @@ const modelo_colaborador = {
     pronombres: null,
     cuentaGit: null,
     presentacion: null,
-    deseaSerContactado: false
+    deseaSerContactado: false,
+    habilidades: []
 }
 
 const modelo_colectivo = {
@@ -76,7 +77,9 @@ export function Registro() {
                 && usuario.password === usuario.repeat_password;
         }
         if (esColectivo) return lleno(colectivo.nombre) && lleno(colectivo.tipo);
-        return lleno(colaborador.nombre) && lleno(colaborador.apellido) && REGEX_CUENTA_GIT.test(colaborador.cuentaGit ?? '');
+        return (lleno(colaborador.nombre) || lleno(colaborador.nombreFantasia))
+            && REGEX_CUENTA_GIT.test(colaborador.cuentaGit ?? '')
+            && colaborador.habilidades.length > 0;
     };
 
     const puedoVolverAtras = () => paso > 1;
@@ -178,7 +181,7 @@ export function Registro() {
         return (
             <div className="mx-auto w-full max-w-[680px] py-4">
                 <RegistroExitoso
-                    nombre={esColectivo ? colectivo.nombre : colaborador.nombre}
+                    nombre={esColectivo ? colectivo.nombre : (colaborador.nombreFantasia || colaborador.nombre)}
                     rol={esColectivo ? 'colectivo' : 'colaborador'}
                 />
             </div>

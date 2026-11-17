@@ -1,8 +1,82 @@
-import { Checkbox, Input, Textarea } from '@/components/common'
+import { useEffect, useState } from 'react'
+import { Checkbox, Input, Skeleton, Textarea } from '@/components/common'
+import apiQuery from '@/services/api/apiQuery'
 
 // Mismo formato que valida la API (colaboradoresValidator)
 export const REGEX_CUENTA_GIT = /^[a-zA-Z0-9._-]{1,39}$/;
 const MAX_PRESENTACION = 300;
+
+// Etiquetas para agrupar las habilidades según su tipo
+const TITULOS_TIPO = {
+    programacion: 'Programación',
+    diseño: 'Diseño',
+    marketing: 'Marketing',
+    comunicacion: 'Comunicación',
+    gestion_proyectos: 'Gestión de proyectos',
+    colaboracion: 'Colaboración',
+};
+
+const agruparPorTipo = (habilidades) =>
+    Object.entries(
+        habilidades.reduce((grupos, h) => ({ ...grupos, [h.tipoHabilidad]: [...(grupos[h.tipoHabilidad] ?? []), h] }), {})
+    );
+
+const SelectorHabilidades = ({ seleccionadas, onChange }) => {
+    const [habilidades, setHabilidades] = useState(null);
+
+    useEffect(() => {
+        // apiQuery ya muestra la alerta si falla; el listado de habilidades es público
+        apiQuery
+            .get('/habilidades', { params: { limite: 100 }, mensajeError: 'No se pudieron cargar las habilidades.' })
+            .then(({ data }) => setHabilidades(data))
+            .catch(() => setHabilidades([]));
+    }, []);
+
+    const alternar = (id) =>
+        onChange(seleccionadas.includes(id) ? seleccionadas.filter((s) => s !== id) : [...seleccionadas, id]);
+
+    return (
+        <fieldset className="m-0 flex min-w-0 flex-col gap-2.5 border-0 p-0">
+            <legend className="p-0 text-[13px] text-muted">
+                Tus habilidades <span aria-hidden="true">({seleccionadas.length} elegidas)</span>
+            </legend>
+
+            {habilidades === null && (
+                <div className="flex flex-col gap-2" aria-busy="true">
+                    <Skeleton />
+                    <Skeleton />
+                </div>
+            )}
+
+            {habilidades?.length === 0 && (
+                <p className="m-0 text-[13px] text-muted">No hay habilidades disponibles por el momento.</p>
+            )}
+
+            {habilidades && agruparPorTipo(habilidades).map(([tipo, lista]) => (
+                <div key={tipo} className="flex flex-col gap-1.5">
+                    <p className="m-0 text-[12px] font-bold uppercase tracking-wide text-muted">{TITULOS_TIPO[tipo] ?? tipo}</p>
+                    <div className="flex flex-wrap gap-2">
+                        {lista.map((h) => {
+                            const elegida = seleccionadas.includes(h.id);
+                            return (
+                                <button
+                                    key={h.id}
+                                    type="button"
+                                    aria-pressed={elegida}
+                                    title={h.descripcion}
+                                    onClick={() => alternar(h.id)}
+                                    className={`min-h-9 cursor-pointer rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors ${elegida ? 'border-accent bg-accent text-on-accent' : 'border-border bg-card text-text hover:border-muted'}`}
+                                >
+                                    {h.titulo}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+        </fieldset>
+    );
+};
 
 const PasoDatosColaborador = ({ colaborador, onChange }) => {
     const cuentaGit = colaborador.cuentaGit ?? '';
@@ -21,14 +95,23 @@ const PasoDatosColaborador = ({ colaborador, onChange }) => {
         <div className="flex flex-col gap-[18px]">
             <h2 className="m-0 text-[24px]">Contanos sobre vos</h2>
 
+            <p className="m-0 text-[13px] text-muted">
+                Podés mantenerte anónima con un nombre de fantasía, o usar tu nombre real. Necesitamos al menos uno de los dos.
+            </p>
+
             <div className="grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
-                <Input label="Nombre" {...campo('nombre')} autoComplete="given-name" required />
-                <Input label="Apellido" {...campo('apellido')} autoComplete="family-name" required />
-                <Input label="Nombre de fantasía (opcional)" {...campo('nombreFantasia')} />
+                <Input label="Nombre de fantasía" {...campo('nombreFantasia')} />
                 <Input label="Pronombres (opcional)" {...campo('pronombres')} placeholder="él, ella, otro" />
+                <Input label="Nombre (opcional si tenés nombre de fantasía)" {...campo('nombre')} autoComplete="given-name" />
+                <Input label="Apellido (opcional)" {...campo('apellido')} autoComplete="family-name" />
             </div>
 
             <Input label="Cuenta de Git" {...campo('cuentaGit')} error={errorCuentaGit} required />
+
+            <SelectorHabilidades
+                seleccionadas={colaborador.habilidades ?? []}
+                onChange={(ids) => onChange('habilidades', ids)}
+            />
 
             <div className="flex flex-col gap-1">
                 <Textarea label="Presentación (opcional)" {...campo('presentacion')} maxLength={MAX_PRESENTACION} rows={4} />
