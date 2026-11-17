@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import sesion, { roles } from "@/services/sesion";
 import EnlacesNav from "./EnlacesNav";
 import NavegacionColaborador from "./NavegacionColaborador";
+import NavegacionColectivo from "./NavegacionColectivo";
 import SelectorTema from "./SelectorTema";
 
 const enlacesPublicos = [
@@ -13,6 +14,11 @@ const enlacesPublicos = [
     { href: "/proyectos", texto: "Proyectos" },
     { href: "/colaboradoras", texto: "Colaboradoras" },
 ];
+
+const inicioPorRol = {
+    [roles.COLABORADOR]: "/colaboradoras/inicio",
+    [roles.COLECTIVO]: "/colectivos/inicio",
+};
 
 export default function Navegacion() {
     const rutaActual = usePathname();
@@ -41,15 +47,21 @@ export default function Navegacion() {
         router.push("/");
     };
 
-    return (
+   return (
         <header className="nav-barra">
             <nav className="nav">
-                <Link href="/" className="nav-marca">
+                <Link href={inicioPorRol[usuario?.rol] ?? "/"} className="nav-marca">
                     <span className="nav-logo" aria-hidden="true">&lt;&gt;</span>
                     Código a Voluntad
                 </Link>
                 {usuario?.rol === roles.COLABORADOR ? (
                     <NavegacionColaborador
+                        usuario={usuario}
+                        rutaActual={rutaActual}
+                        onCerrarSesion={cerrarSesion}
+                    />
+                ) : usuario?.rol === roles.COLECTIVO ? (
+                    <NavegacionColectivo
                         usuario={usuario}
                         rutaActual={rutaActual}
                         onCerrarSesion={cerrarSesion}

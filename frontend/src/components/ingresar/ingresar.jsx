@@ -24,7 +24,7 @@ const Ingresar = () => {
         try {
             // Si falla, apiQuery ya muestra la alerta con el error
             const data = await apiQuery.post('/auth/login', { accessKey, password }, { mensajeError: 'No se pudo ingresar.' });
-             router.push(data.usuario.rol === 'colaborador' ? '/colaboradoras/inicio' : '/buscar-colaboradoras');
+             router.push(data.usuario.rol === 'colaborador' ? '/colaboradoras/inicio' : '/colectivo/inicio');
             return data.usuario;
         } catch {
             setCargando(false);
