@@ -82,8 +82,9 @@ h1 {
     outline-offset: 2px;
 }
 
+/* Mismo ancho que .nav: el contenido arranca en el logo y termina en el botón de la derecha */
 .main {
-    max-width: 980px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 24px 20px 48px;
     display: flex;
