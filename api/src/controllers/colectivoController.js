@@ -4,7 +4,7 @@ const { BadRequestError, NotFoundError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
 const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
 const { Paginado } = require('../dtos/paginado.js');
-const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
+const { ColaboradorCompatible } = require('../dtos/colaboradorPublic.js');
 const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
 const { roles } = require('../auth/models/usuario.js');
 
@@ -97,7 +97,7 @@ class ColectivoController {
             { pagina, limite, orden, direccion }
         );
 
-        res.status(200).json(Paginado.desde(resultado.colaboradores, resultado, ColaboradorPublic));
+        res.status(200).json(Paginado.desde(resultado.colaboradores, resultado, ColaboradorCompatible));
     }
 }
 

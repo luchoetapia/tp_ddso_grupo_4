@@ -28,4 +28,29 @@ class ColaboradorPublic {
     }
 }
 
-module.exports = { ColaboradorPublic }
+// Colaborador de una búsqueda de un colectivo
+class ColaboradorCompatible extends ColaboradorPublic {
+    constructor(colaborador, perfilesCompatibles = []) {
+        super(
+            colaborador.id,
+            colaborador.nombre,
+            colaborador.apellido,
+            colaborador.nombreFantasia,
+            colaborador.cuentaGit,
+            colaborador.habilidades,
+            colaborador.pronombres,
+            colaborador.presentacion,
+            colaborador.deseaSerContactado
+        )
+        this.perfilesCompatibles = perfilesCompatibles.map(({ proyecto, perfil }) => ({
+            proyecto: { id: proyecto.id, titulo: proyecto.titulo },
+            perfil: { id: perfil.id, titulo: perfil.titulo },
+        }))
+    }
+
+    static desde({ colaborador, perfilesCompatibles }) {
+        return new ColaboradorCompatible(colaborador, perfilesCompatibles)
+    }
+}
+
+module.exports = { ColaboradorPublic, ColaboradorCompatible }

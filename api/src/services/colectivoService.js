@@ -161,20 +161,44 @@ class ColectivoService {
             proyectos = proyectosDelColectivo.filter(p => pedidos.has(p._id.toString()));
         }
 
-        const perfiles = proyectos
+        const perfilesAbiertos = proyectos
             .filter(proyecto => !proyecto.finalizado)
-            .flatMap(proyecto => proyecto.perfiles ?? [])
-            .filter(perfil => perfil.busquedaAbierta !== false);
+            .flatMap(proyecto => (proyecto.perfiles ?? [])
+                .filter(perfil => perfil.busquedaAbierta !== false)
+                .map(perfil => ({ proyecto, perfil })));
 
         // Sin perfiles no hay a quién buscar: se devuelve una página vacía
-        if (perfiles.length === 0) {
+        if (perfilesAbiertos.length === 0) {
             const pagina = paginacion.pagina ?? 1;
             const limite = paginacion.limite ?? 10;
             return { colaboradores: [], total: 0, pagina, limite, totalPaginas: 0 };
         }
 
-        return await this.colaboradorService.obtenerColaboradoresPotenciales(perfiles, paginacion);
+        const resultado = await this.colaboradorService.obtenerColaboradoresPotenciales(
+            perfilesAbiertos.map(({ perfil }) => perfil),
+            paginacion
+        );
+
+        return {
+            ...resultado,
+            colaboradores: resultado.colaboradores.map(colaborador => ({
+                colaborador,
+                perfilesCompatibles: perfilesQueCumple(colaborador, perfilesAbiertos),
+            })),
+        };
     }
 }
+
+const idsDe = (lista = []) => lista.map(elemento => (elemento?._id ?? elemento).toString());
+
+const perfilesQueCumple = (colaborador, perfilesAbiertos) => {
+    const habilidadesDelColaborador = new Set(idsDe(colaborador.habilidades));
+    return perfilesAbiertos
+        .filter(({ perfil }) => idsDe(perfil.habilidadesRequeridas).every(id => habilidadesDelColaborador.has(id)))
+        .map(({ proyecto, perfil }) => ({
+            proyecto: { id: proyecto._id.toString(), titulo: proyecto.titulo },
+            perfil: { id: perfil._id.toString(), titulo: perfil.titulo },
+        }));
+};
 
 module.exports = new ColectivoService();

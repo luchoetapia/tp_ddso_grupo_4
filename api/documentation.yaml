@@ -800,7 +800,8 @@ paths:
         Requiere sesión con rol `colectivo` (cookie `accessToken`). Toma los perfiles con
         búsqueda abierta de los proyectos no finalizados del colectivo (o sólo de los indicados
         en `proyectos`) y devuelve las colaboradoras que cumplen todas las habilidades
-        requeridas de al menos uno de esos perfiles. No incluye los medios de contacto.
+        requeridas de al menos uno de esos perfiles, junto con los perfiles en los que encaja
+        (`perfilesCompatibles`). No incluye los medios de contacto.
       tags: [Colectivos]
       parameters:
         - in: query
@@ -836,7 +837,26 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Colaborador"
+                      allOf:
+                        - $ref: "#/components/schemas/Colaborador"
+                        - type: object
+                          properties:
+                            perfilesCompatibles:
+                              type: array
+                              description: Perfiles abiertos del colectivo cuyas habilidades requeridas tiene la colaboradora
+                              items:
+                                type: object
+                                properties:
+                                  proyecto:
+                                    type: object
+                                    properties:
+                                      id: { type: string }
+                                      titulo: { type: string }
+                                  perfil:
+                                    type: object
+                                    properties:
+                                      id: { type: string }
+                                      titulo: { type: string }
                   paginacion:
                     $ref: "#/components/schemas/Paginacion"
         "400":

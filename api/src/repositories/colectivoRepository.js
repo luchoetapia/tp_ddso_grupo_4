@@ -60,7 +60,7 @@ class ColectivoRepository {
 
     async obtenerProyectosConPerfiles(id) {
         const colectivo = await ColectivoModel.findById(id, { _id: 0, proyectos: 1 })
-            .populate('proyectos', 'finalizado perfiles');
+            .populate('proyectos', 'titulo finalizado perfiles');
         return colectivo ? colectivo.proyectos : null;
     }
 }
