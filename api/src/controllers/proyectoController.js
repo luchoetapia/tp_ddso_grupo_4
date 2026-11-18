@@ -33,7 +33,7 @@ class ProyectoController {
     }
 
     crearProyecto = async (req, res) => {
-        const proyectoNuevo = await this.proyectoService.crear(req.body)
+        const proyectoNuevo = await this.proyectoService.crear(req.body, req.usuario.id)
         res.status(201).json({ message: 'Proyecto creado exitosamente', data: ProyectoDetalle.desde(proyectoNuevo) })
     }
 
