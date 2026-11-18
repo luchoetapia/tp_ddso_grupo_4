@@ -17,27 +17,40 @@ jobs:
           script: |
             set -e
             cd ~/tp_ddso_grupo_4
+            PREV=$(git rev-parse HEAD)
             git pull origin main
-            cd api
-            docker compose up -d --build
 
-            ok=0
-            for i in $(seq 1 30); do
-              if curl -fs http://localhost:3000/healthcheck > /dev/null; then
-                ok=1
-                break
-              fi
-              sleep 2
-            done
+            # API con su compose (usa api/.env del servidor) y front en su propio contenedor.
+            # El front le habla a la API por el puerto 3000 del host.
+            levantar() {
+              (cd api && docker compose up -d --build)
+              docker build -t codigo-a-voluntad-front --build-arg API_URL=http://host.docker.internal:3000 ./frontend
+              docker rm -f codigo-a-voluntad-front > /dev/null 2>&1 || true
+              docker run -d --name codigo-a-voluntad-front --restart unless-stopped \
+                --add-host host.docker.internal:host-gateway \
+                -p 3001:3001 codigo-a-voluntad-front
+            }
 
-            if [ "$ok" -ne 1 ]; then
-              echo "Deploy fallido, volviendo a $PREV"
-              docker compose logs --tail=50 api
-              cd ..
-              git reset --hard "$PREV"
-              cd api
-              docker compose up -d --build
-              exit 1
+            # OK si responde la API y el front llega a ella
+            responde() {
+              for i in $(seq 1 30); do
+                if curl -fs http://localhost:3000/healthcheck > /dev/null \
+                  && curl -fs http://localhost:3001/api/healthcheck > /dev/null; then
+                  return 0
+                fi
+                sleep 2
+              done
+              return 1
+            }
+
+            if levantar && responde; then
+              docker image prune -f
+              exit 0
             fi
 
-            docker image prune -f
+            echo "Deploy fallido, volviendo a $PREV"
+            (cd api && docker compose logs --tail=50 api) || true
+            docker logs --tail=50 codigo-a-voluntad-front || true
+            git reset --hard "$PREV"
+            levantar
+            exit 1
