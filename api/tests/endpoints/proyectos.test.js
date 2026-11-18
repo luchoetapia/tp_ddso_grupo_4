@@ -8,6 +8,7 @@ jest.mock('../../src/services/proyectoService.js', () => ({
     agregarPerfil: jest.fn(),
     modificarPerfil: jest.fn(),
     eliminarPerfil: jest.fn(),
+    obtenerEditablePorColectivo: jest.fn(),
 }));
 jest.mock('../../src/services/colectivoService.js', () => ({
     finalizarProyecto: jest.fn(),
@@ -29,7 +30,9 @@ const proyectoService = require('../../src/services/proyectoService.js');
 const colectivoService = require('../../src/services/colectivoService.js');
 const notificacionService = require('../../src/services/notificacionService.js');
 const logroService = require('../../src/services/logroService.js');
-const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
+const { ConflictError, ForbiddenError, NotFoundError } = require('../../src/errors/AppError.js');
+const { roles } = require('../../src/auth/models/usuario.js');
+const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 
 const ID = '507f1f77bcf86cd799439041';
 const ID_PERFIL = '507f1f77bcf86cd799439031';
@@ -181,21 +184,30 @@ describe('Endpoints /proyectos', () => {
     });
 
     describe('POST /proyectos', () => {
-        test('crea el proyecto', async () => {
+        const comoColectivo = () => request(app).post('/proyectos').set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+        test('crea el proyecto asociado al colectivo de la sesión', async () => {
             proyectoService.crear.mockResolvedValue(proyecto);
 
-            const res = await request(app).post('/proyectos')
+            const res = await comoColectivo()
                 .send({ titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org' });
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyecto });
             expect(proyectoService.crear).toHaveBeenCalledWith({
                 titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org', perfiles: [],
-            });
+            }, ID_USUARIO);
+        });
+
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).post('/proyectos').send({ titulo: 'x', descripcion: 'y' });
+
+            expect(res.status).toBe(401);
+            expect(proyectoService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 400 con un enlace inválido', async () => {
-            const res = await request(app).post('/proyectos')
+            const res = await comoColectivo()
                 .send({ titulo: 'x', descripcion: 'y', enlaceSistema: 'no-url' });
 
             expect(res.status).toBe(400);
@@ -203,7 +215,7 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 sin título', async () => {
-            const res = await request(app).post('/proyectos').send({ descripcion: 'y' });
+            const res = await comoColectivo().send({ descripcion: 'y' });
 
             expect(res.status).toBe(400);
         });
@@ -211,7 +223,7 @@ describe('Endpoints /proyectos', () => {
         test('responde 409 si el título ya existe', async () => {
             proyectoService.crear.mockRejectedValue(new ConflictError('Ya existe un proyecto con ese título'));
 
-            const res = await request(app).post('/proyectos').send({ titulo: 'x', descripcion: 'y' });
+            const res = await comoColectivo().send({ titulo: 'x', descripcion: 'y' });
 
             expect(res.status).toBe(409);
         });
@@ -540,16 +552,34 @@ describe('Endpoints /proyectos', () => {
             test('crea el logro', async () => {
                 logroService.crear.mockResolvedValue(logro);
 
-                const res = await request(app).post(`/proyectos/${ID}/logros`)
+                const res = await request(app).post(`/proyectos/${ID}/logros`).set('Cookie', cookieDeSesion(roles.COLECTIVO))
                     .send({ titulo: 'MVP', descripcion: 'Primera versión' });
 
                 expect(res.status).toBe(201);
                 expect(res.body).toEqual({ message: 'Logro creado exitosamente', data: logro });
                 expect(logroService.crear).toHaveBeenCalledWith(ID, { titulo: 'MVP', descripcion: 'Primera versión' });
+                expect(proyectoService.obtenerEditablePorColectivo).toHaveBeenCalledWith(ID, ID_USUARIO);
+            });
+
+            test('responde 401 sin sesión', async () => {
+                const res = await request(app).post(`/proyectos/${ID}/logros`).send({ titulo: 'MVP', descripcion: 'x' });
+
+                expect(res.status).toBe(401);
+                expect(logroService.crear).not.toHaveBeenCalled();
+            });
+
+            test('responde 403 si el proyecto no es del colectivo', async () => {
+                proyectoService.obtenerEditablePorColectivo.mockRejectedValueOnce(new ForbiddenError('El proyecto no pertenece a tu colectivo'));
+
+                const res = await request(app).post(`/proyectos/${ID}/logros`).set('Cookie', cookieDeSesion(roles.COLECTIVO))
+                    .send({ titulo: 'MVP', descripcion: 'x' });
+
+                expect(res.status).toBe(403);
+                expect(logroService.crear).not.toHaveBeenCalled();
             });
 
             test('responde 400 sin descripción', async () => {
-                const res = await request(app).post(`/proyectos/${ID}/logros`).send({ titulo: 'MVP' });
+                const res = await request(app).post(`/proyectos/${ID}/logros`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ titulo: 'MVP' });
 
                 expect(res.status).toBe(400);
                 expect(logroService.crear).not.toHaveBeenCalled();
@@ -587,7 +617,7 @@ describe('Endpoints /proyectos', () => {
             test('actualiza el logro', async () => {
                 logroService.actualizar.mockResolvedValue({ ...logro, titulo: 'Editado' });
 
-                const res = await request(app).put(`/proyectos/${ID}/logros/${ID_LOGRO}`).send({ titulo: 'Editado' });
+                const res = await request(app).put(`/proyectos/${ID}/logros/${ID_LOGRO}`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ titulo: 'Editado' });
 
                 expect(res.status).toBe(200);
                 expect(res.body.data.titulo).toBe('Editado');
@@ -595,7 +625,7 @@ describe('Endpoints /proyectos', () => {
             });
 
             test('responde 400 con campos desconocidos', async () => {
-                const res = await request(app).put(`/proyectos/${ID}/logros/${ID_LOGRO}`).send({ otro: 'x' });
+                const res = await request(app).put(`/proyectos/${ID}/logros/${ID_LOGRO}`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ otro: 'x' });
 
                 expect(res.status).toBe(400);
             });
@@ -605,7 +635,7 @@ describe('Endpoints /proyectos', () => {
             test('elimina el logro', async () => {
                 logroService.eliminar.mockResolvedValue({ mensaje: 'Logro eliminado correctamente' });
 
-                const res = await request(app).delete(`/proyectos/${ID}/logros/${ID_LOGRO}`);
+                const res = await request(app).delete(`/proyectos/${ID}/logros/${ID_LOGRO}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual({ mensaje: 'Logro eliminado correctamente' });
@@ -615,7 +645,7 @@ describe('Endpoints /proyectos', () => {
             test('responde 404 si no existe', async () => {
                 logroService.eliminar.mockRejectedValue(new NotFoundError('Logro o proyecto no encontrado'));
 
-                const res = await request(app).delete(`/proyectos/${ID}/logros/${ID_LOGRO}`);
+                const res = await request(app).delete(`/proyectos/${ID}/logros/${ID_LOGRO}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
                 expect(res.status).toBe(404);
             });

@@ -7,6 +7,7 @@ const enlaces = [
     { href: "/colectivo/inicio", texto: "Inicio" },
     { href: "/colectivo/misProyectos", texto: "Mis proyectos" },
     { href: "/colaboradoras", texto: "Buscar colaboradores" },
+    { href: "/colectivo/perfil", texto: "Mi organización" },
 ];
 
 export default function NavegacionColectivo({ usuario, rutaActual, onCerrarSesion }) {

@@ -7,6 +7,7 @@ const { validarListado } = require('../validators/comunes.js')
 const { validarCreacionLogro, validarActualizacionLogro, validarIdsLogro } = require('../validators/logrosValidator.js')
 const {
     validarCreacionProyecto,
+    validarActualizacionProyecto,
     validarFiltrosProyecto,
     validarFinalizacionProyecto,
     validarContactoColaborador,
@@ -40,6 +41,12 @@ router.route('/:id')
     .get(
         validar(validarIdsProyecto, 'params'),
         (req, res) => proyectoController.obtenerProyectoPorId(req, res)
+    )
+    .patch(
+        autenticar(roles.COLECTIVO),
+        validar(validarIdsProyecto, 'params'),
+        validar(validarActualizacionProyecto, 'body'),
+        (req, res) => proyectoController.actualizarProyecto(req, res)
     );
 
 router.route('/:id/finalizar')
@@ -95,6 +102,7 @@ router.route('/:id/logros')
         (req, res) => proyectoController.obtenerLogrosDeUnProyecto(req, res)
     )
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsProyecto, 'params'),
         validar(validarCreacionLogro, 'body'),
         (req, res) => proyectoController.crearLogro(req, res)
@@ -106,11 +114,13 @@ router.route('/:id/logros/:idLogro')
         (req, res) => proyectoController.obtenerLogroPorId(req, res)
     )
     .put(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsLogro, 'params'),
         validar(validarActualizacionLogro, 'body'),
         (req, res) => proyectoController.actualizarLogro(req, res)
     )
     .delete(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsLogro, 'params'),
         (req, res) => proyectoController.eliminarLogro(req, res)
     );

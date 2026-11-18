@@ -8,7 +8,7 @@ const tiposDeOrganizacion = [
     { valor: 'asamblea', texto: 'Asamblea' },
 ];
 
-const PasoDatosColectivo = ({ colectivo, onChange }) => {
+const PasoDatosColectivo = ({ colectivo, onChange, titulo = 'Contanos sobre tu organización' }) => {
     const campo = (nombre) => ({
         name: nombre,
         value: colectivo[nombre] ?? '',
@@ -17,7 +17,7 @@ const PasoDatosColectivo = ({ colectivo, onChange }) => {
 
     return (
         <div className="flex flex-col gap-[18px]">
-            <h2 className="m-0 text-[24px]">Contanos sobre tu organización</h2>
+            {titulo && <h2 className="m-0 text-[24px]">{titulo}</h2>}
 
             <div className="grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
                 <Input label="Nombre de la organización" {...campo('nombre')} autoComplete="organization" required />

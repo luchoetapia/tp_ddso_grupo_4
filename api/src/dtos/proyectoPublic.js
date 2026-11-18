@@ -26,7 +26,7 @@ class ProyectoPublic {
 
 // Vista completa para cuando se consulta un único proyecto
 class ProyectoDetalle {
-    constructor(id, titulo, descripcion, finalizado, porcentajeFinalizado, enlaceSistema, enlaceCodigoFuente, perfiles = [], logros = []) {
+    constructor(id, titulo, descripcion, finalizado, porcentajeFinalizado, enlaceSistema, enlaceCodigoFuente, perfiles = [], logros = [], estrategiaAceptacion) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
@@ -36,6 +36,7 @@ class ProyectoDetalle {
         this.enlaceCodigoFuente = enlaceCodigoFuente
         this.perfiles = perfiles.map(PerfilPublic.desde)
         this.logros = logros.map(LogroPublic.desde)
+        this.estrategiaAceptacion = estrategiaAceptacion
     }
 
     static desde(proyecto) {
@@ -48,7 +49,8 @@ class ProyectoDetalle {
             proyecto.enlaceSistema,
             proyecto.enlaceCodigoFuente,
             proyecto.perfiles,
-            proyecto.logros
+            proyecto.logros,
+            proyecto.estrategiaAceptacion
         )
     }
 }

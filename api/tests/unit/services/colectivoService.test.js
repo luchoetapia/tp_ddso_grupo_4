@@ -207,6 +207,54 @@ describe('ColectivoService', () => {
         });
     });
 
+    describe('actualizarPorUsuario', () => {
+        test('actualiza el colectivo del usuario de la sesión', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDoc());
+            colectivoRepository.update.mockResolvedValue(colectivoDoc({ ubicacion: 'CABA' }));
+
+            const resultado = await colectivoService.actualizarPorUsuario(ID_USUARIO, { ubicacion: 'CABA' });
+
+            expect(colectivoRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(colectivoRepository.update).toHaveBeenCalledWith(ID_COLECTIVO, { ubicacion: 'CABA' });
+            expect(resultado.ubicacion).toBe('CABA');
+        });
+
+        test('permite cambiar el nombre si no lo usa otro colectivo', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDoc());
+            colectivoRepository.findByNombre.mockResolvedValue(null);
+            colectivoRepository.update.mockResolvedValue(colectivoDoc({ nombre: 'Nuevo nombre' }));
+
+            await colectivoService.actualizarPorUsuario(ID_USUARIO, { nombre: 'Nuevo nombre' });
+
+            expect(colectivoRepository.findByNombre).toHaveBeenCalledWith('Nuevo nombre');
+            expect(colectivoRepository.update).toHaveBeenCalledWith(ID_COLECTIVO, { nombre: 'Nuevo nombre' });
+        });
+
+        test('no busca duplicados si el nombre no cambia', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDoc());
+            colectivoRepository.update.mockResolvedValue(colectivoDoc());
+
+            await colectivoService.actualizarPorUsuario(ID_USUARIO, { nombre: 'Tech For Good' });
+
+            expect(colectivoRepository.findByNombre).not.toHaveBeenCalled();
+        });
+
+        test('lanza ConflictError si el nombre ya lo usa otro colectivo', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDoc());
+            colectivoRepository.findByNombre.mockResolvedValue(colectivoDoc({ id: '507f1f77bcf86cd799439099', nombre: 'Otro' }));
+
+            await expect(colectivoService.actualizarPorUsuario(ID_USUARIO, { nombre: 'Otro' })).rejects.toThrow(ConflictError);
+            expect(colectivoRepository.update).not.toHaveBeenCalled();
+        });
+
+        test('lanza NotFoundError si el usuario no tiene colectivo', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue(null);
+
+            await expect(colectivoService.actualizarPorUsuario(ID_USUARIO, { ubicacion: 'CABA' })).rejects.toThrow(NotFoundError);
+            expect(colectivoRepository.update).not.toHaveBeenCalled();
+        });
+    });
+
     describe('obtenerPotencialesColaboradores', () => {
         const ID_PROY_2 = '507f1f77bcf86cd799439042';
         const id = (valor) => ({ toString: () => valor });

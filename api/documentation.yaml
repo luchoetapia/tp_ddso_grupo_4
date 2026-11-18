@@ -213,6 +213,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    patch:
+      summary: Edita los datos de un proyecto
+      description: >
+        Requiere sesión con rol `colectivo` (cookie `accessToken`) y que el proyecto sea de su colectivo.
+        Solo se envían los campos a modificar (al menos uno). Los perfiles se editan con
+        /proyectos/{id}/perfiles. Un proyecto finalizado no se puede editar.
+      tags: [Proyectos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                titulo:
+                  type: string
+                  minLength: 1
+                descripcion:
+                  type: string
+                  minLength: 1
+                enlaceSistema:
+                  type: string
+                  format: uri
+                  nullable: true
+                enlaceCodigoFuente:
+                  type: string
+                  format: uri
+                  nullable: true
+                estrategiaAceptacion:
+                  type: string
+                  enum: [RevisionManual, TodoSuma, HastaLlenarVacantes]
+                porcentajeFinalizado:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                  description: Porcentaje de concreción del proyecto
+            example:
+              descripcion: Plataforma de aulas virtuales para el barrio
+              enlaceCodigoFuente: https://github.com/colectivo/aula
+      responses:
+        "200":
+          description: Proyecto actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Proyecto actualizado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Proyecto"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo o el proyecto no es suyo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Título repetido, proyecto finalizado o estrategia no aplicable a los perfiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /proyectos/{id}/finalizar:
     post:
@@ -374,7 +455,9 @@ paths:
                 $ref: "#/components/schemas/Error"
     post:
       summary: Agrega un logro a un proyecto
-      description: No se permiten campos adicionales a los declarados en el schema.
+      description: >
+        Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
+        (si no, 401/403/409). No se permiten campos adicionales a los declarados en el schema.
       tags: [Logros]
       requestBody:
         required: true
@@ -437,7 +520,8 @@ paths:
     put:
       summary: Actualiza un logro de un proyecto
       description: >
-        Actualización parcial: se pueden enviar sólo los campos a modificar.
+        Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
+        (si no, 401/403/409). Actualización parcial: se pueden enviar sólo los campos a modificar.
         No se permiten campos adicionales a los declarados en el schema.
       tags: [Logros]
       requestBody:
@@ -473,6 +557,9 @@ paths:
                 $ref: "#/components/schemas/Error"
     delete:
       summary: Elimina un logro de un proyecto
+      description: >
+        Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
+        (si no, 401/403/409).
       tags: [Logros]
       responses:
         "200":
@@ -788,6 +875,97 @@ paths:
           $ref: "#/components/responses/DatosInvalidos"
         "409":
           description: Alguno de los colectivos ya existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colectivos/me:
+    get:
+      summary: Obtiene el colectivo de la sesión
+      description: Requiere sesión con rol `colectivo` (cookie `accessToken`).
+      tags: [Colectivos]
+      responses:
+        "200":
+          description: Colectivo del usuario logueado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Colectivo"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Edita los datos del colectivo de la sesión
+      description: >
+        Requiere sesión con rol `colectivo` (cookie `accessToken`). Solo se envían los
+        campos a modificar (al menos uno). Los proyectos no se editan por acá.
+      tags: [Colectivos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                nombre:
+                  type: string
+                  minLength: 1
+                descripcion:
+                  type: string
+                ubicacion:
+                  type: string
+                tipo:
+                  type: string
+                  enum: [fundacion, asociacion_barrial, ong, asamblea]
+            example:
+              descripcion: Asamblea barrial de Villa Urquiza
+              ubicacion: Villa Urquiza, CABA
+      responses:
+        "200":
+          description: Colectivo actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colectivo actualizado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Colectivo"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no tiene colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe otro colectivo con ese nombre
           content:
             application/json:
               schema:
@@ -1715,6 +1893,10 @@ components:
         descripcion:
           type: string
           example: Se publicó el formulario de inscripción en producción
+        fecha:
+          type: string
+          format: date-time
+          description: Cuándo se cargó el logro
 
     LogroAnidado:
       description: Logro tal como aparece dentro de un proyecto
