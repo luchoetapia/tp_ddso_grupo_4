@@ -30,6 +30,8 @@ const colectivoService = require('../../src/services/colectivoService.js');
 const notificacionService = require('../../src/services/notificacionService.js');
 const logroService = require('../../src/services/logroService.js');
 const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
+const { roles } = require('../../src/auth/models/usuario.js');
+const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 
 const ID = '507f1f77bcf86cd799439041';
 const ID_PERFIL = '507f1f77bcf86cd799439031';
@@ -181,21 +183,30 @@ describe('Endpoints /proyectos', () => {
     });
 
     describe('POST /proyectos', () => {
-        test('crea el proyecto', async () => {
+        const comoColectivo = () => request(app).post('/proyectos').set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+        test('crea el proyecto asociado al colectivo de la sesión', async () => {
             proyectoService.crear.mockResolvedValue(proyecto);
 
-            const res = await request(app).post('/proyectos')
+            const res = await comoColectivo()
                 .send({ titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org' });
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyecto });
             expect(proyectoService.crear).toHaveBeenCalledWith({
                 titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org', perfiles: [],
-            });
+            }, ID_USUARIO);
+        });
+
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).post('/proyectos').send({ titulo: 'x', descripcion: 'y' });
+
+            expect(res.status).toBe(401);
+            expect(proyectoService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 400 con un enlace inválido', async () => {
-            const res = await request(app).post('/proyectos')
+            const res = await comoColectivo()
                 .send({ titulo: 'x', descripcion: 'y', enlaceSistema: 'no-url' });
 
             expect(res.status).toBe(400);
@@ -203,7 +214,7 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 sin título', async () => {
-            const res = await request(app).post('/proyectos').send({ descripcion: 'y' });
+            const res = await comoColectivo().send({ descripcion: 'y' });
 
             expect(res.status).toBe(400);
         });
@@ -211,7 +222,7 @@ describe('Endpoints /proyectos', () => {
         test('responde 409 si el título ya existe', async () => {
             proyectoService.crear.mockRejectedValue(new ConflictError('Ya existe un proyecto con ese título'));
 
-            const res = await request(app).post('/proyectos').send({ titulo: 'x', descripcion: 'y' });
+            const res = await comoColectivo().send({ titulo: 'x', descripcion: 'y' });
 
             expect(res.status).toBe(409);
         });
