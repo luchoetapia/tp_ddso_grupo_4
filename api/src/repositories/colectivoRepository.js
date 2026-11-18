@@ -57,6 +57,12 @@ class ColectivoRepository {
             .populate('proyectos', 'finalizado');
         return colectivo ? colectivo.proyectos : null;
     }
+
+    async obtenerProyectosConPerfiles(id) {
+        const colectivo = await ColectivoModel.findById(id, { _id: 0, proyectos: 1 })
+            .populate('proyectos', 'titulo finalizado perfiles');
+        return colectivo ? colectivo.proyectos : null;
+    }
 }
 
 module.exports = new ColectivoRepository();

@@ -5,7 +5,7 @@ const { ColectivoController } = require('../controllers/colectivoController.js')
 const validar = require('../middlewares/validar.js')
 const autenticar = require('../middlewares/autenticar.js')
 const { roles } = require('../auth/models/usuario.js')
-const { validarCreacionColectivo, validarIdsColectivo , validarFiltrosColectivo} = require('../validators/colectivosValidator.js')
+const { validarCreacionColectivo, validarIdsColectivo, validarFiltrosColectivo, validarFiltrosPotencialesColaboradores } = require('../validators/colectivosValidator.js')
 
 const colectivoController = new ColectivoController()
 const router = express.Router()
@@ -31,6 +31,13 @@ router.route('/me/estadisticas')
     .get(
         autenticar(roles.COLECTIVO),
         (req, res) => colectivoController.obtenerMisEstadisticas(req, res)
+    );
+
+router.route('/me/potencialesColaboradores')
+    .get(
+        autenticar(roles.COLECTIVO),
+        validar(validarFiltrosPotencialesColaboradores, 'query'),
+        (req, res) => colectivoController.obtenerMisPotencialesColaboradores(req, res)
     );
 
 router.route('/:id')
