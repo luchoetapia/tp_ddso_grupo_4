@@ -102,6 +102,7 @@ router.route('/:id/logros')
         (req, res) => proyectoController.obtenerLogrosDeUnProyecto(req, res)
     )
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsProyecto, 'params'),
         validar(validarCreacionLogro, 'body'),
         (req, res) => proyectoController.crearLogro(req, res)
@@ -113,11 +114,13 @@ router.route('/:id/logros/:idLogro')
         (req, res) => proyectoController.obtenerLogroPorId(req, res)
     )
     .put(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsLogro, 'params'),
         validar(validarActualizacionLogro, 'body'),
         (req, res) => proyectoController.actualizarLogro(req, res)
     )
     .delete(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsLogro, 'params'),
         (req, res) => proyectoController.eliminarLogro(req, res)
     );

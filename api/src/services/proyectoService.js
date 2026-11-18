@@ -130,7 +130,8 @@ class ProyectoService {
         return proyecto
     }
 
-    actualizar = async (id, cambios, idUsuarioColectivo) => {
+    // Devuelve el proyecto si es del colectivo del usuario y sigue en curso; si no, lanza el error que corresponda
+    obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
         const proyecto = await this.obtenerPorId(id)
 
         const colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo)
@@ -142,6 +143,12 @@ class ProyectoService {
         if (proyecto.finalizado) {
             throw new ConflictError("No se puede editar un proyecto finalizado")
         }
+
+        return proyecto
+    }
+
+    actualizar = async (id, cambios, idUsuarioColectivo) => {
+        const proyecto = await this.obtenerEditablePorColectivo(id, idUsuarioColectivo)
 
         if (cambios.titulo !== undefined && cambios.titulo !== proyecto.titulo) {
             const existente = await this.proyectoRepository.findByTitulo(cambios.titulo)

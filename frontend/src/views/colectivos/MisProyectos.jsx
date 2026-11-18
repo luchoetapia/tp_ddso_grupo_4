@@ -119,6 +119,9 @@ export default function MisProyectos() {
                                 <Link href={`/colectivo/misProyectos/editar?id=${proyecto.id}`} className={estiloLink}>
                                     Editar
                                 </Link>
+                                <Link href={`/colectivo/misProyectos/avance?id=${proyecto.id}`} className={estiloLink}>
+                                    Avance
+                                </Link>
                                 <Link href={`/proyectos/ver?id=${proyecto.id}`} className={estiloLink}>
                                     Ver
                                 </Link>

@@ -247,6 +247,11 @@ paths:
                 estrategiaAceptacion:
                   type: string
                   enum: [RevisionManual, TodoSuma, HastaLlenarVacantes]
+                porcentajeFinalizado:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                  description: Porcentaje de concreción del proyecto
             example:
               descripcion: Plataforma de aulas virtuales para el barrio
               enlaceCodigoFuente: https://github.com/colectivo/aula
@@ -450,7 +455,9 @@ paths:
                 $ref: "#/components/schemas/Error"
     post:
       summary: Agrega un logro a un proyecto
-      description: No se permiten campos adicionales a los declarados en el schema.
+      description: >
+        Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
+        (si no, 401/403/409). No se permiten campos adicionales a los declarados en el schema.
       tags: [Logros]
       requestBody:
         required: true
@@ -513,7 +520,8 @@ paths:
     put:
       summary: Actualiza un logro de un proyecto
       description: >
-        Actualización parcial: se pueden enviar sólo los campos a modificar.
+        Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
+        (si no, 401/403/409). Actualización parcial: se pueden enviar sólo los campos a modificar.
         No se permiten campos adicionales a los declarados en el schema.
       tags: [Logros]
       requestBody:
@@ -549,6 +557,9 @@ paths:
                 $ref: "#/components/schemas/Error"
     delete:
       summary: Elimina un logro de un proyecto
+      description: >
+        Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
+        (si no, 401/403/409).
       tags: [Logros]
       responses:
         "200":
@@ -1882,6 +1893,10 @@ components:
         descripcion:
           type: string
           example: Se publicó el formulario de inscripción en producción
+        fecha:
+          type: string
+          format: date-time
+          description: Cuándo se cargó el logro
 
     LogroAnidado:
       description: Logro tal como aparece dentro de un proyecto

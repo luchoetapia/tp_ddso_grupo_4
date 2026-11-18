@@ -171,6 +171,7 @@ class ProyectoController {
         const { id } = req.params;
         const datos = req.body;
 
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         const logroCreado = await this.logroService.crear(id, datos);
         res.status(201).json({ message: 'Logro creado exitosamente', data: LogroPublic.desde(logroCreado) });
     }
@@ -179,6 +180,7 @@ class ProyectoController {
         const { id, idLogro } = req.params;
         const cambios = req.body;
 
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         const logroActualizado = await this.logroService.actualizar(idLogro, id, cambios);
         res.status(200).json({ message: 'Logro actualizado exitosamente', data: LogroPublic.desde(logroActualizado) });
     }
@@ -186,6 +188,7 @@ class ProyectoController {
     eliminarLogro = async (req, res) => {
         const { id, idLogro } = req.params;
 
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         const resultado = await this.logroService.eliminar(idLogro, id);
         res.status(200).json(resultado);
     }
