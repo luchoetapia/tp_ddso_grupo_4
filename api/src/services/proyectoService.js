@@ -75,7 +75,7 @@ class ProyectoService {
         return condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
     }
 
-    crear = async (datos, idUsuario = null) => {
+    crear = async (datos, idUsuarioColectivo = null) => {
         const existente = await this.proyectoRepository.findByTitulo(datos.titulo)
         if (existente) {
             throw new ConflictError("Ya existe un proyecto con ese título")
