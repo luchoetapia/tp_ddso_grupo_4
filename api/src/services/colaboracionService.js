@@ -33,6 +33,7 @@ class ColaboracionService {
 
     obtenerPorProyectoId = async (idProyecto) => {
         const colaboraciones = await this.colaboracionRepository.findByProyectoID(idProyecto);
+        return colaboraciones;
     }
 
     crear = async (colaboracionData) => {
