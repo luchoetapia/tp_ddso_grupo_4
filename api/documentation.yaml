@@ -793,6 +793,77 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colectivos/me/potencialesColaboradores:
+    get:
+      summary: Busca potenciales colaboradoras para los proyectos del colectivo de la sesión (paginado)
+      description: >
+        Requiere sesión con rol `colectivo` (cookie `accessToken`). Toma los perfiles con
+        búsqueda abierta de los proyectos no finalizados del colectivo (o sólo de los indicados
+        en `proyectos`) y devuelve las colaboradoras que cumplen todas las habilidades
+        requeridas de al menos uno de esos perfiles. No incluye los medios de contacto.
+      tags: [Colectivos]
+      parameters:
+        - in: query
+          name: proyectos
+          required: false
+          schema:
+            type: string
+          description: Ids de proyectos del colectivo separados por comas para acotar la búsqueda
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
+        - in: query
+          name: orden
+          required: false
+          schema:
+            type: string
+            enum: [cuentaGit, nombre]
+            default: cuentaGit
+        - in: query
+          name: direccion
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        "200":
+          description: Página de colaboradoras compatibles (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Colaborador"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          description: Ids, paginación u orden inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no tiene colectivo, o algún proyecto no pertenece al colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos/{id}:
     get:
       summary: Obtiene un colectivo por id

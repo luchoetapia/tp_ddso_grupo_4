@@ -7,6 +7,10 @@ jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
     findBy: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
+    obtenerProyectosConPerfiles: jest.fn(),
+}));
+jest.mock('../../../src/services/colaboradorService.js', () => ({
+    obtenerColaboradoresPotenciales: jest.fn(),
 }));
 jest.mock('../../../src/services/proyectoService.js', () => ({
     obtenerPorListaId: jest.fn(),
@@ -16,6 +20,7 @@ jest.mock('../../../src/services/proyectoService.js', () => ({
 
 const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
 const proyectoService = require('../../../src/services/proyectoService.js');
+const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colectivoService = require('../../../src/services/colectivoService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
@@ -199,6 +204,65 @@ describe('ColectivoService', () => {
 
         test('lanza BadRequestError con id inválido', async () => {
             await expect(colectivoService.desactivarColectivo('malo')).rejects.toThrow(BadRequestError);
+        });
+    });
+
+    describe('obtenerPotencialesColaboradores', () => {
+        const ID_PROY_2 = '507f1f77bcf86cd799439042';
+        const perfilAbierto = { titulo: 'Back', habilidadesRequeridas: ['h1'], busquedaAbierta: true };
+        const perfilCerrado = { titulo: 'Front', habilidadesRequeridas: ['h2'], busquedaAbierta: false };
+        const perfilOtro = { titulo: 'QA', habilidadesRequeridas: ['h3'], busquedaAbierta: true };
+        const proyecto = (id, extra = {}) => ({ _id: { toString: () => id }, finalizado: false, perfiles: [], ...extra });
+        const paginacion = { pagina: 2, limite: 5, orden: 'nombre', direccion: 'desc' };
+        const pagina = { colaboradores: [{ id: 'c1' }], total: 6, pagina: 2, limite: 5, totalPaginas: 2 };
+
+        test('busca con los perfiles abiertos de los proyectos activos y propaga la paginación', async () => {
+            colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue([
+                proyecto(ID_PROY, { perfiles: [perfilAbierto, perfilCerrado] }),
+                proyecto(ID_PROY_2, { finalizado: true, perfiles: [perfilOtro] }),
+            ]);
+            colaboradorService.obtenerColaboradoresPotenciales.mockResolvedValue(pagina);
+
+            const resultado = await colectivoService.obtenerPotencialesColaboradores(ID_COLECTIVO, [], paginacion);
+
+            expect(colectivoRepository.obtenerProyectosConPerfiles).toHaveBeenCalledWith(ID_COLECTIVO);
+            expect(colaboradorService.obtenerColaboradoresPotenciales).toHaveBeenCalledWith([perfilAbierto], paginacion);
+            expect(resultado).toBe(pagina);
+        });
+
+        test('acota la búsqueda a los proyectos pedidos', async () => {
+            colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue([
+                proyecto(ID_PROY, { perfiles: [perfilAbierto] }),
+                proyecto(ID_PROY_2, { perfiles: [perfilOtro] }),
+            ]);
+            colaboradorService.obtenerColaboradoresPotenciales.mockResolvedValue(pagina);
+
+            await colectivoService.obtenerPotencialesColaboradores(ID_COLECTIVO, [ID_PROY_2], paginacion);
+
+            expect(colaboradorService.obtenerColaboradoresPotenciales).toHaveBeenCalledWith([perfilOtro], paginacion);
+        });
+
+        test('lanza NotFoundError si un proyecto pedido no es del colectivo', async () => {
+            colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue([proyecto(ID_PROY, { perfiles: [perfilAbierto] })]);
+
+            await expect(colectivoService.obtenerPotencialesColaboradores(ID_COLECTIVO, [ID_PROY_2]))
+                .rejects.toThrow(NotFoundError);
+            expect(colaboradorService.obtenerColaboradoresPotenciales).not.toHaveBeenCalled();
+        });
+
+        test('devuelve una página vacía si no hay perfiles abiertos (no trae a todas)', async () => {
+            colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue([proyecto(ID_PROY, { perfiles: [perfilCerrado] })]);
+
+            const resultado = await colectivoService.obtenerPotencialesColaboradores(ID_COLECTIVO, [], { pagina: 3, limite: 20 });
+
+            expect(resultado).toEqual({ colaboradores: [], total: 0, pagina: 3, limite: 20, totalPaginas: 0 });
+            expect(colaboradorService.obtenerColaboradoresPotenciales).not.toHaveBeenCalled();
+        });
+
+        test('lanza NotFoundError si el colectivo no existe', async () => {
+            colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue(null);
+
+            await expect(colectivoService.obtenerPotencialesColaboradores(ID_COLECTIVO)).rejects.toThrow(NotFoundError);
         });
     });
 });

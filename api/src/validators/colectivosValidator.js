@@ -31,9 +31,21 @@ const validarFiltrosColectivo = z.object({
     ...ordenamiento,
 });
 
+// ?proyectos=id1,id2 -> ['id1', 'id2'] (cada uno tiene que ser un id válido)
+const listaDeProyectos = z.string({ error: "El filtro 'proyectos' debe ser una lista de ids separada por comas" })
+    .transform((valor) => valor.split(',').map((id) => id.trim()).filter(Boolean))
+    .pipe(z.array(objectId("Id de proyecto inválido")));
+
+const validarFiltrosPotencialesColaboradores = z.object({
+    proyectos: listaDeProyectos.optional(),
+    ...paginacion,
+    ...ordenamiento,
+});
+
 module.exports = {
     validarCreacionColectivo,
     validarActualizacionColectivo,
     validarIdsColectivo,
-    validarFiltrosColectivo
+    validarFiltrosColectivo,
+    validarFiltrosPotencialesColaboradores
 };
