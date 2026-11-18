@@ -1,6 +1,6 @@
 const colectivoService = require('../services/colectivoService.js');
 const { TipoColectivo } = require('../models/colectivo.js');
-const { BadRequestError } = require('../errors/AppError.js');
+const { BadRequestError, NotFoundError } = require('../errors/AppError.js');
 const { validarCreacionColectivo } = require('../validators/colectivosValidator.js');
 const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
 const { Paginado } = require('../dtos/paginado.js');
@@ -75,6 +75,14 @@ class ColectivoController {
      obtenerMiColectivo = async (req, res) => {
         const colectivo = await this.colectivoService.buscarPorUsuario(req.usuario.id)
         res.status(200).json(ColectivoPublic.desde(colectivo))
+    }
+
+    obtenerMisEstadisticas = async (req, res) => {
+        const colectivo = await this.colectivoService.buscarPorUsuario(req.usuario.id);
+        if (!colectivo) throw new NotFoundError('El usuario no tiene un colectivo asociado');
+
+        const estadisticas = await this.colectivoService.obtenerEstadisticas(colectivo.id);
+        res.status(200).json(estadisticas);
     }
 }
 

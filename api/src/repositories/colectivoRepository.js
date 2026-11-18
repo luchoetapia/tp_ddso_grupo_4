@@ -51,6 +51,12 @@ class ColectivoRepository {
     async totalActivos() {
         return await ColectivoModel.countDocuments({ active: true })
     }
+
+    async obtenerProyectos(id) {
+        const colectivo = await ColectivoModel.findById(id, { _id: 0, proyectos: 1 })
+            .populate('proyectos', 'finalizado');
+        return colectivo ? colectivo.proyectos : null;
+    }
 }
 
 module.exports = new ColectivoRepository();

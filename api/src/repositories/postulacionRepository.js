@@ -45,6 +45,13 @@ class PostulacionRepository {
             { new: true }
         ).populate(REFERENCIAS);
     }
+
+    async cantidadPendientesDeVariosProyectos(proyectos) {
+        return await PostulacionModel.countDocuments({
+            proyecto: { $in: proyectos },
+            estado: EstadoPostulacion.PENDIENTE
+        });
+    }
 }
 
 module.exports = new PostulacionRepository();
