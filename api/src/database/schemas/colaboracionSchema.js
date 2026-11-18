@@ -6,8 +6,10 @@ const Schema = mongoose.Schema;
 
 const colaboracionSchema = new Schema({
     colaborador: {
+        id: { type: Schema.Types.ObjectId, required: true},
         nombre: { type: String },
-        apellido: { type: String }
+        apellido: { type: String },
+        usuario: { type: Schema.Types.ObjectId, ref: 'Usuario' },
     },
     proyecto: { type: Schema.Types.ObjectId, ref: 'Proyecto', required: true },
     perfil: { type: Schema.Types.ObjectId, required: true },
