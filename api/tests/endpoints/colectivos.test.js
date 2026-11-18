@@ -7,6 +7,8 @@ jest.mock('../../src/services/colectivoService.js', () => ({
     obtenerPorId: jest.fn(),
     obtenerActivos: jest.fn(),
     desactivarColectivo: jest.fn(),
+    buscarPorUsuario: jest.fn(),
+    obtenerPotencialesColaboradores: jest.fn(),
 }));
 
 const request = require('supertest');
@@ -15,6 +17,7 @@ const colectivoService = require('../../src/services/colectivoService.js');
 const { crearUsuarioDeSemilla } = require('../../src/auth/usuarioSemilla.js');
 const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
+const { roles } = require('../../src/auth/models/usuario.js');
 
 const ID = '507f1f77bcf86cd799439051';
 const colectivo = { id: ID, nombre: 'Tech For Good', descripcion: 'desc', ubicacion: 'Córdoba', tipo: 'fundacion', proyectos: [] };
@@ -215,6 +218,66 @@ describe('Endpoints /colectivos', () => {
             const res = await request(app).post('/colectivos/llenarDatosPrueba').send([{ nombre: 'Sin tipo' }]);
 
             expect(res.status).toBe(400);
+        });
+    });
+
+    describe('GET /colectivos/me/potencialesColaboradores', () => {
+        const ID_PROY = '507f1f77bcf86cd799439041';
+        const ID_PROY_2 = '507f1f77bcf86cd799439042';
+        const URL = '/colectivos/me/potencialesColaboradores';
+        const colaborador = { id: 'c1', nombre: 'Ana', apellido: 'Paz', nombreFantasia: null, cuentaGit: 'ana', habilidades: [], pronombres: 'ella', presentacion: null, deseaSerContactado: true };
+
+        test('devuelve la página de colaboradoras con la paginación', async () => {
+            colectivoService.buscarPorUsuario.mockResolvedValue(colectivo);
+            const perfilesCompatibles = [{ proyecto: { id: ID_PROY, titulo: 'Huerta' }, perfil: { id: 'pf1', titulo: 'Back' } }];
+            colectivoService.obtenerPotencialesColaboradores.mockResolvedValue({ colaboradores: [{ colaborador, perfilesCompatibles }], total: 11, pagina: 2, limite: 5, totalPaginas: 3 });
+
+            const res = await request(app)
+                .get(`${URL}?proyectos=${ID_PROY},${ID_PROY_2}&pagina=2&limite=5&orden=nombre&direccion=desc`)
+                .set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+            expect(res.status).toBe(200);
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.data[0].cuentaGit).toBe('ana');
+            expect(res.body.data[0]).not.toHaveProperty('contactos');
+            expect(res.body.data[0].perfilesCompatibles).toEqual(perfilesCompatibles);
+            expect(res.body.paginacion).toEqual({ pagina: 2, limite: 5, total: 11, totalPaginas: 3 });
+            expect(colectivoService.obtenerPotencialesColaboradores).toHaveBeenCalledWith(
+                ID, [ID_PROY, ID_PROY_2], { pagina: 2, limite: 5, orden: 'nombre', direccion: 'desc' }
+            );
+        });
+
+        test('sin filtros usa la paginación por defecto y todos los proyectos', async () => {
+            colectivoService.buscarPorUsuario.mockResolvedValue(colectivo);
+            colectivoService.obtenerPotencialesColaboradores.mockResolvedValue({ colaboradores: [], total: 0, pagina: 1, limite: 10, totalPaginas: 0 });
+
+            const res = await request(app).get(URL).set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ data: [], paginacion: { pagina: 1, limite: 10, total: 0, totalPaginas: 0 } });
+            expect(colectivoService.obtenerPotencialesColaboradores).toHaveBeenCalledWith(ID, [], paginacionDefault);
+        });
+
+        test('responde 400 con un id de proyecto o un límite inválidos', async () => {
+            const cookie = cookieDeSesion(roles.COLECTIVO);
+
+            expect((await request(app).get(`${URL}?proyectos=malo`).set('Cookie', cookie)).status).toBe(400);
+            expect((await request(app).get(`${URL}?limite=500`).set('Cookie', cookie)).status).toBe(400);
+            expect(colectivoService.obtenerPotencialesColaboradores).not.toHaveBeenCalled();
+        });
+
+        test('responde 404 si el usuario no tiene colectivo', async () => {
+            colectivoService.buscarPorUsuario.mockResolvedValue(null);
+
+            const res = await request(app).get(URL).set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+            expect(res.status).toBe(404);
+        });
+
+        test('responde 401 sin sesión y 403 con otro rol', async () => {
+            expect((await request(app).get(URL)).status).toBe(401);
+            expect((await request(app).get(URL).set('Cookie', cookieDeSesion(roles.COLABORADOR))).status).toBe(403);
+            expect(colectivoService.obtenerPotencialesColaboradores).not.toHaveBeenCalled();
         });
     });
 });
