@@ -11,7 +11,7 @@ const contadores = [
     { clave: 'colaboracionesActivas', titulo: 'Colaboraciones activas', detalle: 'en curso' }
 ];
 
-const grilla = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3';
+const grilla = 'grid grid-cols-2 gap-3 lg:grid-cols-3';
 
 const valorContador = (datos, clave) => {
     if (datos[clave] !== undefined) return datos[clave];
@@ -49,7 +49,7 @@ const ContadoresPlataforma = ({ cargando, error, datos, reintentar }) => {
             {!cargando && !error && datos && (
                 <div className={grilla}>
                     {contadores.map(({ clave, titulo, detalle }) => (
-                        <Card key={clave} className="gap-0.5">
+                        <Card key={clave} className="min-w-0 gap-0.5">
                             <span className="font-display text-[38px] leading-[1.1] font-bold text-accent">
                                 {formatearEntero(valorContador(datos, clave))}
                             </span>
