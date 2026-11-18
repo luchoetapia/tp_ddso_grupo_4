@@ -94,6 +94,33 @@ class ProyectoRepository {
         return await ProyectoModel.countDocuments({ finalizado: false })
     }
 
+    async estadisticasGlobales() {
+        const [resultado] = await ProyectoModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    activos: {
+                        $sum: { $cond: [{ $eq: ['$finalizado', false] }, 1, 0] }
+                    },
+                    finalizados: {
+                        $sum: { $cond: [{ $eq: ['$finalizado', true] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    total: 1,
+                    activos: 1,
+                    finalizados: 1
+                }
+            }
+        ]);
+
+        return resultado ?? { total: 0, activos: 0, finalizados: 0 };
+    }
+
     async masReciente(fechaLimite) {
         return await ProyectoModel.findOne({ finalizado: false, createdAt: { $gte: fechaLimite } })
             .sort({ createdAt: -1 })
