@@ -55,12 +55,24 @@ class ColaboracionService {
         if (yaAnotada)
             throw new ConflictError("La persona colaboradora ya está anotada en este proyecto")
 
+        const colaboradorDesnormalizado = colaboracionData.esAnonima
+        ? { id: colaborador.id }
+        : {
+            id: colaborador.id,
+            nombre: colaborador.nombre,
+            apellido: colaborador.apellido,
+            usuario: colaborador.usuario
+        };
+
         const creada = await this.colaboracionRepository.save({
-            colaborador: colaborador.id,
+            colaborador: colaboradorDesnormalizado,
             proyecto: proyecto.id,
+            perfil: colaboracionData.idPerfil,
+            esAnonima,
             inicio: new Date()
         });
-        return creada;
+
+    return creada;
     }
 
     desanotar = async (idColaboracion, usuario) => {

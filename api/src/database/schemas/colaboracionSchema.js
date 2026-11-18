@@ -5,7 +5,10 @@ const { Colaboracion } = require('../../models/colaboracion.js');
 const Schema = mongoose.Schema;
 
 const colaboracionSchema = new Schema({
-    colaborador: { type: Schema.Types.ObjectId, ref: 'Colaborador', required: true },
+    colaborador: {
+        nombre: { type: String },
+        apellido: { type: String }
+    },
     proyecto: { type: Schema.Types.ObjectId, ref: 'Proyecto', required: true },
     perfil: { type: Schema.Types.ObjectId, required: true },
     inicio: { type: Date, required: true },

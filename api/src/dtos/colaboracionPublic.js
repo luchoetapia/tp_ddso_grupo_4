@@ -2,7 +2,7 @@ class ColaboracionPublic {
     constructor(id, colaborador, proyecto, inicio, fin, esAnonima) {
         this.id = id
         // Si la colaboración es anónima no se expone quién colaboró
-        this.colaborador = esAnonima ? null : { id: colaborador.id, cuentaGit: colaborador.cuentaGit }
+        this.colaborador = esAnonima ? null : { nombre: colaborador.nombre, apellido : colaborador.apellido}
         this.proyecto = { id: proyecto.id, titulo: proyecto.titulo }
         this.inicio = inicio
         this.fin = fin
