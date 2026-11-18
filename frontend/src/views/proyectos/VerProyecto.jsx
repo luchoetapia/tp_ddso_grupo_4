@@ -439,6 +439,32 @@ export default function VerProyectoContenido() {
                     </ul>
                 )}
             </section>
+            <section aria-labelledby="seccion-colaboradores" className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <h2 id="seccion-colaboraciones" className="m-0 text-2xl font-bold">
+                        Colaboraciones
+                    </h2>
+                    <span className="text-sm text-muted">
+                        {colaboraciones.length} {colaboraciones.length === 1 ? 'colaboracion' : 'colaboraciones'}
+                    </span>
+                </div>
+
+                {colaboraciones.length === 0 ? (
+                    <Card className="items-center text-center">
+                        <p className="m-0 text-muted">Todavía no hay colaboradores.</p>
+                    </Card>
+                ) : (
+                    <ul className="m-0 flex list-none flex-col gap-3 p-0">
+                        {colaboraciones.map((colaboracion) => (
+                            <Card as="li" key={colaboracion.id} className="gap-1.5">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="m-0 text-base font-bold">{colaboracion.colaborador.nombre}  {colaboracion.colaborador.apellido}</h3>
+                                </div>
+                            </Card>
+                        ))}
+                    </ul>
+                )}
+            </section>
 
             {/* Modal de confirmación y mensaje de postulación */}
             <Modal
