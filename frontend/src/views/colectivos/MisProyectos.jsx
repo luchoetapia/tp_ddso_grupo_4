@@ -116,7 +116,7 @@ export default function MisProyectos() {
                                 <Link href={`/colectivo/misProyectos/postulaciones?id=${proyecto.id}`} className={estiloLink}>
                                     Postulaciones
                                 </Link>
-                                <Link href={`/colectivos/misproyectos/editar?id=${proyecto.id}`} className={estiloLink}>
+                                <Link href={`/colectivo/misProyectos/editar?id=${proyecto.id}`} className={estiloLink}>
                                     Editar
                                 </Link>
                                 <Link href={`/proyectos/ver?id=${proyecto.id}`} className={estiloLink}>

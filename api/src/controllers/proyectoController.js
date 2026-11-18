@@ -37,6 +37,11 @@ class ProyectoController {
         res.status(201).json({ message: 'Proyecto creado exitosamente', data: ProyectoDetalle.desde(proyectoNuevo) })
     }
 
+    actualizarProyecto = async (req, res) => {
+        const proyecto = await this.proyectoService.actualizar(req.params.id, req.body, req.usuario.id)
+        res.status(200).json({ message: 'Proyecto actualizado exitosamente', data: ProyectoDetalle.desde(proyecto) })
+    }
+
     obtenerProyectoPorId = async (req, res) => {
         const proyecto = await this.proyectoService.obtenerPorId(req.params.id)
         res.status(200).json(ProyectoDetalle.desde(proyecto))

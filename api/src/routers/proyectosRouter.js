@@ -7,6 +7,7 @@ const { validarListado } = require('../validators/comunes.js')
 const { validarCreacionLogro, validarActualizacionLogro, validarIdsLogro } = require('../validators/logrosValidator.js')
 const {
     validarCreacionProyecto,
+    validarActualizacionProyecto,
     validarFiltrosProyecto,
     validarFinalizacionProyecto,
     validarContactoColaborador,
@@ -40,6 +41,12 @@ router.route('/:id')
     .get(
         validar(validarIdsProyecto, 'params'),
         (req, res) => proyectoController.obtenerProyectoPorId(req, res)
+    )
+    .patch(
+        autenticar(roles.COLECTIVO),
+        validar(validarIdsProyecto, 'params'),
+        validar(validarActualizacionProyecto, 'body'),
+        (req, res) => proyectoController.actualizarProyecto(req, res)
     );
 
 router.route('/:id/finalizar')

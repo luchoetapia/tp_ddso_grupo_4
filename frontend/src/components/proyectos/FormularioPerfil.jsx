@@ -26,6 +26,27 @@ export const perfilVacio = () => ({
     fechaFinBusqueda: '',
 });
 
+// Perfil tal como lo devuelve la API (PerfilPublic) -> estado del formulario
+export const perfilDesdeApi = (perfil) => {
+    const fecha = perfil.fechaFinBusqueda ? String(perfil.fechaFinBusqueda).slice(0, 10) : '';
+    return {
+        ...perfilVacio(),
+        id: perfil.id,
+        titulo: perfil.titulo ?? '',
+        descripcion: perfil.descripcion ?? '',
+        habilidadesRequeridas: (perfil.habilidadesRequeridas ?? []).map((h) => h.id),
+        habilidadesOpcionales: (perfil.habilidadesOpcionales ?? []).map((h) => h.id),
+        cantHoras: perfil.tipoCompromiso?.cantHoras != null ? String(perfil.tipoCompromiso.cantHoras) : '',
+        periodo: perfil.tipoCompromiso?.periodo ?? 'semanal',
+        incentivoEconomico: perfil.modalidadColaboracion?.incentivoEconomico ? String(perfil.modalidadColaboracion.incentivoEconomico) : '',
+        posibleContratacion: Boolean(perfil.modalidadColaboracion?.posibleContratacion),
+        busquedaAbierta: perfil.busquedaAbierta !== false,
+        limiteColaboraciones: perfil.limiteColaboraciones != null ? String(perfil.limiteColaboraciones) : '',
+        fechaFinBusqueda: fecha,
+        fechaGuardada: fecha, // una fecha ya vencida que no se tocó no es un error
+    };
+};
+
 const hoy = () => new Date().toISOString().slice(0, 10);
 
 export const validarPerfil = (perfil) => {
@@ -40,7 +61,7 @@ export const validarPerfil = (perfil) => {
     if (perfil.limiteColaboraciones !== '' && !(Number.isInteger(Number(perfil.limiteColaboraciones)) && Number(perfil.limiteColaboraciones) > 0)) {
         errores.limiteColaboraciones = 'El límite debe ser un número entero mayor a 0.';
     }
-    if (perfil.fechaFinBusqueda && perfil.fechaFinBusqueda < hoy()) {
+    if (perfil.fechaFinBusqueda && perfil.fechaFinBusqueda !== perfil.fechaGuardada && perfil.fechaFinBusqueda < hoy()) {
         errores.fechaFinBusqueda = 'La fecha no puede ser anterior a hoy.';
     }
     return errores;
@@ -58,8 +79,9 @@ export const perfilParaEnviar = (perfil) => ({
         posibleContratacion: perfil.posibleContratacion,
     },
     busquedaAbierta: perfil.busquedaAbierta,
-    ...(perfil.limiteColaboraciones !== '' && { limiteColaboraciones: Number(perfil.limiteColaboraciones) }),
-    ...(perfil.fechaFinBusqueda && { fechaFinBusqueda: perfil.fechaFinBusqueda }),
+    // null borra el valor guardado al editar
+    limiteColaboraciones: perfil.limiteColaboraciones === '' ? null : Number(perfil.limiteColaboraciones),
+    fechaFinBusqueda: perfil.fechaFinBusqueda || null,
 });
 
 const SelectorHabilidades = ({ etiqueta, ayuda, habilidades, seleccionadas, deshabilitadas = [], onChange, error }) => {

@@ -22,13 +22,18 @@ jest.mock('../../../src/services/habilidadService.js', () => ({
 jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerColaboradoresPotenciales: jest.fn(),
 }));
+jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
+    findByUsuario: jest.fn(),
+    update: jest.fn(),
+}));
 
 const proyectoRepository = require('../../../src/repositories/proyectoRepository.js');
 const habilidadService = require('../../../src/services/habilidadService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const proyectoService = require('../../../src/services/proyectoService.js');
 const { Proyecto, Perfil } = require('../../../src/models/proyecto.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
+const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_PROY_2 = '507f1f77bcf86cd799439042';
@@ -152,6 +157,56 @@ describe('ProyectoService', () => {
             proyectoRepository.findById.mockResolvedValue(null);
 
             await expect(proyectoService.obtenerPorId(ID_PROY)).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe('actualizar', () => {
+        const ID_USUARIO = '507f1f77bcf86cd7994390aa';
+        const colectivoDueño = { id: 'col', proyectos: [{ toString: () => ID_PROY }] };
+
+        test('actualiza el proyecto del colectivo de la sesión', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+            proyectoRepository.update.mockResolvedValue(proyectoDoc({ descripcion: 'nueva' }));
+
+            const resultado = await proyectoService.actualizar(ID_PROY, { descripcion: 'nueva' }, ID_USUARIO);
+
+            expect(colectivoRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(proyectoRepository.update).toHaveBeenCalledWith(ID_PROY, { descripcion: 'nueva' });
+            expect(resultado.descripcion).toBe('nueva');
+        });
+
+        test('lanza ForbiddenError si el proyecto es de otro colectivo', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            colectivoRepository.findByUsuario.mockResolvedValue({ id: 'otro', proyectos: [] });
+
+            await expect(proyectoService.actualizar(ID_PROY, { descripcion: 'x' }, ID_USUARIO)).rejects.toThrow(ForbiddenError);
+            expect(proyectoRepository.update).not.toHaveBeenCalled();
+        });
+
+        test('lanza ConflictError si el proyecto está finalizado', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc({ finalizado: true }));
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+
+            await expect(proyectoService.actualizar(ID_PROY, { descripcion: 'x' }, ID_USUARIO)).rejects.toThrow(ConflictError);
+            expect(proyectoRepository.update).not.toHaveBeenCalled();
+        });
+
+        test('lanza ConflictError si el título nuevo ya lo usa otro proyecto', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+            proyectoRepository.findByTitulo.mockResolvedValue(proyectoDoc({ id: ID_PROY_2 }));
+
+            await expect(proyectoService.actualizar(ID_PROY, { titulo: 'Otro' }, ID_USUARIO)).rejects.toThrow(ConflictError);
+        });
+
+        test('lanza ConflictError si la estrategia no aplica a los perfiles actuales', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc({ perfiles: [] }));
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+
+            await expect(proyectoService.actualizar(ID_PROY, { estrategiaAceptacion: 'HastaLlenarVacantes' }, ID_USUARIO))
+                .rejects.toThrow(ConflictError);
+            expect(proyectoRepository.update).not.toHaveBeenCalled();
         });
     });
 
