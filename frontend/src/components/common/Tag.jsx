@@ -2,6 +2,7 @@ const variantes = {
     accent: "bg-accent/15 text-accent",
     highlight: "bg-highlight text-[#16302b]",
     neutral: "bg-sf text-muted",
+    error: "bg-error/15 text-error",
 };
 
 export default function Tag({ variant = "accent", className, children, ...props }) {

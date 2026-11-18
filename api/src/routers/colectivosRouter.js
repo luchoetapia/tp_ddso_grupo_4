@@ -27,6 +27,12 @@ router.route('/me')
         (req, res) => colectivoController.obtenerMiColectivo(req, res)
     );
 
+router.route('/me/estadisticas')
+    .get(
+        autenticar(roles.COLECTIVO),
+        (req, res) => colectivoController.obtenerMisEstadisticas(req, res)
+    );
+
 router.route('/:id')
     .get(
         validar(validarIdsColectivo, 'params'),

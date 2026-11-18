@@ -10,7 +10,10 @@ class ColectivoPublic {
             return {
                 id: proyecto.id,
                 titulo: proyecto.titulo,
-                finalizado: proyecto.finalizado
+                descripcion: proyecto.descripcion,
+                finalizado: proyecto.finalizado,
+                porcentajeFinalizado: proyecto.porcentajeFinalizado,
+                perfilesAbiertos: (proyecto.perfiles ?? []).filter(perfil => perfil.busquedaAbierta).length
             }
         });
     }

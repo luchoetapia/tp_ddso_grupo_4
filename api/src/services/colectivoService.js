@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
+const colaboracionRepository = require('../repositories/colaboracionRepository.js');
+const postulacionRepository = require('../repositories/postulacionRepository.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 const proyectoService = require('./proyectoService.js');
 
@@ -20,6 +22,8 @@ const MENSAJE_USUARIO_CON_COLECTIVO = "El usuario ya tiene un colectivo asociado
 class ColectivoService {
     constructor() {
         this.colectivoRepository = colectivoRepository;
+        this.colaboracionRepository = colaboracionRepository;
+        this.postulacionRepository = postulacionRepository;
         this.proyectoService = proyectoService;
     }
 
@@ -107,6 +111,34 @@ class ColectivoService {
 
     buscarPorUsuario = async (idUsuario) => {
         return await this.colectivoRepository.findByUsuarioConProyectos(idUsuario);
+    }
+
+    obtenerEstadisticas = async (idColectivo) => {
+        const respuesta = {
+            proyectosActivos: 0,
+            proyectosTotales: 0,
+            colaboracionesActivas: 0,
+            colaboracionesTotales: 0,
+            postulacionesPendientes: 0
+        };
+
+        const proyectos = await this.colectivoRepository.obtenerProyectos(idColectivo);
+        if (!proyectos || !proyectos.length) return respuesta;
+
+        respuesta.proyectosTotales = proyectos.length;
+        respuesta.proyectosActivos = proyectos.filter(p => !p.finalizado).length;
+
+        const idsProyectos = proyectos.map(p => p._id);
+        const [colaboraciones, postulacionesPendientes] = await Promise.all([
+            this.colaboracionRepository.buscarPorVariosProyectos(idsProyectos),
+            this.postulacionRepository.cantidadPendientesDeVariosProyectos(idsProyectos)
+        ]);
+
+        respuesta.colaboracionesTotales = colaboraciones.length;
+        respuesta.colaboracionesActivas = colaboraciones.filter(c => c.estaActiva()).length;
+        respuesta.postulacionesPendientes = postulacionesPendientes;
+
+        return respuesta;
     }
 }
 
