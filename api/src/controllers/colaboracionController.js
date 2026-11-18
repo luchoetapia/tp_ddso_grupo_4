@@ -25,9 +25,15 @@ class ColaboracionController {
         res.status(200).json(response);
     }
 
+    obtenerColaboracionPorColaborador = async (req, res) => {
+        const colaboraciones = await this.colaboracionService.obtenerPorColaboradorId(req.params.id);
+        const response = colaboraciones.map(c => ColaboracionPublic.desde(c));
+        res.status(200).json(response);
+    }
+
     desanotarColaboracion = async (req, res) => {
-    const colaboracion = await this.colaboracionService.desanotar(req.params.id, req.usuario)
-    res.status(200).json({ message: 'Colaboración dada de baja exitosamente', data: ColaboracionPublic.desde(colaboracion) })
+        const colaboracion = await this.colaboracionService.desanotar(req.params.id, req.usuario)
+        res.status(200).json({ message: 'Colaboración dada de baja exitosamente', data: ColaboracionPublic.desde(colaboracion) })
     }
 }
 

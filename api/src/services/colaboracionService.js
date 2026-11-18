@@ -36,6 +36,11 @@ class ColaboracionService {
         return colaboraciones;
     }
 
+    obtenerPorColaboradorId = async (idColaborador) => {
+        const colaboraciones = await this.colaboracionRepository.findByColaboradorID(idColaborador);
+        return colaboraciones;
+    }
+
     crear = async (colaboracionData) => {
         const proyecto = await this.proyectoService.obtenerPorId(colaboracionData.idProyecto);
         const colaborador = await this.colaboradorService.obtenerPorId(colaboracionData.idColaborador);
@@ -90,11 +95,18 @@ class ColaboracionService {
     }
 
     validarPermisoDeBaja = async (colaboracion, usuario) => {
-        if(usuario.rol === roles.COLABORADOR){
+        if (usuario.rol === roles.COLABORADOR) {
             const colaborador = await this.colaboradorService.buscarPorUsuario(usuario.id);
-            if(colaborador && colaborador.id === colaboracion.colaborador?.id) return;
+
+            const esMismoColaborador =
+                colaborador?._id &&
+                colaboracion?.colaborador?.id &&
+                colaborador._id.toString() === colaboracion.colaborador.id.toString();
+
+            if (esMismoColaborador) return;
+
             throw new ForbiddenError("Solo la propia persona colaboradora puede darse de baja de un proyecto");
-        } 
+        }
 
         if(usuario.rol === roles.COLECTIVO){
             const colectivo = await this.colectivoService.buscarPorUsuario(usuario.id);

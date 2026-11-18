@@ -40,6 +40,10 @@ class ColaboracionRepository {
         return await ColaboracionModel.find({proyecto: idProyecto});
     }
 
+    async findByColaboradorID(idColaborador) {
+        return await ColaboracionModel.find({"colaborador.id": idColaborador});
+    }
+
     async buscarPorVariosProyectos(proyectos) {
         return await ColaboracionModel.find({ proyecto: { $in: proyectos } });
     }
