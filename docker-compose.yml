@@ -5,6 +5,7 @@ services:
   mongo:
     image: mongo:7
     restart: unless-stopped
+    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
     ports:
       # 27018 para no chocar con un Mongo local en 27017 (para conectarse con Compass: mongodb://localhost:27018)
       - "27018:27017"

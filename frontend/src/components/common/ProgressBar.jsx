@@ -16,7 +16,6 @@ export default function ProgressBar({ value, label = "Completado" }) {
                     style={{ width: `${porcentaje}%` }}
                 />
             </div>
-            <b>{porcentaje}%</b>
         </div>
     );
 }

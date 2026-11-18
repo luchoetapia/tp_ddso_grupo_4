@@ -19,6 +19,12 @@ class ColaboracionController {
         res.status(201).json({ message: 'Colaboracion creada exitosamente', data: ColaboracionPublic.desde(colaboracionNueva) })
     }
 
+    obtenerColaboracionPorProyecto = async (req, res) => {
+        const colaboraciones = await this.colaboracionService.obtenerPorProyectoId(req.params.id);
+        const response = colaboraciones.map(c => ColaboracionPublic.desde(c));
+        res.status(200).json(response);
+    }
+
     desanotarColaboracion = async (req, res) => {
     const colaboracion = await this.colaboracionService.desanotar(req.params.id, req.usuario)
     res.status(200).json({ message: 'Colaboración dada de baja exitosamente', data: ColaboracionPublic.desde(colaboracion) })

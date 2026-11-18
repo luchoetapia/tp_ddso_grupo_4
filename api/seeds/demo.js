@@ -534,14 +534,26 @@ const idPerfil = (proyecto, titulo) => {
 };
 
 const cargarColaboraciones = (colaboradores, proyectos) =>
-    ColaboracionModel.insertMany(COLABORACIONES.map((c) => ({
-        colaborador: colaboradores.get(c.cuentaGit)._id,
-        proyecto: proyectos.get(c.proyecto)._id,
-        perfil: idPerfil(proyectos.get(c.proyecto), c.perfil),
-        inicio: haceDias(c.inicio),
-        fin: c.fin != null ? haceDias(c.fin) : null,
-        esAnonima: c.esAnonima ?? false,
-    })));
+    ColaboracionModel.insertMany(COLABORACIONES.map((c) => {
+        const colab = colaboradores.get(c.cuentaGit);
+        const esAnonima = c.esAnonima ?? false;
+
+        return {
+            colaborador: esAnonima
+                ? { id: colab._id }
+                : {
+                    id: colab._id,
+                    nombre: colab.nombre,
+                    apellido: colab.apellido,
+                    usuario: colab.usuario,
+                },
+            proyecto: proyectos.get(c.proyecto)._id,
+            perfil: idPerfil(proyectos.get(c.proyecto), c.perfil),
+            inicio: haceDias(c.inicio),
+            fin: c.fin != null ? haceDias(c.fin) : null,
+            esAnonima,
+        };
+    }));
 
 const cargarPostulaciones = async (colaboradores, proyectos) => {
     const postulaciones = await PostulacionModel.insertMany(POSTULACIONES.map((p) => ({
