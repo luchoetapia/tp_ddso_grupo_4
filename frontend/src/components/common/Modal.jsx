@@ -3,7 +3,8 @@
 import { useEffect, useId, useRef } from "react";
 
 // Modal accesible sobre <dialog>: foco atrapado, Esc cierra y click en el fondo cierra.
-export default function Modal({ open, onClose, title, children, footer }) {
+// `ancho`: clase de ancho máximo (por defecto 420px, el de los modales de confirmación)
+export default function Modal({ open, onClose, title, children, footer, ancho = "max-w-[420px]" }) {
     const ref = useRef(null);
     const tituloId = useId();
 
@@ -20,7 +21,7 @@ export default function Modal({ open, onClose, title, children, footer }) {
             onClose={onClose}
             onClick={(e) => e.target === ref.current && onClose?.()}
             aria-labelledby={tituloId}
-            className="m-auto w-full max-w-[420px] rounded-[14px] border border-border bg-card p-0 text-text backdrop:bg-black/55"
+            className={`m-auto w-full ${ancho} rounded-[14px] border border-border bg-card p-0 text-text backdrop:bg-black/55`}
         >
             <div className="flex flex-col gap-2 p-[18px]">
                 <h3 id={tituloId} className="text-[17px] font-bold">
