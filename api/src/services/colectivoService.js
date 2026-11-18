@@ -117,6 +117,22 @@ class ColectivoService {
         return await this.colectivoRepository.findByUsuarioConProyectos(idUsuario);
     }
 
+    actualizarPorUsuario = async (idUsuario, cambios) => {
+        const colectivo = await this.colectivoRepository.findByUsuario(idUsuario)
+        if (!colectivo) {
+            throw new NotFoundError("El usuario no tiene un colectivo asociado")
+        }
+
+        if (cambios.nombre !== undefined && cambios.nombre !== colectivo.nombre) {
+            const existente = await this.colectivoRepository.findByNombre(cambios.nombre)
+            if (existente && existente.id !== colectivo.id) {
+                throw new ConflictError("Ya existe un colectivo con ese nombre")
+            }
+        }
+
+        return await this.colectivoRepository.update(colectivo.id, cambios)
+    }
+
     obtenerEstadisticas = async (idColectivo) => {
         const respuesta = {
             proyectosActivos: 0,

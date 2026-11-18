@@ -18,7 +18,12 @@ const validarCreacionColectivo = z.object({
     proyectos: campos.proyectos.default([]),
 }).strict();
 
-const validarActualizacionColectivo = z.object(campos).partial().strict()
+const validarActualizacionColectivo = z.object({
+    nombre: campos.nombre,
+    tipo: campos.tipo,
+    descripcion: campos.descripcion,
+    ubicacion: campos.ubicacion,
+}).partial().strict()
     .refine(...alMenosUnCampo);
 
 const validarIdsColectivo = z.object({

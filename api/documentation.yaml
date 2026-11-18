@@ -793,6 +793,97 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colectivos/me:
+    get:
+      summary: Obtiene el colectivo de la sesión
+      description: Requiere sesión con rol `colectivo` (cookie `accessToken`).
+      tags: [Colectivos]
+      responses:
+        "200":
+          description: Colectivo del usuario logueado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Colectivo"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Edita los datos del colectivo de la sesión
+      description: >
+        Requiere sesión con rol `colectivo` (cookie `accessToken`). Solo se envían los
+        campos a modificar (al menos uno). Los proyectos no se editan por acá.
+      tags: [Colectivos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                nombre:
+                  type: string
+                  minLength: 1
+                descripcion:
+                  type: string
+                ubicacion:
+                  type: string
+                tipo:
+                  type: string
+                  enum: [fundacion, asociacion_barrial, ong, asamblea]
+            example:
+              descripcion: Asamblea barrial de Villa Urquiza
+              ubicacion: Villa Urquiza, CABA
+      responses:
+        "200":
+          description: Colectivo actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Colectivo actualizado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Colectivo"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no tiene colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Ya existe otro colectivo con ese nombre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos/me/potencialesColaboradores:
     get:
       summary: Busca potenciales colaboradoras para los proyectos del colectivo de la sesión (paginado)
