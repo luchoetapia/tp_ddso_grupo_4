@@ -49,7 +49,35 @@ class ColectivoRepository {
     }
 
     async totalActivos() {
-        return await ColectivoModel.countDocuments({ active: true })
+        const estadisticas = await this.estadisticasGlobales();
+        return estadisticas.activos;
+    }
+
+    async estadisticasGlobales() {
+        const [resultado] = await ColectivoModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    activos: {
+                        $sum: { $cond: [{ $eq: ['$active', true] }, 1, 0] }
+                    },
+                    desactivados: {
+                        $sum: { $cond: [{ $eq: ['$active', false] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    total: 1,
+                    activos: 1,
+                    desactivados: 1
+                }
+            }
+        ]);
+
+        return resultado ?? { total: 0, activos: 0, desactivados: 0 };
     }
 
     async obtenerProyectos(id) {
