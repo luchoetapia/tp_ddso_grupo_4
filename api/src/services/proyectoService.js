@@ -82,8 +82,8 @@ class ProyectoService {
         }
 
         let colectivo = null;
-        if (idUsuarioColectivo) {
-        colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo);
+        if (idUsuario) {
+        colectivo = await this.colectivoRepository.findByUsuario(idUsuario);
         if (!colectivo)
             throw new NotFoundError("El usuario no tiene un colectivo registrado");
         }
@@ -112,8 +112,12 @@ class ProyectoService {
 
         const creado = await this.proyectoRepository.save(payload);
 
-        if (colectivo)
-            await this.colectivoRepository.update(colectivo.id, { $push: { proyectos: creado.id } });
+        if (colectivo) {
+            await this.colectivoRepository.update(
+                colectivo.id,
+                { $push: { proyectos: creado.id } }
+            );
+        }
 
         return creado;
     }
