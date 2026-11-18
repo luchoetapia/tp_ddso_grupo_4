@@ -103,7 +103,6 @@ export default function EditarProyecto() {
                 const datos = perfilParaEnviar(perfil);
                 const { data } = await apiQuery.post(base, datos, { mensajeError: `No se pudo crear el perfil "${perfil.titulo}".` });
                 perfilesGuardados[data.id] = datos;
-                // Desde ahora es un perfil guardado: si otro paso falla, no se vuelve a crear
                 setPerfiles((lista) => lista.map((p) => (p.clave === perfil.clave ? { ...p, id: data.id } : p)));
             }
             if (Object.keys(cambios).length) {

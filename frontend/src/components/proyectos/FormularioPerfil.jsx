@@ -26,7 +26,6 @@ export const perfilVacio = () => ({
     fechaFinBusqueda: '',
 });
 
-// Perfil tal como lo devuelve la API (PerfilPublic) -> estado del formulario
 export const perfilDesdeApi = (perfil) => {
     const fecha = perfil.fechaFinBusqueda ? String(perfil.fechaFinBusqueda).slice(0, 10) : '';
     return {

@@ -130,7 +130,6 @@ class ProyectoService {
         return proyecto
     }
 
-    // Devuelve el proyecto si es del colectivo del usuario y sigue en curso; si no, lanza el error que corresponda
     obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
         const proyecto = await this.obtenerPorId(id)
 

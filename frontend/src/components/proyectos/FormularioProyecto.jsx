@@ -42,7 +42,6 @@ const esUrl = (texto) => {
     }
 };
 
-// Si una estrategia no se puede usar con los límites cargados, se explica por qué
 const estrategiaAplicable = (estrategia, perfiles) => {
     const algunoConLimite = perfiles.some((p) => p.limiteColaboraciones !== '');
     if (estrategia === 'TodoSuma') return !algunoConLimite;
@@ -66,8 +65,6 @@ const validarProyecto = (proyecto, perfiles) => {
     return errores;
 };
 
-// Formulario de alta y edición de proyectos. Es controlado: el estado vive en la vista que lo usa.
-// onEnviar solo se llama si todo es válido.
 const FormularioProyecto = ({ proyecto, setProyecto, perfiles, setPerfiles, onEnviar, enviando, textoEnviar, hrefCancelar }) => {
     const [habilidades, setHabilidades] = useState(null);
     const [mostrarErrores, setMostrarErrores] = useState(false);
@@ -98,7 +95,6 @@ const FormularioProyecto = ({ proyecto, setProyecto, perfiles, setPerfiles, onEn
     const sacarDeLaLista = (clave) => setPerfiles((lista) => lista.filter((p) => p.clave !== clave));
     const agregarPerfil = () => setPerfiles((lista) => [...lista, perfilVacio()]);
 
-    // Un perfil nuevo se saca directo; uno guardado pide confirmación porque se borra al guardar
     const quitarPerfil = (perfil) => (perfil.id ? setAQuitar(perfil) : sacarDeLaLista(perfil.clave));
 
     const confirmarQuitar = () => {
