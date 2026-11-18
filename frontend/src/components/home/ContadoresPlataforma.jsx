@@ -3,13 +3,29 @@ import { Button, Card, Skeleton } from '@/components/common'
 
 // Orden y textos de las cards; "clave" es el campo que devuelve GET /home/contadores
 const contadores = [
-    { clave: 'totalColectivos', titulo: 'Colectivos', detalle: 'confían en nosotros' },
+    { clave: 'proyectosTotales', titulo: 'Proyectos', detalle: 'creados en la plataforma' },
     { clave: 'proyectosActivos', titulo: 'Proyectos activos', detalle: 'en desarrollo' },
-    { clave: 'colaboradores', titulo: 'Colaboradores', detalle: 'ya colaboraron en algún proyecto' },
-    { clave: 'habilidadesBuscadas', titulo: 'Habilidades', detalle: 'buscadas en los perfiles' },
+    { clave: 'colectivosTotales', titulo: 'Colectivos', detalle: 'registrados en la plataforma' },
+    { clave: 'colaboradores', titulo: 'Colaboradores', detalle: 'distintos participaron en proyectos' },
+    { clave: 'colaboracionesTotales', titulo: 'Colaboraciones', detalle: 'totales registradas' },
+    { clave: 'colaboracionesActivas', titulo: 'Colaboraciones activas', detalle: 'en curso' }
 ];
 
 const grilla = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3';
+
+const valorContador = (datos, clave) => {
+    if (datos[clave] !== undefined) return datos[clave];
+
+    if (clave === 'proyectosTotales') {
+        return (datos.proyectosActivos ?? 0) + (datos.proyectosFinalizados ?? 0);
+    }
+
+    if (clave === 'colectivosTotales') {
+        return datos.totalColectivos ?? 0;
+    }
+
+    return 0;
+};
 
 const ContadoresPlataforma = ({ cargando, error, datos, reintentar }) => {
     return (
@@ -35,7 +51,7 @@ const ContadoresPlataforma = ({ cargando, error, datos, reintentar }) => {
                     {contadores.map(({ clave, titulo, detalle }) => (
                         <Card key={clave} className="gap-0.5">
                             <span className="font-display text-[38px] leading-[1.1] font-bold text-accent">
-                                {formatearEntero(datos[clave] ?? 0)}
+                                {formatearEntero(valorContador(datos, clave))}
                             </span>
                             <span className="font-semibold">{titulo}</span>
                             <span className="text-[13px] text-muted">{detalle}</span>
