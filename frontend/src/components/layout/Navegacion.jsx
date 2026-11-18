@@ -12,7 +12,6 @@ import SelectorTema from "./SelectorTema";
 const enlacesPublicos = [
     { href: "/", texto: "Inicio" },
     { href: "/proyectos", texto: "Proyectos" },
-    { href: "/colaboradoras", texto: "Colaboradoras" },
 ];
 
 const inicioPorRol = {
