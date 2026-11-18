@@ -46,7 +46,7 @@ export default function MisProyectos() {
         try {
             await apiQuery.post(
                 `/proyectos/${proyecto.id}/finalizar`,
-                { idColectivo: estado.colectivo.id },
+                {}, // el colectivo sale de la sesión
                 { mensajeError: 'No se pudo cerrar el proyecto.' }
             );
             setEstado((e) => ({

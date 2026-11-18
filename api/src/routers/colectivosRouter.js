@@ -51,11 +51,12 @@ router.route('/:id')
         (req, res) => colectivoController.obtenerColectivoPorId(req, res)
     )
     .delete(
+        autenticar([roles.COLECTIVO, roles.ADMIN]),
         validar(validarIdsColectivo, 'params'),
         (req, res) => colectivoController.desactivarColectivo(req, res)
     );
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => colectivoController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => colectivoController.llenarDatosPrueba(req, res));
 
 module.exports = router

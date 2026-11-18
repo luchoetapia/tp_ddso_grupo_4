@@ -13,16 +13,19 @@ jest.mock('../../../src/repositories/colaboracionRepository.js', () => ({
 
 jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
     findById: jest.fn(),
+    findByUsuario: jest.fn(),
 }));
 
 jest.mock('../../../src/services/proyectoService.js', () => ({
     obtenerPorId: jest.fn(),
     modificarPerfil: jest.fn(),
+    obtenerEditablePorColectivo: jest.fn(),
 }));
 
 jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerPorId: jest.fn(),
     obtenerPorCuentaGit: jest.fn(),
+    buscarPorUsuario: jest.fn(),
 }));
 
 const postulacionRepository = require('../../../src/repositories/postulacionRepository.js');
@@ -32,7 +35,8 @@ const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const postulacionService = require('../../../src/services/postulacionService.js');
 const EstadoPostulacion = require('../../../src/models/Proyecto/Postulaciones/EstadoPostulacion.js');
-const { ConflictError, NotFoundError, BadRequestError } = require('../../../src/errors/AppError.js');
+const { ConflictError, NotFoundError, BadRequestError, ForbiddenError } = require('../../../src/errors/AppError.js');
+const { roles } = require('../../../src/auth/models/usuario.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_PERFIL = '507f1f77bcf86cd799439051';
@@ -459,6 +463,132 @@ describe('PostulacionService', () => {
                 ID_POSTULACION,
                 EstadoPostulacion.RECHAZADA
             );
+        });
+    });
+describe('control de acceso por sesión', () => {
+        const ID_USUARIO = '507f1f77bcf86cd7994390aa';
+        const ID_OTRO = '507f1f77bcf86cd799439099';
+        const comoColaboradora = { id: ID_USUARIO, rol: roles.COLABORADOR };
+        const comoColectivo = { id: ID_USUARIO, rol: roles.COLECTIVO };
+        const colaboradoraPropia = { id: ID_COLAB, cuentaGit: 'juanp', habilidades: ['hab1'] };
+        const colectivoPropio = { id: ID_COLECTIVO, proyectos: [{ _id: ID_PROY }] };
+
+        describe('crear', () => {
+            const prepararProyecto = () => {
+                proyectoService.obtenerPorId.mockResolvedValue({
+                    id: ID_PROY,
+                    finalizado: false,
+                    perfiles: { id: jest.fn().mockReturnValue({ _id: ID_PERFIL, busquedaAbierta: true, cumpleHabilidadesRequeridas: () => true }) },
+                });
+                colaboradorService.buscarPorUsuario.mockResolvedValue(colaboradoraPropia);
+                postulacionRepository.findActiva.mockResolvedValue(null);
+                postulacionRepository.save.mockImplementation(async (data) => ({ id: ID_POSTULACION, ...data }));
+            };
+
+            test('postula a la colaboradora de la sesión', async () => {
+                prepararProyecto();
+
+                const resultado = await postulacionService.crear({ idProyecto: ID_PROY, idPerfil: ID_PERFIL }, comoColaboradora);
+
+                expect(colaboradorService.buscarPorUsuario).toHaveBeenCalledWith(ID_USUARIO);
+                expect(resultado.colaborador).toBe(ID_COLAB);
+            });
+
+            test('lanza ForbiddenError si intenta postular a otra persona', async () => {
+                prepararProyecto();
+
+                await expect(postulacionService.crear({ idProyecto: ID_PROY, idPerfil: ID_PERFIL, cuentaGit: 'otra' }, comoColaboradora))
+                    .rejects.toThrow(ForbiddenError);
+                await expect(postulacionService.crear({ idProyecto: ID_PROY, idPerfil: ID_PERFIL, idColaborador: ID_OTRO }, comoColaboradora))
+                    .rejects.toThrow(ForbiddenError);
+                expect(postulacionRepository.save).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('obtenerTodas', () => {
+            test('la colaboradora solo ve sus postulaciones', async () => {
+                colaboradorService.buscarPorUsuario.mockResolvedValue(colaboradoraPropia);
+                postulacionRepository.findAll.mockResolvedValue([]);
+
+                await postulacionService.obtenerTodas({ idProyecto: ID_PROY }, comoColaboradora);
+
+                expect(postulacionRepository.findAll).toHaveBeenCalledWith({ proyecto: ID_PROY, colaborador: ID_COLAB });
+            });
+
+            test('lanza ForbiddenError si la colaboradora pide las de otra', async () => {
+                colaboradorService.buscarPorUsuario.mockResolvedValue(colaboradoraPropia);
+
+                await expect(postulacionService.obtenerTodas({ idColaborador: ID_OTRO }, comoColaboradora)).rejects.toThrow(ForbiddenError);
+                expect(postulacionRepository.findAll).not.toHaveBeenCalled();
+            });
+
+            test('el colectivo ve las de un proyecto propio (respeta el filtro)', async () => {
+                colectivoRepository.findByUsuario.mockResolvedValue(colectivoPropio);
+                colectivoRepository.findById.mockResolvedValue(colectivoPropio);
+                postulacionRepository.findAll.mockResolvedValue([]);
+
+                await postulacionService.obtenerTodas({ idProyecto: ID_PROY }, comoColectivo);
+
+                expect(postulacionRepository.findAll).toHaveBeenCalledWith({ proyecto: ID_PROY });
+            });
+
+            test('sin filtro, el colectivo ve solo las de sus proyectos', async () => {
+                colectivoRepository.findByUsuario.mockResolvedValue(colectivoPropio);
+                colectivoRepository.findById.mockResolvedValue(colectivoPropio);
+                postulacionRepository.findAll.mockResolvedValue([]);
+
+                await postulacionService.obtenerTodas({}, comoColectivo);
+
+                expect(postulacionRepository.findAll).toHaveBeenCalledWith({ proyecto: { $in: [ID_PROY] } });
+            });
+
+            test('lanza ForbiddenError si el colectivo pide las de un proyecto ajeno', async () => {
+                colectivoRepository.findByUsuario.mockResolvedValue(colectivoPropio);
+
+                await expect(postulacionService.obtenerTodas({ idProyecto: ID_OTRO }, comoColectivo)).rejects.toThrow(ForbiddenError);
+                expect(postulacionRepository.findAll).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('obtenerPorId', () => {
+            const postulacion = { id: ID_POSTULACION, colaborador: { _id: ID_COLAB }, proyecto: { _id: ID_PROY } };
+
+            test('la ve la colaboradora que se postuló', async () => {
+                postulacionRepository.findById.mockResolvedValue(postulacion);
+                colaboradorService.buscarPorUsuario.mockResolvedValue(colaboradoraPropia);
+
+                await expect(postulacionService.obtenerPorId(ID_POSTULACION, comoColaboradora)).resolves.toBe(postulacion);
+            });
+
+            test('la ve el colectivo dueño del proyecto', async () => {
+                postulacionRepository.findById.mockResolvedValue(postulacion);
+                colectivoRepository.findByUsuario.mockResolvedValue(colectivoPropio);
+
+                await expect(postulacionService.obtenerPorId(ID_POSTULACION, comoColectivo)).resolves.toBe(postulacion);
+            });
+
+            test('lanza ForbiddenError para otra colaboradora u otro colectivo', async () => {
+                postulacionRepository.findById.mockResolvedValue(postulacion);
+                colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_OTRO });
+                colectivoRepository.findByUsuario.mockResolvedValue({ id: 'otro', proyectos: [] });
+
+                await expect(postulacionService.obtenerPorId(ID_POSTULACION, comoColaboradora)).rejects.toThrow(ForbiddenError);
+                await expect(postulacionService.obtenerPorId(ID_POSTULACION, comoColectivo)).rejects.toThrow(ForbiddenError);
+            });
+        });
+
+        describe('actualizarEstado', () => {
+            test('lanza ForbiddenError si el proyecto no es del colectivo, sin cambiar el estado', async () => {
+                postulacionRepository.findById.mockResolvedValue({
+                    id: ID_POSTULACION, estado: EstadoPostulacion.PENDIENTE, proyecto: { _id: ID_PROY },
+                });
+                proyectoService.obtenerEditablePorColectivo.mockRejectedValue(new ForbiddenError('El proyecto no pertenece a tu colectivo'));
+
+                await expect(postulacionService.actualizarEstado(ID_POSTULACION, EstadoPostulacion.RECHAZADA, comoColectivo))
+                    .rejects.toThrow(ForbiddenError);
+                expect(proyectoService.obtenerEditablePorColectivo).toHaveBeenCalledWith(ID_PROY, ID_USUARIO);
+                expect(postulacionRepository.updateEstado).not.toHaveBeenCalled();
+            });
         });
     });
 });

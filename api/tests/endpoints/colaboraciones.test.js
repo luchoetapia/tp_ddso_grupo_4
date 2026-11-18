@@ -65,7 +65,7 @@ describe('Endpoints /colaboraciones', () => {
         test('crea la colaboración', async () => {
             colaboracionService.crear.mockResolvedValue(colaboracion);
 
-            const res = await request(app).post('/colaboraciones').send(body);
+            const res = await request(app).post('/colaboraciones').set('Cookie', cookieDeSesion(roles.ADMIN)).send(body);
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colaboracion creada exitosamente', data: colaboracionPublica });
@@ -73,7 +73,7 @@ describe('Endpoints /colaboraciones', () => {
         });
 
         test('responde 400 con ids inválidos', async () => {
-            const res = await request(app).post('/colaboraciones').send({ idProyecto: '1', idColaborador: ID_COLAB });
+            const res = await request(app).post('/colaboraciones').set('Cookie', cookieDeSesion(roles.ADMIN)).send({ idProyecto: '1', idColaborador: ID_COLAB });
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Id de proyecto inválido');
@@ -81,7 +81,7 @@ describe('Endpoints /colaboraciones', () => {
         });
 
         test('responde 400 sin body', async () => {
-            const res = await request(app).post('/colaboraciones');
+            const res = await request(app).post('/colaboraciones').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(400);
         });
@@ -89,7 +89,7 @@ describe('Endpoints /colaboraciones', () => {
         test('responde 404 si el proyecto no existe', async () => {
             colaboracionService.crear.mockRejectedValue(new NotFoundError('Proyecto no encontrado'));
 
-            const res = await request(app).post('/colaboraciones').send(body);
+            const res = await request(app).post('/colaboraciones').set('Cookie', cookieDeSesion(roles.ADMIN)).send(body);
 
             expect(res.status).toBe(404);
         });
@@ -97,7 +97,7 @@ describe('Endpoints /colaboraciones', () => {
         test('responde 409 si el proyecto está finalizado', async () => {
             colaboracionService.crear.mockRejectedValue(new ConflictError('El proyecto ya fue finalizado'));
 
-            const res = await request(app).post('/colaboraciones').send(body);
+            const res = await request(app).post('/colaboraciones').set('Cookie', cookieDeSesion(roles.ADMIN)).send(body);
 
             expect(res.status).toBe(409);
             expect(res.body.message).toBe('El proyecto ya fue finalizado');

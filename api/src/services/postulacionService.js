@@ -5,7 +5,10 @@ const colaboradorService = require('./colaboradorService.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const colaboracionRepository = require('../repositories/colaboracionRepository.js');
 const EstadoPostulacion = require('../models/Proyecto/Postulaciones/EstadoPostulacion.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
+const { roles } = require('../auth/models/usuario.js');
+
+const idDe = (ref) => (ref?._id ?? ref)?.toString();
 
 class PostulacionService {
     constructor() {
@@ -16,7 +19,65 @@ class PostulacionService {
         this.colaboracionRepository = colaboracionRepository;
     }
 
-    crear = async (datos) => {
+    // ---------- Control de acceso ----------
+    // "usuario" es la sesión (req.usuario). Sin usuario es una llamada interna y no se restringe.
+
+    colaboradoraDeLaSesion = async (usuario) => {
+        const colaborador = await this.colaboradorService.buscarPorUsuario(usuario.id);
+        if (!colaborador) throw new NotFoundError("El usuario no tiene un perfil de colaboradora");
+        return colaborador;
+    }
+
+    colectivoDeLaSesion = async (usuario) => {
+        const colectivo = await this.colectivoRepository.findByUsuario(usuario.id);
+        if (!colectivo) throw new NotFoundError("El usuario no tiene un colectivo asociado");
+        return colectivo;
+    }
+
+    // Una postulación la ven la colaboradora que se postuló y el colectivo dueño del proyecto
+    verificarAcceso = async (postulacion, usuario) => {
+        if (!usuario || usuario.rol === roles.ADMIN) return;
+
+        if (usuario.rol === roles.COLABORADOR) {
+            const colaborador = await this.colaboradoraDeLaSesion(usuario);
+            if (idDe(postulacion.colaborador) === colaborador.id) return;
+        }
+
+        if (usuario.rol === roles.COLECTIVO) {
+            const colectivo = await this.colectivoDeLaSesion(usuario);
+            if (colectivo.proyectos.some(p => idDe(p) === idDe(postulacion.proyecto))) return;
+        }
+
+        throw new ForbiddenError("No tenés acceso a esta postulación");
+    }
+
+    // Acota los filtros a lo que la sesión puede ver: la colaboradora, sus postulaciones; el colectivo, las de sus proyectos
+    acotarFiltros = async (filtros, usuario) => {
+        if (!usuario || usuario.rol === roles.ADMIN) return filtros;
+
+        if (usuario.rol === roles.COLABORADOR) {
+            const colaborador = await this.colaboradoraDeLaSesion(usuario);
+            if (filtros.idColaborador && filtros.idColaborador !== colaborador.id) {
+                throw new ForbiddenError("Solo podés ver tus propias postulaciones");
+            }
+            return { ...filtros, idColaborador: colaborador.id };
+        }
+
+        if (usuario.rol === roles.COLECTIVO) {
+            const colectivo = await this.colectivoDeLaSesion(usuario);
+            if (filtros.idColectivo && filtros.idColectivo !== colectivo.id) {
+                throw new ForbiddenError("Solo podés ver las postulaciones de tu colectivo");
+            }
+            if (filtros.idProyecto && !colectivo.proyectos.some(p => idDe(p) === filtros.idProyecto)) {
+                throw new ForbiddenError("El proyecto no pertenece a tu colectivo");
+            }
+            return { ...filtros, idColectivo: colectivo.id };
+        }
+
+        throw new ForbiddenError("No tenés acceso a las postulaciones");
+    }
+
+    crear = async (datos, usuario) => {
         const { idProyecto, idPerfil, idColaborador, cuentaGit, mensaje } = datos;
 
         // 1. Obtener y validar proyecto
@@ -40,9 +101,14 @@ class PostulacionService {
             throw new ConflictError("La fecha límite para postularse a este perfil ya ha expirado");
         }
 
-        // 4. Obtener y validar colaborador
+        // 4. Obtener y validar colaborador. Con sesión, es la colaboradora logueada: nadie puede postular a otra persona
         let colaborador;
-        if (idColaborador) {
+        if (usuario) {
+            colaborador = await this.colaboradoraDeLaSesion(usuario);
+            if ((idColaborador && idColaborador !== colaborador.id) || (cuentaGit && cuentaGit !== colaborador.cuentaGit)) {
+                throw new ForbiddenError("Solo podés postularte vos misma");
+            }
+        } else if (idColaborador) {
             colaborador = await this.colaboradorService.obtenerPorId(idColaborador);
         } else {
             colaborador = await this.colaboradorService.obtenerPorCuentaGit(cuentaGit);
@@ -108,7 +174,8 @@ class PostulacionService {
         return nuevaPostulacion;
     }
 
-    obtenerTodas = async (filtros = {}) => {
+    obtenerTodas = async (filtrosPedidos = {}, usuario) => {
+        const filtros = await this.acotarFiltros(filtrosPedidos, usuario);
         const query = {};
 
         if (filtros.idProyecto) {
@@ -133,13 +200,14 @@ class PostulacionService {
                 throw new NotFoundError("Colectivo no encontrado");
             }
             const idsProyectos = colectivo.proyectos.map(p => (p._id ?? p).toString());
-            query.proyecto = { $in: idsProyectos };
+            // Si además se filtró por un proyecto (ya validado como propio), se respeta ese filtro
+            if (!query.proyecto) query.proyecto = { $in: idsProyectos };
         }
 
         return await this.postulacionRepository.findAll(query);
     }
 
-    obtenerPorId = async (id) => {
+    obtenerPorId = async (id, usuario) => {
         if (!mongoose.isValidObjectId(id)) {
             throw new BadRequestError("Id de postulación inválido");
         }
@@ -149,11 +217,17 @@ class PostulacionService {
             throw new NotFoundError("Postulación no encontrada");
         }
 
+        await this.verificarAcceso(postulacion, usuario);
         return postulacion;
     }
 
-    actualizarEstado = async (id, nuevoEstado) => {
+    actualizarEstado = async (id, nuevoEstado, usuario) => {
         const postulacion = await this.obtenerPorId(id);
+
+        // Solo el colectivo dueño acepta o rechaza, y mientras el proyecto siga en curso
+        if (usuario) {
+            await this.proyectoService.obtenerEditablePorColectivo(idDe(postulacion.proyecto), usuario.id);
+        }
 
         if (postulacion.estado !== EstadoPostulacion.PENDIENTE) {
             throw new ConflictError(`La postulación ya se encuentra en estado '${postulacion.estado}' y no puede ser modificada`);

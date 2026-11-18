@@ -22,7 +22,7 @@ const colectivoRepository = require('../../../src/repositories/colectivoReposito
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colectivoService = require('../../../src/services/colectivoService.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_COLECTIVO = '507f1f77bcf86cd799439051';
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -204,6 +204,32 @@ describe('ColectivoService', () => {
 
         test('lanza BadRequestError con id inválido', async () => {
             await expect(colectivoService.desactivarColectivo('malo')).rejects.toThrow(BadRequestError);
+        });
+
+        test('el colectivo de la sesión puede darse de baja a sí mismo', async () => {
+            colectivoRepository.findById.mockResolvedValue(colectivoDoc({ usuario: { toString: () => ID_USUARIO } }));
+            colectivoRepository.update.mockResolvedValue(colectivoDoc({ active: false }));
+
+            await colectivoService.desactivarColectivo(ID_COLECTIVO, { id: ID_USUARIO, rol: 'colectivo' });
+
+            expect(colectivoRepository.update).toHaveBeenCalledWith(ID_COLECTIVO, { active: false });
+        });
+
+        test('lanza ForbiddenError si un colectivo intenta dar de baja a otro', async () => {
+            colectivoRepository.findById.mockResolvedValue(colectivoDoc({ usuario: { toString: () => 'otro-usuario' } }));
+
+            await expect(colectivoService.desactivarColectivo(ID_COLECTIVO, { id: ID_USUARIO, rol: 'colectivo' }))
+                .rejects.toThrow(ForbiddenError);
+            expect(colectivoRepository.update).not.toHaveBeenCalled();
+        });
+
+        test('el admin puede dar de baja cualquier colectivo', async () => {
+            colectivoRepository.findById.mockResolvedValue(colectivoDoc({ usuario: { toString: () => 'otro-usuario' } }));
+            colectivoRepository.update.mockResolvedValue(colectivoDoc({ active: false }));
+
+            await colectivoService.desactivarColectivo(ID_COLECTIVO, { id: ID_USUARIO, rol: 'admin' });
+
+            expect(colectivoRepository.update).toHaveBeenCalled();
         });
     });
 

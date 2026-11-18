@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
+const { roles } = require('../auth/models/usuario.js');
 
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const colaboracionRepository = require('../repositories/colaboracionRepository.js');
@@ -98,8 +99,14 @@ class ColectivoService {
         return await this.proyectoService.finalizar(idProyecto)
     }
 
-    desactivarColectivo = async (id) => {
+    // usuario: sesión que pide la baja (sin usuario es una llamada interna).
+    // Un colectivo solo puede darse de baja a sí mismo; admin, a cualquiera
+    desactivarColectivo = async (id, usuario) => {
         const colectivo = await this.obtenerPorId(id);
+
+        if (usuario && usuario.rol !== roles.ADMIN && colectivo.usuario?.toString() !== usuario.id) {
+            throw new ForbiddenError("Solo podés dar de baja tu propio colectivo");
+        }
 
         if (!colectivo.active) 
             throw new BadRequestError("El colectivo ya se encuentra desactivado");

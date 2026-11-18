@@ -9,7 +9,6 @@ const {
     validarCreacionProyecto,
     validarActualizacionProyecto,
     validarFiltrosProyecto,
-    validarFinalizacionProyecto,
     validarContactoColaborador,
     validarIdsProyecto,
     validarIdsPerfilDeProyecto,
@@ -35,7 +34,7 @@ router.route('/')
     );
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => proyectoController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => proyectoController.llenarDatosPrueba(req, res));
 
 router.route('/:id')
     .get(
@@ -51,8 +50,8 @@ router.route('/:id')
 
 router.route('/:id/finalizar')
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsProyecto, 'params'),
-        validar(validarFinalizacionProyecto, 'body'),
         (req, res) => proyectoController.finalizarProyecto(req, res)
     );
 
@@ -62,6 +61,7 @@ router.route('/:id/perfiles')
         (req, res) => proyectoController.obtenerPerfilesDeUnProyecto(req, res)
     )
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsProyecto, 'params'),
         validar(validarCreacionPerfil, 'body'),
         (req, res) => proyectoController.crearPerfil(req, res)
@@ -73,17 +73,20 @@ router.route('/:id/perfiles/:idPerfil')
         (req, res) => proyectoController.obtenerPerfilPorId(req, res)
     )
     .put(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         validar(validarActualizacionPerfil, 'body'),
         (req, res) => proyectoController.actualizarPerfil(req, res)
     )
     .delete(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         (req, res) => proyectoController.eliminarPerfil(req, res)
     );
 
 router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')
     .get(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         validar(validarListado, 'query'),
         (req, res) => proyectoController.buscarPotencialesColaboradores(req, res)
@@ -91,6 +94,7 @@ router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')
 
 router.route('/:id/perfiles/:idPerfil/contactarColaborador')
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         validar(validarContactoColaborador, 'body'),
         (req, res) => proyectoController.contactarColaborador(req, res)

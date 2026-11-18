@@ -130,8 +130,8 @@ class ProyectoService {
         return proyecto
     }
 
-    // Devuelve el proyecto si es del colectivo del usuario y sigue en curso; si no, lanza el error que corresponda
-    obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
+    // Devuelve el proyecto si es del colectivo del usuario; si no, ForbiddenError
+    obtenerDelColectivo = async (id, idUsuarioColectivo) => {
         const proyecto = await this.obtenerPorId(id)
 
         const colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo)
@@ -139,6 +139,13 @@ class ProyectoService {
         if (!esDelColectivo) {
             throw new ForbiddenError("El proyecto no pertenece a tu colectivo")
         }
+
+        return proyecto
+    }
+
+    // Igual que obtenerDelColectivo, pero además exige que el proyecto siga en curso
+    obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
+        const proyecto = await this.obtenerDelColectivo(id, idUsuarioColectivo)
 
         if (proyecto.finalizado) {
             throw new ConflictError("No se puede editar un proyecto finalizado")

@@ -46,17 +46,20 @@ router.route('/:cuentaGit/contactos')
         (req, res) => colaboradorController.obtenerContactosColaborador(req, res)
     )
 
+// Anotación directa (1ª entrega): desde las postulaciones solo la usa el equipo administrativo
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
     .post(
+        autenticar(roles.ADMIN),
         validar(validarAnotacionAProyecto, 'params'),
         (req, res) => colaboradorController.anotarColaboradorAProyecto(req, res)
     )
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => colaboradorController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => colaboradorController.llenarDatosPrueba(req, res));
 
 router.route('/:cuentaGit/buscarPotencialesProyectos')
     .get(
+        autenticar([roles.COLABORADOR, roles.ADMIN]),
         validar(validarCuentaGitColaborador, 'params'),
         validar(validarFiltrosProyecto, 'query'),
         (req, res) => colaboradorController.buscarPotencialesProyectos(req, res)

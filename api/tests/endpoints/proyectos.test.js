@@ -9,6 +9,8 @@ jest.mock('../../src/services/proyectoService.js', () => ({
     modificarPerfil: jest.fn(),
     eliminarPerfil: jest.fn(),
     obtenerEditablePorColectivo: jest.fn(),
+    obtenerDelColectivo: jest.fn(),
+    finalizar: jest.fn(),
 }));
 jest.mock('../../src/services/colectivoService.js', () => ({
     finalizarProyecto: jest.fn(),
@@ -273,29 +275,40 @@ describe('Endpoints /proyectos', () => {
     });
 
     describe('POST /proyectos/:id/finalizar', () => {
-        test('finaliza el proyecto a través del colectivo', async () => {
-            colectivoService.finalizarProyecto.mockResolvedValue({ ...proyecto, finalizado: true });
+        const finalizar = () => request(app).post(`/proyectos/${ID}/finalizar`);
 
-            const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({ idColectivo: ID_COLECTIVO });
+        test('el colectivo dueño finaliza el proyecto (el colectivo sale de la sesión)', async () => {
+            proyectoService.finalizar.mockResolvedValue({ ...proyecto, finalizado: true });
+
+            const res = await finalizar().set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(200);
             expect(res.body.data.finalizado).toBe(true);
-            expect(colectivoService.finalizarProyecto).toHaveBeenCalledWith(ID_COLECTIVO, ID);
+            expect(proyectoService.obtenerEditablePorColectivo).toHaveBeenCalledWith(ID, ID_USUARIO);
+            expect(proyectoService.finalizar).toHaveBeenCalledWith(ID);
         });
 
-        test('responde 400 sin idColectivo', async () => {
-            const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({});
+        test('responde 401 sin sesión', async () => {
+            const res = await finalizar();
 
-            expect(res.status).toBe(400);
-            expect(colectivoService.finalizarProyecto).not.toHaveBeenCalled();
+            expect(res.status).toBe(401);
+            expect(proyectoService.finalizar).not.toHaveBeenCalled();
         });
 
-        test('responde 404 si el colectivo no existe', async () => {
-            colectivoService.finalizarProyecto.mockRejectedValue(new NotFoundError('Colectivo no encontrado'));
+        test('responde 403 con sesión de colaboradora', async () => {
+            const res = await finalizar().set('Cookie', cookieDeSesion(roles.COLABORADOR));
 
-            const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({ idColectivo: ID_COLECTIVO });
+            expect(res.status).toBe(403);
+            expect(proyectoService.finalizar).not.toHaveBeenCalled();
+        });
 
-            expect(res.status).toBe(404);
+        test('responde 403 si el proyecto es de otro colectivo', async () => {
+            proyectoService.obtenerEditablePorColectivo.mockRejectedValueOnce(new ForbiddenError('El proyecto no pertenece a tu colectivo'));
+
+            const res = await finalizar().set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+            expect(res.status).toBe(403);
+            expect(proyectoService.finalizar).not.toHaveBeenCalled();
         });
     });
 
@@ -335,10 +348,26 @@ describe('Endpoints /proyectos', () => {
                 modalidadColaboracion: {},
             };
 
+            test('responde 401 sin sesión', async () => {
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+
+                expect(res.status).toBe(401);
+                expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
+            });
+
+            test('responde 403 si el proyecto es de otro colectivo', async () => {
+                proyectoService.obtenerEditablePorColectivo.mockRejectedValueOnce(new ForbiddenError('El proyecto no pertenece a tu colectivo'));
+
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send(body);
+
+                expect(res.status).toBe(403);
+                expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
+            });
+
             test('crea el perfil aplicando defaults', async () => {
                 proyectoService.agregarPerfil.mockResolvedValue(perfil);
 
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send(body);
 
                 expect(res.status).toBe(201);
                 expect(proyectoService.agregarPerfil).toHaveBeenCalledWith(ID, {
@@ -352,14 +381,14 @@ describe('Endpoints /proyectos', () => {
             test('responde 400 sin título', async () => {
                 const { titulo, ...sinTitulo } = body;
 
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(sinTitulo);
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send(sinTitulo);
 
                 expect(res.status).toBe(400);
                 expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
             });
 
             test('responde 400 sin tipo de compromiso', async () => {
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`)
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', cookieDeSesion(roles.COLECTIVO))
                     .send({ titulo: 'x', descripcion: 'x', modalidadColaboracion: {} });
 
                 expect(res.status).toBe(400);
@@ -369,7 +398,7 @@ describe('Endpoints /proyectos', () => {
             test('responde 404 si alguna habilidad no existe', async () => {
                 proyectoService.agregarPerfil.mockRejectedValue(new NotFoundError('Habilidades no encontradas', [ID_HAB]));
 
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send(body);
 
                 expect(res.status).toBe(404);
                 expect(res.body.details).toEqual([ID_HAB]);
@@ -407,7 +436,7 @@ describe('Endpoints /proyectos', () => {
             test('actualiza solo los campos enviados', async () => {
                 proyectoService.modificarPerfil.mockResolvedValue({ ...perfil, descripcion: 'Nuevo' });
 
-                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({ descripcion: 'Nuevo' });
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ descripcion: 'Nuevo' });
 
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe('Perfil actualizado exitosamente');
@@ -416,7 +445,7 @@ describe('Endpoints /proyectos', () => {
             });
 
             test('responde 400 con body vacío', async () => {
-                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({});
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({});
 
                 // Al no haber defaults, el objeto está vacío y Zod lanza el error correspondiente
                 expect(res.status).toBe(400);
@@ -426,7 +455,7 @@ describe('Endpoints /proyectos', () => {
             test('responde 404 si no existe', async () => {
                 proyectoService.modificarPerfil.mockRejectedValue(new NotFoundError('Proyecto o perfil no encontrado'));
 
-                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({ descripcion: 'x' });
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ descripcion: 'x' });
 
                 expect(res.status).toBe(404);
             });
@@ -436,7 +465,7 @@ describe('Endpoints /proyectos', () => {
             test('elimina el perfil', async () => {
                 proyectoService.eliminarPerfil.mockResolvedValue();
 
-                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual({ message: 'Perfil eliminado exitosamente' });
@@ -446,7 +475,7 @@ describe('Endpoints /proyectos', () => {
             test('responde 404 si no existe', async () => {
                 proyectoService.eliminarPerfil.mockRejectedValue(new NotFoundError('Proyecto o perfil no encontrado'));
 
-                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
                 expect(res.status).toBe(404);
             });
@@ -461,7 +490,7 @@ describe('Endpoints /proyectos', () => {
                 colaboradores: [{ cuentaGit: 'juanp' }], total: 1, pagina: 2, limite: 5, totalPaginas: 1
             });
 
-            const res = await request(app).get(`${url}?pagina=2&limite=5`);
+            const res = await request(app).get(`${url}?pagina=2&limite=5`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({
@@ -472,14 +501,14 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 con un límite fuera de rango', async () => {
-            const res = await request(app).get(`${url}?limite=500`);
+            const res = await request(app).get(`${url}?limite=500`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(400);
             expect(proyectoService.buscarPotencialesColaboradores).not.toHaveBeenCalled();
         });
 
         test('responde 400 con id de perfil inválido', async () => {
-            const res = await request(app).get(`/proyectos/${ID}/perfiles/abc/buscarPotencialesColaboradores`);
+            const res = await request(app).get(`/proyectos/${ID}/perfiles/abc/buscarPotencialesColaboradores`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Id de perfil inválido');
@@ -488,7 +517,7 @@ describe('Endpoints /proyectos', () => {
         test('responde 404 si el perfil no pertenece al proyecto', async () => {
             proyectoService.buscarPotencialesColaboradores.mockRejectedValue(new NotFoundError('El perfil no pertenece al proyecto'));
 
-            const res = await request(app).get(url);
+            const res = await request(app).get(url).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(404);
         });
@@ -496,6 +525,16 @@ describe('Endpoints /proyectos', () => {
 
     describe('POST /proyectos/:id/perfiles/:idPerfil/contactarColaborador', () => {
         const url = `/proyectos/${ID}/perfiles/${ID_PERFIL}/contactarColaborador`;
+
+        test('responde 401 sin sesión y 403 con sesión de colaboradora', async () => {
+            const sinSesion = await request(app).post(url).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
+            const comoColaboradora = await request(app).post(url).set('Cookie', cookieDeSesion(roles.COLABORADOR))
+                .send({ cuentaGit: 'juanp', mensaje: 'Hola' });
+
+            expect(sinSesion.status).toBe(401);
+            expect(comoColaboradora.status).toBe(403);
+            expect(notificacionService.contactarColaborador).not.toHaveBeenCalled();
+        });
 
         test('contacta al colaborador', async () => {
             const notificacion = {
@@ -505,7 +544,7 @@ describe('Endpoints /proyectos', () => {
             const { destinatario, ...notificacionPublica } = notificacion;
             notificacionService.contactarColaborador.mockResolvedValue(notificacion);
 
-            const res = await request(app).post(url).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
+            const res = await request(app).post(url).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colaborador contactado exitosamente', data: notificacionPublica });
@@ -513,7 +552,7 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 sin mensaje', async () => {
-            const res = await request(app).post(url).send({ cuentaGit: 'juanp' });
+            const res = await request(app).post(url).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ cuentaGit: 'juanp' });
 
             expect(res.status).toBe(400);
         });
@@ -521,7 +560,7 @@ describe('Endpoints /proyectos', () => {
         test('responde 409 si el colaborador no acepta ser contactado', async () => {
             notificacionService.contactarColaborador.mockRejectedValue(new ConflictError('El colaborador no acepta ser contactado'));
 
-            const res = await request(app).post(url).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
+            const res = await request(app).post(url).set('Cookie', cookieDeSesion(roles.COLECTIVO)).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
 
             expect(res.status).toBe(409);
         });
@@ -656,7 +695,7 @@ describe('Endpoints /proyectos', () => {
         test('crea un proyecto por defecto con sus perfiles embebidos', async () => {
             proyectoService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/proyectos/llenarDatosPrueba');
+            const res = await request(app).post('/proyectos/llenarDatosPrueba').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(201);
             expect(res.body.data).toHaveLength(1);
@@ -665,7 +704,7 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/proyectos/llenarDatosPrueba').send([{ titulo: 'Sin descripción' }]);
+            const res = await request(app).post('/proyectos/llenarDatosPrueba').set('Cookie', cookieDeSesion(roles.ADMIN)).send([{ titulo: 'Sin descripción' }]);
 
             expect(res.status).toBe(400);
         });

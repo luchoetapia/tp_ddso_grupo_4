@@ -18,6 +18,7 @@ jest.mock('../../src/services/proyectoService.js', () => ({
 
 
 const request = require('supertest');
+const { roles } = require('../../src/auth/models/usuario.js');
 const app = require('../../src/app.js');
 const { crearUsuarioDeSemilla } = require('../../src/auth/usuarioSemilla.js');
 const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
@@ -150,7 +151,7 @@ describe('Endpoints /colaboradores', () => {
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
             colaboracionService.crear.mockResolvedValue(colaboracion);
 
-            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`);
+            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`).set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion });
@@ -158,7 +159,7 @@ describe('Endpoints /colaboradores', () => {
         });
 
         test('responde 400 con id de proyecto inválido', async () => {
-            const res = await request(app).post('/colaboradores/juanp/anotarProyecto/123');
+            const res = await request(app).post('/colaboradores/juanp/anotarProyecto/123').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(400);
         });
@@ -167,13 +168,37 @@ describe('Endpoints /colaboradores', () => {
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
             colaboracionService.crear.mockRejectedValue(new ConflictError('No cumple'));
 
-            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`);
+            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`).set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(409);
         });
     });
 
     describe('GET /colaboradores/:cuentaGit/buscarPotencialesProyectos', () => {
+        test('la colaboradora busca con sus propias habilidades', async () => {
+            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ cuentaGit: 'juanp', usuario: ID_USUARIO, habilidades: [] });
+            proyectoService.buscarPotencialesProyectos.mockResolvedValue({ proyectos: [], total: 0, pagina: 1, limite: 10, totalPaginas: 0 });
+
+            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos').set('Cookie', cookieDeSesion(roles.COLABORADOR));
+
+            expect(res.status).toBe(200);
+        });
+
+        test('responde 403 si busca con las habilidades de otra colaboradora', async () => {
+            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ cuentaGit: 'otra', usuario: 'otro-usuario', habilidades: [] });
+
+            const res = await request(app).get('/colaboradores/otra/buscarPotencialesProyectos').set('Cookie', cookieDeSesion(roles.COLABORADOR));
+
+            expect(res.status).toBe(403);
+            expect(proyectoService.buscarPotencialesProyectos).not.toHaveBeenCalled();
+        });
+
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos');
+
+            expect(res.status).toBe(401);
+        });
+
         test('busca proyectos con las habilidades del colaborador', async () => {
             const ID_HAB = '507f1f77bcf86cd799439021';
             const ID_HAB_2 = '507f1f77bcf86cd799439022';
@@ -183,7 +208,7 @@ describe('Endpoints /colaboradores', () => {
                 proyectos: [{ id: ID_PROY }], total: 6, pagina: 2, limite: 5, totalPaginas: 2
             });
 
-            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos?pagina=2&limite=5');
+            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos?pagina=2&limite=5').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({
@@ -195,7 +220,7 @@ describe('Endpoints /colaboradores', () => {
         });
 
         test('responde 400 con un límite inválido', async () => {
-            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos?limite=abc');
+            const res = await request(app).get('/colaboradores/juanp/buscarPotencialesProyectos?limite=abc').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(400);
             expect(proyectoService.buscarPotencialesProyectos).not.toHaveBeenCalled();
@@ -204,7 +229,7 @@ describe('Endpoints /colaboradores', () => {
         test('responde 404 si el colaborador no existe', async () => {
             colaboradorService.obtenerPorCuentaGit.mockRejectedValue(new NotFoundError('Colaborador no encontrado'));
 
-            const res = await request(app).get('/colaboradores/nadie/buscarPotencialesProyectos');
+            const res = await request(app).get('/colaboradores/nadie/buscarPotencialesProyectos').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(404);
             expect(proyectoService.buscarPotencialesProyectos).not.toHaveBeenCalled();
@@ -218,7 +243,7 @@ describe('Endpoints /colaboradores', () => {
             crearUsuarioDeSemilla.mockImplementation(async (cuentaGit) => ({ id: `usr-${cuentaGit}` }));
             colaboradorService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/colaboradores/llenarDatosPrueba');
+            const res = await request(app).post('/colaboradores/llenarDatosPrueba').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(201);
             expect(res.body.data.map(c => c.cuentaGit)).toEqual(['juanperez', 'mariagomez']);
@@ -227,7 +252,7 @@ describe('Endpoints /colaboradores', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/colaboradores/llenarDatosPrueba').send([{ nombre: 'Sin apellido' }]);
+            const res = await request(app).post('/colaboradores/llenarDatosPrueba').set('Cookie', cookieDeSesion(roles.ADMIN)).send([{ nombre: 'Sin apellido' }]);
 
             expect(res.status).toBe(400);
         });

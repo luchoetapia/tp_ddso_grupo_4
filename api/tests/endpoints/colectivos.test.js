@@ -166,15 +166,15 @@ describe('Endpoints /colectivos', () => {
             const resultado = { mensaje: 'Colectivo Tech For Good desactivado correctamente, 2 proyectos finalizados.' };
             colectivoService.desactivarColectivo.mockResolvedValue(resultado);
 
-            const res = await request(app).delete(`/colectivos/${ID}`);
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual(resultado);
-            expect(colectivoService.desactivarColectivo).toHaveBeenCalledWith(ID);
+            expect(colectivoService.desactivarColectivo).toHaveBeenCalledWith(ID, expect.objectContaining({ id: ID_USUARIO, rol: roles.COLECTIVO }));
         });
 
         test('responde 400 con un id inválido', async () => {
-            const res = await request(app).delete('/colectivos/abc');
+            const res = await request(app).delete('/colectivos/abc').set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Id de colectivo inválido');
@@ -184,7 +184,7 @@ describe('Endpoints /colectivos', () => {
         test('responde 404 si no existe', async () => {
             colectivoService.desactivarColectivo.mockRejectedValue(new NotFoundError('Colectivo no encontrado'));
 
-            const res = await request(app).delete(`/colectivos/${ID}`);
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(404);
         });
@@ -192,7 +192,7 @@ describe('Endpoints /colectivos', () => {
         test('responde 400 si ya estaba desactivado', async () => {
             colectivoService.desactivarColectivo.mockRejectedValue(new BadRequestError('El colectivo ya se encuentra desactivado'));
 
-            const res = await request(app).delete(`/colectivos/${ID}`);
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('El colectivo ya se encuentra desactivado');
@@ -204,7 +204,7 @@ describe('Endpoints /colectivos', () => {
             crearUsuarioDeSemilla.mockImplementation(async (nombre) => ({ id: `usr-${nombre}` }));
             colectivoService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/colectivos/llenarDatosPrueba');
+            const res = await request(app).post('/colectivos/llenarDatosPrueba').set('Cookie', cookieDeSesion(roles.ADMIN));
 
             expect(res.status).toBe(201);
             expect(res.body.data.map(c => c.nombre)).toEqual(['Colectivo Software Libre', 'Tech For Good']);
@@ -215,7 +215,7 @@ describe('Endpoints /colectivos', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/colectivos/llenarDatosPrueba').send([{ nombre: 'Sin tipo' }]);
+            const res = await request(app).post('/colectivos/llenarDatosPrueba').set('Cookie', cookieDeSesion(roles.ADMIN)).send([{ nombre: 'Sin tipo' }]);
 
             expect(res.status).toBe(400);
         });

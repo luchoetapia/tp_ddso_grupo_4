@@ -29,6 +29,8 @@ tags:
     description: Gestión de habilidades
   - name: Colaboradores
     description: Gestión de colaboradoras/es
+  - name: Postulaciones
+    description: Postulaciones de colaboradoras a perfiles de proyectos
   - name: Colaboraciones
     description: Participación de colaboradoras/es en proyectos
 
@@ -88,11 +90,15 @@ paths:
     post:
       summary: Crea un nuevo proyecto
       description: >
+        **Requiere sesión (colectivo).**
         Los perfiles se envían completos y quedan embebidos en el proyecto.
         Sus habilidades se referencian por id y deben existir previamente
         (ver GET /habilidades). No se permiten campos adicionales a los
         declarados en el schema.
       tags: [Proyectos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -129,6 +135,10 @@ paths:
                   titulo: Reciclado de residuos electrónicos
                   descripcion: Registro de puntos de reciclado en la ciudad.
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Proyecto creado exitosamente
           content:
@@ -164,10 +174,14 @@ paths:
     post:
       summary: Carga proyectos iniciales
       description: >
+        **Requiere sesión (admin).**
         Sin body, crea un proyecto de ejemplo con dos perfiles embebidos
         (Backend Node.js y Diseño UX/UI) sin habilidades. También acepta un
         array de proyectos con el mismo formato que POST /proyectos.
       tags: [Proyectos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: false
         content:
@@ -177,6 +191,10 @@ paths:
               items:
                 $ref: "#/components/schemas/ProyectoInput"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Proyectos creados
           content:
@@ -216,10 +234,14 @@ paths:
     patch:
       summary: Edita los datos de un proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto).**
         Requiere sesión con rol `colectivo` (cookie `accessToken`) y que el proyecto sea de su colectivo.
         Solo se envían los campos a modificar (al menos uno). Los perfiles se editan con
         /proyectos/{id}/perfiles. Un proyecto finalizado no se puede editar.
       tags: [Proyectos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPath"
       requestBody:
@@ -299,23 +321,20 @@ paths:
     post:
       summary: Finaliza un proyecto
       description: >
-        Un colectivo marca el proyecto como finalizado. Un proyecto finalizado
-        no admite nuevas personas colaboradoras ni contactos.
+        **Requiere sesión (colectivo dueño del proyecto).**
+        El colectivo de la sesión marca su proyecto como finalizado (no lleva body).
+        Un proyecto finalizado no admite nuevas personas colaboradoras ni contactos.
       tags: [Proyectos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                idColectivo:
-                  $ref: "#/components/schemas/ObjectId"
-              required:
-                - idColectivo
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Proyecto finalizado exitosamente
           content:
@@ -329,13 +348,9 @@ paths:
                   data:
                     $ref: "#/components/schemas/Proyecto"
         "400":
-          description: Falta idColectivo o algún id es inválido
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/IdInvalido"
         "404":
-          description: Colectivo o proyecto no encontrado
+          description: Proyecto no encontrado
           content:
             application/json:
               schema:
@@ -345,15 +360,23 @@ paths:
     get:
       summary: Busca potenciales colaboradoras/es para un perfil del proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto).**
         Devuelve las colaboradoras que tienen todas las habilidades requeridas
         por el perfil indicado. No incluye los medios de contacto.
       tags: [Proyectos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPath"
         - $ref: "#/components/parameters/IdPerfilPath"
         - $ref: "#/components/parameters/PaginaQuery"
         - $ref: "#/components/parameters/LimiteQuery"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Página de colaboradoras compatibles (puede ser vacía), ordenadas por cuenta de Git
           content:
@@ -384,11 +407,15 @@ paths:
     post:
       summary: Contacta a una colaboradora por un perfil del proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
         Envía un mensaje interno (notificación) a la colaboradora indicada, sólo si
         aceptó ser contactada (deseaSerContactado). La notificación queda registrada
         en la plataforma y además se replica por cada uno de sus medios de contacto
         (Email, WhatsApp, SMS).
       tags: [Proyectos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPath"
         - $ref: "#/components/parameters/IdPerfilPath"
@@ -399,6 +426,10 @@ paths:
             schema:
               $ref: "#/components/schemas/ContactoInput"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Colaboradora contactada
           content:
@@ -456,9 +487,13 @@ paths:
     post:
       summary: Agrega un logro a un proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
         Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
         (si no, 401/403/409). No se permiten campos adicionales a los declarados en el schema.
       tags: [Logros]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -466,6 +501,10 @@ paths:
             schema:
               $ref: "#/components/schemas/LogroInput"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Logro creado exitosamente
           content:
@@ -520,10 +559,14 @@ paths:
     put:
       summary: Actualiza un logro de un proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
         Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
         (si no, 401/403/409). Actualización parcial: se pueden enviar sólo los campos a modificar.
         No se permiten campos adicionales a los declarados en el schema.
       tags: [Logros]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -531,6 +574,10 @@ paths:
             schema:
               $ref: "#/components/schemas/LogroActualizacion"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Logro actualizado exitosamente
           content:
@@ -558,10 +605,18 @@ paths:
     delete:
       summary: Elimina un logro de un proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
         Requiere sesión con rol `colectivo` y que el proyecto sea de su colectivo y esté en curso
         (si no, 401/403/409).
       tags: [Logros]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Logro eliminado
           content:
@@ -611,10 +666,14 @@ paths:
     post:
       summary: Agrega un perfil a un proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
         Las habilidades se referencian por id y deben existir previamente
         (ver GET /habilidades). No se permiten campos adicionales a los
         declarados en el schema.
       tags: [Perfiles]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -648,6 +707,10 @@ paths:
                     incentivoEconomico: 20000
                     posibleContratacion: true
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Perfil creado exitosamente
           content:
@@ -702,9 +765,13 @@ paths:
     put:
       summary: Actualiza un perfil de un proyecto
       description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
         Actualización parcial: se pueden enviar sólo los campos a modificar.
         No se permiten campos adicionales a los declarados en el schema.
       tags: [Perfiles]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -717,6 +784,10 @@ paths:
                 cantHoras: 8
                 periodo: mensual
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Perfil actualizado exitosamente
           content:
@@ -743,8 +814,17 @@ paths:
                 $ref: "#/components/schemas/Error"
     delete:
       summary: Elimina un perfil de un proyecto
+      description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
       tags: [Perfiles]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Perfil eliminado exitosamente
           content:
@@ -801,10 +881,14 @@ paths:
     post:
       summary: Crea un nuevo colectivo
       description: >
+        **Requiere sesión (colectivo).**
         Los proyectos se referencian por id y deben existir previamente
         (ver GET /proyectos). No se permiten campos adicionales a los
         declarados en el schema.
       tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -818,6 +902,10 @@ paths:
               tipo: asamblea
               proyectos: ["665f1c2b3a4d5e6f7a8b9c03"]
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Colectivo creado exitosamente
           content:
@@ -853,9 +941,13 @@ paths:
     post:
       summary: Carga colectivos iniciales
       description: >
+        **Requiere sesión (admin).**
         Sin body, crea dos colectivos de ejemplo sin proyectos. También acepta
         un array de colectivos con el mismo formato que POST /colectivos.
       tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: false
         content:
@@ -865,6 +957,10 @@ paths:
               items:
                 $ref: "#/components/schemas/ColectivoInput"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Colectivos creados
           content:
@@ -883,8 +979,13 @@ paths:
   /colectivos/me:
     get:
       summary: Obtiene el colectivo de la sesión
-      description: Requiere sesión con rol `colectivo` (cookie `accessToken`).
+      description: >
+        **Requiere sesión (colectivo).**
+        Requiere sesión con rol `colectivo` (cookie `accessToken`).
       tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Colectivo del usuario logueado
@@ -907,9 +1008,13 @@ paths:
     patch:
       summary: Edita los datos del colectivo de la sesión
       description: >
+        **Requiere sesión (colectivo).**
         Requiere sesión con rol `colectivo` (cookie `accessToken`). Solo se envían los
         campos a modificar (al menos uno). Los proyectos no se editan por acá.
       tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -975,12 +1080,16 @@ paths:
     get:
       summary: Busca potenciales colaboradoras para los proyectos del colectivo de la sesión (paginado)
       description: >
+        **Requiere sesión (colectivo).**
         Requiere sesión con rol `colectivo` (cookie `accessToken`). Toma los perfiles con
         búsqueda abierta de los proyectos no finalizados del colectivo (o sólo de los indicados
         en `proyectos`) y devuelve las colaboradoras que cumplen todas las habilidades
         requeridas de al menos uno de esos perfiles, junto con los perfiles en los que encaja
         (`perfilesCompatibles`). No incluye los medios de contacto.
       tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - in: query
           name: proyectos
@@ -1083,6 +1192,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    delete:
+      summary: Da de baja (desactiva) un colectivo
+      description: >
+        **Requiere sesión (el propio colectivo o admin).**
+        Desactiva el colectivo y finaliza todos sus proyectos.
+      tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
+        "200":
+          description: Colectivo desactivado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: Colectivo Tech For Good desactivado correctamente, 2 proyectos finalizados.
+        "400":
+          description: Id inválido o el colectivo ya estaba desactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colectivo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /habilidades:
     get:
@@ -1109,8 +1256,13 @@ paths:
           $ref: "#/components/responses/DatosInvalidos"
     post:
       summary: Crea una nueva habilidad
-      description: No se permiten campos adicionales a los declarados en el schema.
+      description: >
+        **Requiere sesión (admin).**
+        No se permiten campos adicionales a los declarados en el schema.
       tags: [Habilidades]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1131,6 +1283,10 @@ paths:
                   tipoHabilidad: diseño
                   descripcion: Piezas gráficas para difusión de proyectos comunitarios
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Habilidad creada exitosamente
           content:
@@ -1156,10 +1312,14 @@ paths:
     post:
       summary: Carga habilidades iniciales
       description: >
+        **Requiere sesión (admin).**
         Sin body, crea dos habilidades de ejemplo (JavaScript y Node.js).
         También acepta un array de habilidades con el mismo formato que
         POST /habilidades.
       tags: [Habilidades]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: false
         content:
@@ -1169,6 +1329,10 @@ paths:
               items:
                 $ref: "#/components/schemas/HabilidadInput"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Habilidades creadas
           content:
@@ -1233,11 +1397,15 @@ paths:
     post:
       summary: Crea una nueva colaboradora/colaborador
       description: >
+        **Requiere sesión (colaborador).**
         Las habilidades se referencian por id y deben existir previamente
         (ver GET /habilidades). Los medios de contacto se registran
         internamente y no se devuelven en las respuestas. No se permiten
         campos adicionales a los declarados en el schema.
       tags: [Colaboradores]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1269,6 +1437,10 @@ paths:
                   cuentaGit: facumartinez
                   habilidades: ["665f1c2b3a4d5e6f7a8b9c02"]
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Colaboradora creada exitosamente
           content:
@@ -1304,10 +1476,14 @@ paths:
     post:
       summary: Carga colaboradoras/es iniciales
       description: >
+        **Requiere sesión (admin).**
         Sin body, crea dos personas de ejemplo (juanperez y mariagomez) con
         las habilidades existentes (correr antes POST /habilidades/llenarDatosPrueba).
         También acepta un array con el mismo formato que POST /colaboradores.
       tags: [Colaboradores]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: false
         content:
@@ -1317,6 +1493,10 @@ paths:
               items:
                 $ref: "#/components/schemas/ColaboradorInput"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Colaboradoras/es creadas/os
           content:
@@ -1356,9 +1536,13 @@ paths:
     get:
       summary: Obtiene los datos de contacto de una colaboradora/colaborador
       description: >
+        **Requiere sesión (cualquier sesión; solo la propia colaboradora, un colectivo con una postulación suya aceptada o admin).**
         Requiere sesión. Solo pueden verlos la propia colaboradora, un admin, o un colectivo
         que le haya aceptado una postulación en alguno de sus proyectos. Cualquier otro recibe 403.
       tags: [Colaboradores]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/CuentaGitPath"
       responses:
@@ -1395,10 +1579,14 @@ paths:
     post:
       summary: Anota a una colaboradora/colaborador a un proyecto
       description: >
+        **Requiere sesión (admin (la anotación normal es por postulación)).**
         Crea una colaboración. La colaboradora debe tener todas las habilidades
         requeridas de al menos un perfil del proyecto, el proyecto no debe
         estar finalizado y no puede estar ya anotada en él.
       tags: [Colaboradores]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/CuentaGitPath"
         - in: path
@@ -1407,6 +1595,10 @@ paths:
           schema:
             $ref: "#/components/schemas/ObjectId"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Colaboradora anotada al proyecto exitosamente
           content:
@@ -1438,15 +1630,23 @@ paths:
     get:
       summary: Busca potenciales proyectos para una colaboradora/colaborador
       description: >
+        **Requiere sesión (la propia colaboradora o admin).**
         Devuelve los proyectos no finalizados que tienen al menos un perfil
         cuyas habilidades requeridas posee en su totalidad la colaboradora,
         ordenados por cantidad de perfiles que cumple y luego por habilidades cumplidas.
       tags: [Colaboradores]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/CuentaGitPath"
         - $ref: "#/components/parameters/PaginaQuery"
         - $ref: "#/components/parameters/LimiteQuery"
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Página de proyectos compatibles (puede ser vacía)
           content:
@@ -1469,14 +1669,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /colaboradores/{cuentaGit}/notificaciones:
+  /colaboradores/me/notificaciones:
     get:
-      summary: Lista los mensajes internos recibidos por una colaboradora
-      description: Devuelve las notificaciones de la colaboradora, de la más reciente a la más antigua.
+      summary: Lista los mensajes internos recibidos por la colaboradora de la sesión
+      description: >
+        **Requiere sesión (colaborador).**
+        Devuelve las notificaciones de la colaboradora, de la más reciente a la más antigua.
       tags: [Colaboradores]
-      parameters:
-        - $ref: "#/components/parameters/CuentaGitPath"
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "200":
           description: Lista de notificaciones (puede ser vacía)
           content:
@@ -1518,9 +1725,13 @@ paths:
     post:
       summary: Crea una colaboración
       description: >
+        **Requiere sesión (admin (las colaboraciones nacen al aceptar una postulación)).**
         Equivalente a POST /colaboradores/{cuentaGit}/anotarProyecto/{idProyecto},
         pero recibiendo los ids. Aplica las mismas reglas.
       tags: [Colaboraciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1537,6 +1748,10 @@ paths:
                 - idProyecto
                 - idColaborador
       responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
         "201":
           description: Colaboración creada exitosamente
           content:
@@ -1568,7 +1783,190 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /postulaciones:
+    get:
+      summary: Lista postulaciones
+      description: >
+        **Requiere sesión (colaborador, colectivo o admin).**
+        Los resultados se acotan según la sesión: una colaboradora solo ve las suyas y un colectivo
+        solo las de sus proyectos (pedir las de otra persona o de un proyecto ajeno responde 403).
+      tags: [Postulaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - { in: query, name: idProyecto, required: false, schema: { $ref: "#/components/schemas/ObjectId" } }
+        - { in: query, name: idPerfil, required: false, schema: { $ref: "#/components/schemas/ObjectId" } }
+        - { in: query, name: idColaborador, required: false, schema: { $ref: "#/components/schemas/ObjectId" } }
+        - { in: query, name: idColectivo, required: false, schema: { $ref: "#/components/schemas/ObjectId" } }
+        - { in: query, name: estado, required: false, schema: { type: string, enum: [Pendiente, Aceptada, Rechazada] } }
+      responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
+        "200":
+          description: Postulaciones visibles para la sesión
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Postulacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+    post:
+      summary: Postula a la colaboradora de la sesión a un perfil
+      description: >
+        **Requiere sesión (colaborador).**
+        La colaboradora sale de la sesión. Si se envían idColaborador o cuentaGit tienen que ser los
+        suyos (si no, 403). Solo se puede postular a perfiles con búsqueda abierta de proyectos en curso
+        y cumpliendo las habilidades requeridas. Según la estrategia del proyecto puede quedar aceptada
+        o rechazada automáticamente.
+      tags: [Postulaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idProyecto, idPerfil]
+              properties:
+                idProyecto: { $ref: "#/components/schemas/ObjectId" }
+                idPerfil: { $ref: "#/components/schemas/ObjectId" }
+                mensaje: { type: string }
+            example:
+              idProyecto: 665f1c2b3a4d5e6f7a8b9c03
+              idPerfil: 665f1c2b3a4d5e6f7a8b9c31
+              mensaje: Me interesa sumarme como tester
+      responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
+        "201":
+          description: Postulación creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Postulación creada exitosamente }
+                  data: { $ref: "#/components/schemas/Postulacion" }
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "404":
+          description: Proyecto o perfil no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Proyecto finalizado, búsqueda cerrada o vencida, no cumple las habilidades o ya tiene una postulación activa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /postulaciones/{id}:
+    get:
+      summary: Obtiene una postulación
+      description: >
+        **Requiere sesión (colaborador, colectivo o admin).**
+        La ven la colaboradora que se postuló y el colectivo dueño del proyecto.
+      tags: [Postulaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
+        "200":
+          description: Postulación encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Postulacion"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "404":
+          description: Postulación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /postulaciones/{id}/estado:
+    patch:
+      summary: Acepta o rechaza una postulación pendiente
+      description: >
+        **Requiere sesión (colectivo dueño del proyecto, en curso).**
+        Solo el colectivo dueño del proyecto, mientras el proyecto siga en curso. Al aceptar se crea la
+        colaboración y los datos de contacto quedan disponibles para el colectivo. No se puede aceptar
+        si el perfil ya alcanzó su límite de colaboraciones.
+      tags: [Postulaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado: { type: string, enum: [Aceptada, Rechazada] }
+      responses:
+        "401":
+          $ref: "#/components/responses/SinSesion"
+        "403":
+          $ref: "#/components/responses/SinPermiso"
+        "200":
+          description: Postulación actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Postulación actualizada a 'Aceptada' exitosamente" }
+                  data: { $ref: "#/components/schemas/Postulacion" }
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "404":
+          description: Postulación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La postulación ya no está pendiente, el proyecto está finalizado o se alcanzó el límite del perfil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+      description: Access token JWT que el login deja en una cookie httpOnly
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Alternativa para Postman/Swagger (header Authorization)
   parameters:
     IdPath:
       in: path
@@ -1616,6 +2014,18 @@ components:
         default: 10
 
   responses:
+    SinSesion:
+      description: Falta la sesión o el token es inválido / venció
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    SinPermiso:
+      description: La sesión no tiene el rol requerido o el recurso no le pertenece
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     DatosInvalidos:
       description: Datos inválidos
       content:
@@ -1661,6 +2071,28 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    Postulacion:
+      type: object
+      properties:
+        id: { $ref: "#/components/schemas/ObjectId" }
+        estado: { type: string, enum: [Pendiente, Aceptada, Rechazada] }
+        mensaje: { type: string }
+        fecha: { type: string, format: date-time }
+        idPerfil: { $ref: "#/components/schemas/ObjectId" }
+        proyecto:
+          type: object
+          properties:
+            id: { $ref: "#/components/schemas/ObjectId" }
+            titulo: { type: string }
+        colaborador:
+          type: object
+          properties:
+            id: { $ref: "#/components/schemas/ObjectId" }
+            cuentaGit: { type: string }
+            nombreFantasia: { type: string }
+            nombre: { type: string }
+            apellido: { type: string }
 
     Error:
       type: object

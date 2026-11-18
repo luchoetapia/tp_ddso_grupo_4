@@ -18,7 +18,9 @@ router.route('/')
         validar(validarListado, 'query'),
         (req, res) => colaboracionController.obtenerColaboraciones(req, res)
     )
+    // Las colaboraciones nacen al aceptar una postulación: el alta directa queda para el equipo administrativo
     .post(
+        autenticar(roles.ADMIN),
         validar(validarCreacionColaboracion, 'body'),
         (req, res) => colaboracionController.crearColaboracion(req, res)
     )

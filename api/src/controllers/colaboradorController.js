@@ -3,7 +3,7 @@ const colaboracionService = require('../services/colaboracionService.js');
 const habilidadService = require('../services/habilidadService.js');
 const proyectoService = require('../services/proyectoService.js');
 const notificacionService = require('../services/notificacionService.js');
-const { BadRequestError } = require('../errors/AppError.js');
+const { BadRequestError, ForbiddenError } = require('../errors/AppError.js');
 const { validarCreacionColaborador } = require('../validators/colaboradoresValidator.js');
 const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
 const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
@@ -97,6 +97,10 @@ class ColaboradorController {
 
     buscarPotencialesProyectos = async (req, res) => {
         const colaborador = await this.colaboradorService.obtenerPorCuentaGit(req.params.cuentaGit);
+        // Cada colaboradora busca con sus propias habilidades (el admin puede hacerlo por cualquiera)
+        if (req.usuario.rol !== roles.ADMIN && colaborador.usuario?.toString() !== req.usuario.id) {
+            throw new ForbiddenError('Solo podés buscar proyectos con tus propias habilidades');
+        }
         const idsHabilidades = colaborador.habilidades.map(h => (h._id ?? h).toString());
 
         const { texto, habilidades, pagina, limite, orden, direccion } = req.query;

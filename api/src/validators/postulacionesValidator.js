@@ -10,10 +10,7 @@ const validarCreacionPostulacion = z.object({
     idColaborador: objectId("Id de colaborador inválido").optional(),
     cuentaGit: z.string().trim().min(1, "La cuentaGit no puede estar vacía").optional(),
     mensaje: z.string().optional().default("")
-}).refine(
-    data => data.idColaborador || data.cuentaGit,
-    { message: "Debe proveer idColaborador o cuentaGit", path: ["idColaborador"] }
-);
+}); // La colaboradora sale de la sesión; idColaborador/cuentaGit, si vienen, tienen que ser los suyos
 
 const validarFiltrosPostulaciones = z.object({
     idProyecto: objectId("Id de proyecto inválido").optional(),
