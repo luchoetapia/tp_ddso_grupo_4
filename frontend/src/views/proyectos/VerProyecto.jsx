@@ -10,6 +10,7 @@ import { Button, Card, Modal, ProgressBar, Skeleton, Tag, Textarea } from '@/com
 import { formatearFecha, formatearMoneda } from '@/helpers/formatos';
 
 const varianteEstado = { Pendiente: 'highlight', Aceptada: 'accent', Rechazada: 'neutral' };
+const grilla = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3';
 
 export default function VerProyectoContenido() {
     const searchParams = useSearchParams();
@@ -29,6 +30,9 @@ export default function VerProyectoContenido() {
     const [mensajePostulacion, setMensajePostulacion] = useState('');
     const [enviandoPostulacion, setEnviandoPostulacion] = useState(false);
 
+    const [colaboraciones, setColaboraciones] = useState([]);
+
+
     useEffect(() => {
         if (!id) return;
 
@@ -43,6 +47,17 @@ export default function VerProyectoContenido() {
             .then((data) => setProyecto(data))
             .catch((err) => {
                 if (!err.cancelado) setError(err.mensaje ?? 'No se encontró el proyecto.');
+            })
+
+        apiQuery
+            .get(`/colaboraciones/proyecto/${id}`, {
+                signal: controlador.signal,
+                alertarError: false,
+                mensajeError: 'No se pudo cargar las colaboraciones',
+            })
+            .then((data) => setColaboraciones(data))
+            .catch((err) => {
+                if (!err.cancelado) setError(err.mensaje ?? 'No se encontraron las colaboraciones.');
             })
             .finally(() => setCargando(false));
 
@@ -160,33 +175,27 @@ export default function VerProyectoContenido() {
     return (
         <section className="flex flex-col gap-6" aria-labelledby="proyecto-titulo">
             {/* Cabecera del Proyecto */}
-            <Card>
-                <header className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <Link href="/proyectos" className="text-[13px] text-muted underline">
-                            ← Volver a proyectos
-                        </Link>
-                        <div className="flex flex-wrap gap-2">
-                            {finalizado ? (
-                                <Tag variant="neutral">Proyecto finalizado</Tag>
-                            ) : (
-                                <Tag variant="accent">Proyecto en curso</Tag>
-                            )}
-                        </div>
+            <header className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Link href="/proyectos" className="text-[13px] text-muted underline">
+                        ← Volver a proyectos
+                    </Link>
+                    <div className="flex flex-wrap gap-2">
+                        {finalizado ? (
+                            <Tag variant="neutral">Proyecto finalizado</Tag>
+                        ) : (
+                            <Tag variant="accent">Proyecto en curso</Tag>
+                        )}
                     </div>
+                </div>
 
-                    <h1 id="proyecto-titulo" className="m-0 text-3xl font-bold">
-                        {titulo}
-                    </h1>
-
+                <h1 id="proyecto-titulo" className="m-0 text-3xl font-bold">
+                    {titulo}
+                </h1>
+                <Card>
                     <p className="m-0 text-base leading-relaxed text-muted whitespace-pre-line">
                         {descripcion}
                     </p>
-
-                    {/* Avance del proyecto */}
-                    <div className="max-w-md pt-2">
-                        <ProgressBar value={porcentajeFinalizado} label="Avance general" />
-                    </div>
 
                     {/* Enlaces externos */}
                     {(enlaceSistema || enlaceCodigoFuente) && (
@@ -213,8 +222,32 @@ export default function VerProyectoContenido() {
                             )}
                         </div>
                     )}
-                </header>
-            </Card>
+                </Card>
+            </header>
+            <section aria-labelledby="numeros-titulo" className="flex flex-col gap-3">
+                <div className={grilla}>
+                    <Card className="gap-0.5">
+                        <span className="font-display text-[38px] leading-[1.1] font-bold text-accent">
+                            {porcentajeFinalizado ?? 0}%
+                        </span>
+                        <span className="font-semibold">Del proyecto finalizado</span>
+                        <ProgressBar value={porcentajeFinalizado} label="Avance general" />
+                    </Card>
+                    <Card className="gap-0.5">
+                        <span className="font-display text-[38px] leading-[1.1] font-bold text-accent">
+                            {logros.length ?? 0}
+                        </span>
+                        <span className="font-semibold">Logros alcanzados</span>
+                    </Card>
+                    <Card className="gap-0.5">
+                        <span className="font-display text-[38px] leading-[1.1] font-bold text-accent">
+                            {colaboraciones.length ?? 0}
+                        </span>
+                        <span className="font-semibold">Colaboraciones activas</span>
+                    </Card>
+                </div>
+                
+            </section>
             {/* Perfiles buscados */}
             <section aria-labelledby="seccion-perfiles" className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
