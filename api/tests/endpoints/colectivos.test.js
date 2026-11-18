@@ -229,7 +229,8 @@ describe('Endpoints /colectivos', () => {
 
         test('devuelve la página de colaboradoras con la paginación', async () => {
             colectivoService.buscarPorUsuario.mockResolvedValue(colectivo);
-            colectivoService.obtenerPotencialesColaboradores.mockResolvedValue({ colaboradores: [colaborador], total: 11, pagina: 2, limite: 5, totalPaginas: 3 });
+            const perfilesCompatibles = [{ proyecto: { id: ID_PROY, titulo: 'Huerta' }, perfil: { id: 'pf1', titulo: 'Back' } }];
+            colectivoService.obtenerPotencialesColaboradores.mockResolvedValue({ colaboradores: [{ colaborador, perfilesCompatibles }], total: 11, pagina: 2, limite: 5, totalPaginas: 3 });
 
             const res = await request(app)
                 .get(`${URL}?proyectos=${ID_PROY},${ID_PROY_2}&pagina=2&limite=5&orden=nombre&direccion=desc`)
@@ -239,6 +240,7 @@ describe('Endpoints /colectivos', () => {
             expect(res.body.data).toHaveLength(1);
             expect(res.body.data[0].cuentaGit).toBe('ana');
             expect(res.body.data[0]).not.toHaveProperty('contactos');
+            expect(res.body.data[0].perfilesCompatibles).toEqual(perfilesCompatibles);
             expect(res.body.paginacion).toEqual({ pagina: 2, limite: 5, total: 11, totalPaginas: 3 });
             expect(colectivoService.obtenerPotencialesColaboradores).toHaveBeenCalledWith(
                 ID, [ID_PROY, ID_PROY_2], { pagina: 2, limite: 5, orden: 'nombre', direccion: 'desc' }

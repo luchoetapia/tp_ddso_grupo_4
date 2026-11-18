@@ -209,12 +209,13 @@ describe('ColectivoService', () => {
 
     describe('obtenerPotencialesColaboradores', () => {
         const ID_PROY_2 = '507f1f77bcf86cd799439042';
-        const perfilAbierto = { titulo: 'Back', habilidadesRequeridas: ['h1'], busquedaAbierta: true };
-        const perfilCerrado = { titulo: 'Front', habilidadesRequeridas: ['h2'], busquedaAbierta: false };
-        const perfilOtro = { titulo: 'QA', habilidadesRequeridas: ['h3'], busquedaAbierta: true };
-        const proyecto = (id, extra = {}) => ({ _id: { toString: () => id }, finalizado: false, perfiles: [], ...extra });
+        const id = (valor) => ({ toString: () => valor });
+        const perfilAbierto = { _id: id('pf1'), titulo: 'Back', habilidadesRequeridas: ['h1'], busquedaAbierta: true };
+        const perfilCerrado = { _id: id('pf2'), titulo: 'Front', habilidadesRequeridas: ['h2'], busquedaAbierta: false };
+        const perfilOtro = { _id: id('pf3'), titulo: 'QA', habilidadesRequeridas: ['h3'], busquedaAbierta: true };
+        const proyecto = (idProyecto, extra = {}) => ({ _id: id(idProyecto), titulo: `Proyecto ${idProyecto}`, finalizado: false, perfiles: [], ...extra });
         const paginacion = { pagina: 2, limite: 5, orden: 'nombre', direccion: 'desc' };
-        const pagina = { colaboradores: [{ id: 'c1' }], total: 6, pagina: 2, limite: 5, totalPaginas: 2 };
+        const pagina = { colaboradores: [{ id: 'c1', habilidades: [{ _id: id('h1') }] }], total: 6, pagina: 2, limite: 5, totalPaginas: 2 };
 
         test('busca con los perfiles abiertos de los proyectos activos y propaga la paginación', async () => {
             colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue([
@@ -227,7 +228,26 @@ describe('ColectivoService', () => {
 
             expect(colectivoRepository.obtenerProyectosConPerfiles).toHaveBeenCalledWith(ID_COLECTIVO);
             expect(colaboradorService.obtenerColaboradoresPotenciales).toHaveBeenCalledWith([perfilAbierto], paginacion);
-            expect(resultado).toBe(pagina);
+            expect(resultado).toMatchObject({ total: 6, pagina: 2, limite: 5, totalPaginas: 2 });
+            expect(resultado.colaboradores).toHaveLength(1);
+            expect(resultado.colaboradores[0].colaborador).toBe(pagina.colaboradores[0]);
+        });
+
+        test('indica en qué perfiles encaja cada colaborador', async () => {
+            const perfilSinRequisitos = { _id: id('pf4'), titulo: 'Docs', habilidadesRequeridas: [], busquedaAbierta: true };
+            const perfilDoble = { _id: id('pf5'), titulo: 'Full', habilidadesRequeridas: ['h1', 'h3'], busquedaAbierta: true };
+            colectivoRepository.obtenerProyectosConPerfiles.mockResolvedValue([
+                proyecto(ID_PROY, { perfiles: [perfilAbierto, perfilDoble] }),
+                proyecto(ID_PROY_2, { perfiles: [perfilOtro, perfilSinRequisitos] }),
+            ]);
+            colaboradorService.obtenerColaboradoresPotenciales.mockResolvedValue(pagina);
+
+            const { colaboradores } = await colectivoService.obtenerPotencialesColaboradores(ID_COLECTIVO, [], paginacion);
+
+            expect(colaboradores[0].perfilesCompatibles).toEqual([
+                { proyecto: { id: ID_PROY, titulo: `Proyecto ${ID_PROY}` }, perfil: { id: 'pf1', titulo: 'Back' } },
+                { proyecto: { id: ID_PROY_2, titulo: `Proyecto ${ID_PROY_2}` }, perfil: { id: 'pf4', titulo: 'Docs' } },
+            ]);
         });
 
         test('acota la búsqueda a los proyectos pedidos', async () => {
