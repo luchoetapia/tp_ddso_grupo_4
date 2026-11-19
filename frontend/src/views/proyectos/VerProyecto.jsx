@@ -34,35 +34,42 @@ export default function VerProyectoContenido() {
 
 
     useEffect(() => {
-        if (!id) return;
+    if (!id) return;
 
-        const controlador = new AbortController();
+    const controlador = new AbortController();
+    setCargando(true);
+    setError(null);
 
-        apiQuery
-            .get(`/proyectos/${id}`, {
-                signal: controlador.signal,
-                alertarError: false,
-                mensajeError: 'No se pudo cargar el proyecto.',
-            })
-            .then((data) => setProyecto(data))
-            .catch((err) => {
-                if (!err.cancelado) setError(err.mensaje ?? 'No se encontró el proyecto.');
-            })
+    Promise.all([
+        apiQuery.get(`/proyectos/${id}`, {
+            signal: controlador.signal,
+            alertarError: false,
+            mensajeError: 'No se pudo cargar el proyecto.',
+        }),
+        apiQuery.get(`/colaboraciones/proyecto/${id}`, {
+            signal: controlador.signal,
+            alertarError: false,
+            mensajeError: 'No se pudo cargar las colaboraciones',
+        }),
+    ])
+        .then(([proyectoData, colaboracionesData]) => {
+            setProyecto(proyectoData);
+            // Adjust if your API wraps the array (e.g., colaboracionesData?.colaboraciones ?? colaboracionesData)
+            setColaboraciones(Array.isArray(colaboracionesData) ? colaboracionesData : colaboracionesData?.data ?? []);
+        })
+        .catch((err) => {
+            if (!err.cancelado) {
+                setError(err.mensaje ?? 'No se encontró el proyecto.');
+            }
+        })
+        .finally(() => {
+            if (!controlador.signal.aborted) {
+                setCargando(false);
+            }
+        });
 
-        apiQuery
-            .get(`/colaboraciones/proyecto/${id}`, {
-                signal: controlador.signal,
-                alertarError: false,
-                mensajeError: 'No se pudo cargar las colaboraciones',
-            })
-            .then((data) => setColaboraciones(data))
-            .catch((err) => {
-                if (!err.cancelado) setError(err.mensaje ?? 'No se encontraron las colaboraciones.');
-            })
-            .finally(() => setCargando(false));
-
-        return () => controlador.abort();
-    }, [id]);
+    return () => controlador.abort();
+}, [id]);
 
     useEffect(() => {
         const cargarDatosColaborador = async () => {
