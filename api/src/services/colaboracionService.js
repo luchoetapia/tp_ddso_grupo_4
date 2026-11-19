@@ -69,9 +69,15 @@ class ColaboracionService {
             usuario: colaborador.usuario
         };
 
+        const proyectosDesnormalizado = {
+            id: proyecto.id,
+            titulo: proyecto.titulo,
+            descripcion: proyecto.descripcion
+        }
+
         const creada = await this.colaboracionRepository.save({
             colaborador: colaboradorDesnormalizado,
-            proyecto: proyecto.id,
+            proyecto: proyectosDesnormalizado,
             perfil: colaboracionData.idPerfil,
             esAnonima,
             inicio: new Date()

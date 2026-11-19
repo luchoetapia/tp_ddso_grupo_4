@@ -11,7 +11,11 @@ const colaboracionSchema = new Schema({
         apellido: { type: String },
         usuario: { type: Schema.Types.ObjectId, ref: 'Usuario' },
     },
-    proyecto: { type: Schema.Types.ObjectId, ref: 'Proyecto', required: true },
+    proyecto: { 
+        id: { type: Schema.Types.ObjectId, required: true},
+        titulo: { type: String, required: true },
+        descripcion: { type: String, required: true }
+    },
     perfil: { type: Schema.Types.ObjectId, required: true },
     inicio: { type: Date, required: true },
     fin: { type: Date, default: null },
