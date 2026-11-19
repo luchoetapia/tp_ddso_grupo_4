@@ -114,7 +114,7 @@ export default function MisProyectos() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <Link href={`/colectivo/misProyectos/postulaciones?id=${proyecto.id}`} className={estiloLink}>
-                                    Postulaciones
+                                    Colaboradores
                                 </Link>
                                 <Link href={`/colectivo/misProyectos/editar?id=${proyecto.id}`} className={estiloLink}>
                                     Editar
