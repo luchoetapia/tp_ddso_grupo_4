@@ -71,7 +71,7 @@ export default function MisProyectos() {
         <section aria-labelledby="misproyectos-titulo" aria-busy={cargando} className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h1 id="misproyectos-titulo" className="m-0 text-[30px]">Mis proyectos</h1>
-                <Link href="/colectivo/misproyectos/nuevo" className={estiloLinkPrimario}>
+                <Link href="/colectivo/misProyectos/nuevo" className={estiloLinkPrimario}>
                     + Nuevo proyecto
                 </Link>
             </div>
@@ -116,8 +116,11 @@ export default function MisProyectos() {
                                 <Link href={`/colectivo/misProyectos/postulaciones?id=${proyecto.id}`} className={estiloLink}>
                                     Postulaciones
                                 </Link>
-                                <Link href={`/colectivos/misproyectos/editar?id=${proyecto.id}`} className={estiloLink}>
+                                <Link href={`/colectivo/misProyectos/editar?id=${proyecto.id}`} className={estiloLink}>
                                     Editar
+                                </Link>
+                                <Link href={`/colectivo/misProyectos/avance?id=${proyecto.id}`} className={estiloLink}>
+                                    Avance
                                 </Link>
                                 <Link href={`/proyectos/ver?id=${proyecto.id}`} className={estiloLink}>
                                     Ver

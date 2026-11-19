@@ -4,7 +4,7 @@ const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
 const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 const { construirOrden } = require('./ordenamiento.js');
 
 // Claves por las que el front puede ordenar los proyectos (2° criterio: título, 3°: _id)
@@ -128,6 +128,42 @@ class ProyectoService {
             throw new NotFoundError("Proyecto no encontrado")
         }
         return proyecto
+    }
+
+    obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
+        const proyecto = await this.obtenerPorId(id)
+
+        const colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo)
+        const esDelColectivo = (colectivo?.proyectos ?? []).some(p => (p._id ?? p).toString() === proyecto.id)
+        if (!esDelColectivo) {
+            throw new ForbiddenError("El proyecto no pertenece a tu colectivo")
+        }
+
+        if (proyecto.finalizado) {
+            throw new ConflictError("No se puede editar un proyecto finalizado")
+        }
+
+        return proyecto
+    }
+
+    actualizar = async (id, cambios, idUsuarioColectivo) => {
+        const proyecto = await this.obtenerEditablePorColectivo(id, idUsuarioColectivo)
+
+        if (cambios.titulo !== undefined && cambios.titulo !== proyecto.titulo) {
+            const existente = await this.proyectoRepository.findByTitulo(cambios.titulo)
+            if (existente && existente.id !== proyecto.id) {
+                throw new ConflictError("Ya existe un proyecto con ese título")
+            }
+        }
+
+        if (cambios.estrategiaAceptacion) {
+            const estrategia = obtenerEstrategia(cambios.estrategiaAceptacion)
+            if (!estrategia.aplicableAProyecto(proyecto)) {
+                throw new ConflictError(`La estrategia '${estrategia.nombre}' no es aplicable a este proyecto`)
+            }
+        }
+
+        return await this.proyectoRepository.update(id, cambios)
     }
 
     obtenerPorListaId = async (listaDeIDs) => {

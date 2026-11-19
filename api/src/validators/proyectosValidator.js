@@ -65,6 +65,9 @@ const validarActualizacionProyecto = z.object({
     enlaceSistema: enlace("El enlace al sistema debe ser una URL válida"),
     enlaceCodigoFuente: enlace("El enlace al código fuente debe ser una URL válida"),
     estrategiaAceptacion: z.string().optional(),
+    porcentajeFinalizado: z.number({ error: "El porcentaje de avance debe ser un número" })
+        .min(0, "El porcentaje de avance no puede ser menor a 0")
+        .max(100, "El porcentaje de avance no puede ser mayor a 100"),
 }).partial().strict()
     .refine(...alMenosUnCampo);
 

@@ -62,8 +62,46 @@ class ColaboracionRepository {
     }
 
     async totalColaboradoresDistintos() {
-        const colaboradores = await ColaboracionModel.distinct('colaborador');
-        return colaboradores.length || 0;
+        const estadisticas = await this.estadisticasGlobales();
+        return estadisticas.colaboradores;
+    }
+
+    async estadisticasGlobales() {
+        const [resultado] = await ColaboracionModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    colaboracionesTotales: { $sum: 1 },
+                    colaboracionesActivas: {
+                        $sum: {
+                            $cond: [{ $eq: ['$fin', null] }, 1, 0]
+                        }
+                    },
+                    colaboracionesFinalizadas: {
+                        $sum: {
+                            $cond: [{ $ne: ['$fin', null] }, 1, 0]
+                        }
+                    },
+                    colaboradores: { $addToSet: '$colaborador' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    colaboracionesTotales: 1,
+                    colaboracionesActivas: 1,
+                    colaboracionesFinalizadas: 1,
+                    colaboradores: { $size: '$colaboradores' }
+                }
+            }
+        ]);
+
+        return resultado ?? {
+            colaboracionesTotales: 0,
+            colaboracionesActivas: 0,
+            colaboracionesFinalizadas: 0,
+            colaboradores: 0
+        };
     }
 
 }

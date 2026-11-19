@@ -149,7 +149,7 @@ export default function InicioColectivos() {
             <Card as="section" aria-labelledby="colectivo-titulo" className="gap-3.5 p-6">
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="m-0 flex-1 text-[12px] font-bold tracking-[0.12em] text-muted uppercase">Panel del colectivo</p>
-                    <Link href="/colectivos/cuenta" className={estiloLink}>Editar datos</Link>
+                    <Link href="/colectivo/perfil" className={estiloLink}>Editar datos</Link>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <h1 id="colectivo-titulo" className="m-0 text-[34px] leading-[1.1]">{colectivo.nombre}</h1>

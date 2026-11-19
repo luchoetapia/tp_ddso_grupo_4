@@ -13,14 +13,29 @@ class HomeService {
     }
 
     async contadores() {
-        const [totalColectivos, proyectosActivos, colaboradores, habilidadesBuscadas] = await Promise.all([
-            this.colectivoRepository.totalActivos(),
-            this.proyectoRepository.totalActivos(),
-            this.colaboracionRepository.totalColaboradoresDistintos(),
+        const [proyectos, colectivos, colaboraciones, habilidadesBuscadas] = await Promise.all([
+            this.proyectoRepository.estadisticasGlobales(),
+            this.colectivoRepository.estadisticasGlobales(),
+            this.colaboracionRepository.estadisticasGlobales(),
             this.proyectoRepository.totalHabilidadesBuscadas()
         ]);
 
-        return { totalColectivos, proyectosActivos, colaboradores, habilidadesBuscadas };
+        return {
+        // Compatibilidad con las claves que usa el frontend actual
+            totalColectivos: colectivos.activos,
+            proyectosActivos: proyectos.activos,
+            colaboradores: colaboraciones.colaboradores,
+            habilidadesBuscadas,
+
+            proyectosTotales: proyectos.total,
+            proyectosFinalizados: proyectos.finalizados,
+            colectivosTotales: colectivos.total,
+            colectivosActivos: colectivos.activos,
+            colectivosDesactivados: colectivos.desactivados,
+            colaboracionesTotales: colaboraciones.colaboracionesTotales,
+            colaboracionesActivas: colaboraciones.colaboracionesActivas,
+            colaboracionesFinalizadas: colaboraciones.colaboracionesFinalizadas
+        };
     }
 
     async rankingHabilidades() {
