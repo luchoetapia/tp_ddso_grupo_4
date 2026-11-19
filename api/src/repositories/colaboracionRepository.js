@@ -1,10 +1,5 @@
 const ColaboracionModel = require('../database/schemas/colaboracionSchema');
 
-// Datos mínimos del colaborador y del proyecto para la vista pública de la colaboración
-const REFERENCIAS = [
-    { path: 'colaborador', select: 'cuentaGit' },
-    { path: 'proyecto', select: 'titulo' }
-];
 
 class ColaboracionRepository {
     constructor() {
@@ -16,8 +11,7 @@ class ColaboracionRepository {
 
         const [colaboraciones, total] = await Promise.all([
             this.model.find(filtros, datosNecesarios)
-                .paginar({ pagina, limite, orden })
-                .populate(REFERENCIAS),
+                .paginar({ pagina, limite, orden }),
             this.model.countDocuments(filtros)
         ]);
 
@@ -25,40 +19,51 @@ class ColaboracionRepository {
     }
 
     async findAll() {
-        return await ColaboracionModel.find().populate(REFERENCIAS);
+        return await ColaboracionModel.find();
     }
 
     async findActiva(idColaborador, idProyecto) {
-        return await ColaboracionModel.findOne({ colaborador: idColaborador, proyecto: idProyecto, fin: null });
+        return await ColaboracionModel.findOne({
+            'colaborador.id': idColaborador,
+            'proyecto.id': idProyecto,
+            fin: null
+        });
     }
 
     async contarActivasPorPerfil(idProyecto, idPerfil) {
-        return await ColaboracionModel.countDocuments({ proyecto: idProyecto, perfil: idPerfil, fin: null });
+        return await ColaboracionModel.countDocuments({
+            'proyecto.id': idProyecto,
+            perfil: idPerfil,
+            fin: null
+        });
     }
 
     async findByProyectoID(idProyecto) {
-        return await ColaboracionModel.find({proyecto: idProyecto});
+        return await ColaboracionModel.find({ 'proyecto.id': idProyecto });
     }
 
     async findByColaboradorID(idColaborador) {
-        return await ColaboracionModel.find({"colaborador.id": idColaborador});
+        return await ColaboracionModel.find({ 'colaborador.id': idColaborador });
     }
 
     async buscarPorVariosProyectos(proyectos) {
-        return await ColaboracionModel.find({ proyecto: { $in: proyectos } });
+        return await ColaboracionModel.find({ 'proyecto.id': { $in: proyectos } });
     }
 
     async save(colaboracion) {
-        const creada = await ColaboracionModel.create(colaboracion);
-        return await creada.populate(REFERENCIAS);
+        return await ColaboracionModel.create(colaboracion);
     }
 
     async findById(id) {
-        return await ColaboracionModel.findById(id).populate(REFERENCIAS);
+        return await ColaboracionModel.findById(id);
     }
 
     async cerrar(id, fin) {
-        return await ColaboracionModel.findOneAndUpdate({ _id: id, fin: null }, { fin }, { new: true }).populate(REFERENCIAS);
+        return await ColaboracionModel.findOneAndUpdate(
+            { _id: id, fin: null },
+            { fin },
+            { new: true }
+        );
     }
 
     async totalColaboradoresDistintos() {
@@ -82,7 +87,7 @@ class ColaboracionRepository {
                             $cond: [{ $ne: ['$fin', null] }, 1, 0]
                         }
                     },
-                    colaboradores: { $addToSet: '$colaborador' }
+                    colaboradores: { $addToSet: '$colaborador.id' }
                 }
             },
             {
@@ -103,7 +108,6 @@ class ColaboracionRepository {
             colaboradores: 0
         };
     }
-
 }
 
 module.exports = new ColaboracionRepository();

@@ -79,7 +79,7 @@ class ColaboracionService {
             colaborador: colaboradorDesnormalizado,
             proyecto: proyectosDesnormalizado,
             perfil: colaboracionData.idPerfil,
-            esAnonima,
+            esAnonima: Boolean(colaboracionData.esAnonima),
             inicio: new Date()
         });
 
@@ -104,10 +104,13 @@ class ColaboracionService {
         if (usuario.rol === roles.COLABORADOR) {
             const colaborador = await this.colaboradorService.buscarPorUsuario(usuario.id);
 
+            const idColaborador = colaborador?.id ?? colaborador?._id;
+            const idColaboradorColaboracion = colaboracion?.colaborador?.id ?? colaboracion?.colaborador;
+
             const esMismoColaborador =
-                colaborador?._id &&
-                colaboracion?.colaborador?.id &&
-                colaborador._id.toString() === colaboracion.colaborador.id.toString();
+                idColaborador &&
+                idColaboradorColaboracion &&
+                idColaborador.toString() === idColaboradorColaboracion.toString();
 
             if (esMismoColaborador) return;
 
@@ -116,7 +119,7 @@ class ColaboracionService {
 
         if(usuario.rol === roles.COLECTIVO){
             const colectivo = await this.colectivoService.buscarPorUsuario(usuario.id);
-            const idProyecto = colaboracion.proyecto?.id;
+            const idProyecto = (colaboracion.proyecto?.id ?? colaboracion.proyecto)?.toString();
             if(idProyecto && colectivo?.proyectos?.some(p => (p._id ?? p).toString() === idProyecto)) return;
             throw new ForbiddenError("El proyecto no pertenece a tu colectivo");
         }

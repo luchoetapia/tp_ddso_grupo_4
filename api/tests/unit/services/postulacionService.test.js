@@ -77,6 +77,9 @@ describe('PostulacionService', () => {
 
             colaboradorService.obtenerPorId.mockResolvedValue({
                 id: ID_COLAB,
+                nombre: 'Juan',
+                apellido: 'Pérez',
+                usuario: 'user123',
                 habilidades: ['hab1']
             });
 
@@ -223,8 +226,16 @@ describe('PostulacionService', () => {
 
         test('al aceptar crea colaboración activa y actualiza estado a Aceptada', async () => {
             postulacionRepository.findById.mockResolvedValue(postulacionMock);
+            colaboradorService.obtenerPorId.mockResolvedValue({
+                id: ID_COLAB,
+                nombre: 'Juan',
+                apellido: 'Pérez',
+                usuario: 'user123'
+            });
             proyectoService.obtenerPorId.mockResolvedValue({
                 id: ID_PROY,
+                titulo: 'Proyecto Test',
+                descripcion: 'Descripción Test',
                 perfiles: {
                     id: jest.fn().mockReturnValue({
                         _id: ID_PERFIL,
@@ -241,8 +252,17 @@ describe('PostulacionService', () => {
             const res = await postulacionService.actualizarEstado(ID_POSTULACION, EstadoPostulacion.ACEPTADA);
 
             expect(colaboracionRepository.save).toHaveBeenCalledWith({
-                colaborador: ID_COLAB,
-                proyecto: ID_PROY,
+                colaborador: {
+                    id: ID_COLAB,
+                    nombre: 'Juan',
+                    apellido: 'Pérez',
+                    usuario: 'user123'
+                },
+                proyecto: {
+                    id: ID_PROY,
+                    titulo: 'Proyecto Test',
+                    descripcion: 'Descripción Test'
+                },
                 perfil: ID_PERFIL,
                 inicio: expect.any(Date)
             });
@@ -251,8 +271,16 @@ describe('PostulacionService', () => {
 
         test('al aceptar cierra la búsqueda si se alcanza el límite de colaboraciones', async () => {
             postulacionRepository.findById.mockResolvedValue(postulacionMock);
+            colaboradorService.obtenerPorId.mockResolvedValue({
+                id: ID_COLAB,
+                nombre: 'Juan',
+                apellido: 'Pérez',
+                usuario: 'user123'
+            });
             proyectoService.obtenerPorId.mockResolvedValue({
                 id: ID_PROY,
+                titulo: 'Proyecto Test',
+                descripcion: 'Descripción Test',
                 perfiles: {
                     id: jest.fn().mockReturnValue({
                         _id: ID_PERFIL,
@@ -321,6 +349,8 @@ describe('PostulacionService', () => {
             proyectoService.obtenerPorId.mockResolvedValue({
                 id: ID_PROY,
                 _id: ID_PROY,
+                titulo: 'Proyecto Test',
+                descripcion: 'Descripción Test',
                 finalizado: false,
                 estrategiaAceptacion: estrategia,
                 perfiles: {
@@ -330,6 +360,9 @@ describe('PostulacionService', () => {
 
             colaboradorService.obtenerPorId.mockResolvedValue({
                 id: ID_COLAB,
+                nombre: 'Juan',
+                apellido: 'Pérez',
+                usuario: 'user123',
                 habilidades: ['hab1']
             });
 
@@ -360,8 +393,17 @@ describe('PostulacionService', () => {
 
             expect(resultado.estado).toBe(EstadoPostulacion.ACEPTADA);
             expect(colaboracionRepository.save).toHaveBeenCalledWith({
-                colaborador: ID_COLAB,
-                proyecto: ID_PROY,
+                colaborador: {
+                    id: ID_COLAB,
+                    nombre: 'Juan',
+                    apellido: 'Pérez',
+                    usuario: 'user123'
+                },
+                proyecto: {
+                    id: ID_PROY,
+                    titulo: 'Proyecto Test',
+                    descripcion: 'Descripción Test'
+                },
                 perfil: ID_PERFIL,
                 inicio: expect.any(Date)
             });

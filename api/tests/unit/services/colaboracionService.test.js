@@ -54,8 +54,20 @@ describe('ColaboracionService', () => {
         const datos = { idProyecto: ID_PROY, idColaborador: ID_COLAB };
 
         const prepararEscenario = ({ finalizado = false, requeridas = [ID_HAB], habilidades = [{ _id: ID_HAB }], activa = null } = {}) => {
-            proyectoService.obtenerPorId.mockResolvedValue({ id: ID_PROY, finalizado, perfiles: [perfil(requeridas)] });
-            colaboradorService.obtenerPorId.mockResolvedValue({ id: ID_COLAB, habilidades });
+            proyectoService.obtenerPorId.mockResolvedValue({
+                id: ID_PROY,
+                titulo: 'Proyecto Test',
+                descripcion: 'Descripción Test',
+                finalizado,
+                perfiles: [perfil(requeridas)]
+            });
+            colaboradorService.obtenerPorId.mockResolvedValue({
+                id: ID_COLAB,
+                nombre: 'Juan',
+                apellido: 'Pérez',
+                usuario: 'user123',
+                habilidades
+            });
             colaboracionRepository.findActiva.mockResolvedValue(activa);
         };
 
@@ -67,11 +79,22 @@ describe('ColaboracionService', () => {
 
             expect(colaboracionRepository.findActiva).toHaveBeenCalledWith(ID_COLAB, ID_PROY);
             expect(colaboracionRepository.save).toHaveBeenCalledWith({
-                colaborador: ID_COLAB,
-                proyecto: ID_PROY,
+                colaborador: {
+                    id: ID_COLAB,
+                    nombre: 'Juan',
+                    apellido: 'Pérez',
+                    usuario: 'user123'
+                },
+                proyecto: {
+                    id: ID_PROY,
+                    titulo: 'Proyecto Test',
+                    descripcion: 'Descripción Test'
+                },
+                perfil: undefined,
+                esAnonima: false,
                 inicio: expect.any(Date),
             });
-            expect(resultado).toMatchObject({ id: ID_COLABORACION, colaborador: ID_COLAB, proyecto: ID_PROY });
+            expect(resultado).toMatchObject({ id: ID_COLABORACION, colaborador: { id: ID_COLAB }, proyecto: { id: ID_PROY } });
         });
 
         test('lanza ConflictError si el proyecto está finalizado', async () => {

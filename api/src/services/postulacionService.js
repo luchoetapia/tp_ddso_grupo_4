@@ -177,6 +177,9 @@ class PostulacionService {
             throw new NotFoundError("El perfil asociado a la postulación no existe en el proyecto");
         }
 
+        const idColaborador = postulacion.colaborador.id ?? postulacion.colaborador;
+        const colaborador = await this.colaboradorService.obtenerPorId(idColaborador);
+
         // Verificar límite de colaboraciones para el perfil
         if (perfil.limiteColaboraciones != null) {
             const activas = await this.colaboracionRepository.contarActivasPorPerfil(proyecto.id, perfil._id);
@@ -190,10 +193,19 @@ class PostulacionService {
             }
         }
 
-        // Crear la colaboración
+        // Crear la colaboración con datos desnormalizados
         await this.colaboracionRepository.save({
-            colaborador: postulacion.colaborador.id ?? postulacion.colaborador,
-            proyecto: proyecto.id,
+            colaborador: {
+                id: colaborador.id ?? colaborador._id,
+                nombre: colaborador.nombre,
+                apellido: colaborador.apellido,
+                usuario: colaborador.usuario
+            },
+            proyecto: {
+                id: proyecto.id ?? proyecto._id,
+                titulo: proyecto.titulo,
+                descripcion: proyecto.descripcion
+            },
             perfil: perfil._id,
             inicio: new Date()
         });

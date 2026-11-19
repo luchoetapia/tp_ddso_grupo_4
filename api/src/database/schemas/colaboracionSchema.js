@@ -26,9 +26,9 @@ const colaboracionSchema = new Schema({
 });
 
 // findActiva: colaboración abierta de un colaborador en un proyecto
-colaboracionSchema.index({ colaborador: 1, proyecto: 1, fin: 1 });
+colaboracionSchema.index({ 'colaborador.id': 1, 'proyecto.id': 1, fin: 1 });
 // Conteo de colaboraciones activas por perfil en un proyecto
-colaboracionSchema.index({ proyecto: 1, perfil: 1, fin: 1 });
+colaboracionSchema.index({ 'proyecto.id': 1, perfil: 1, fin: 1 });
 
 colaboracionSchema.loadClass(Colaboracion);
 
