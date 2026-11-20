@@ -34,35 +34,42 @@ export default function VerProyectoContenido() {
 
 
     useEffect(() => {
-        if (!id) return;
+    if (!id) return;
 
-        const controlador = new AbortController();
+    const controlador = new AbortController();
+    setCargando(true);
+    setError(null);
 
-        apiQuery
-            .get(`/proyectos/${id}`, {
-                signal: controlador.signal,
-                alertarError: false,
-                mensajeError: 'No se pudo cargar el proyecto.',
-            })
-            .then((data) => setProyecto(data))
-            .catch((err) => {
-                if (!err.cancelado) setError(err.mensaje ?? 'No se encontró el proyecto.');
-            })
+    Promise.all([
+        apiQuery.get(`/proyectos/${id}`, {
+            signal: controlador.signal,
+            alertarError: false,
+            mensajeError: 'No se pudo cargar el proyecto.',
+        }),
+        apiQuery.get(`/colaboraciones/proyecto/${id}`, {
+            signal: controlador.signal,
+            alertarError: false,
+            mensajeError: 'No se pudo cargar las colaboraciones',
+        }),
+    ])
+        .then(([proyectoData, colaboracionesData]) => {
+            setProyecto(proyectoData);
+            // Adjust if your API wraps the array (e.g., colaboracionesData?.colaboraciones ?? colaboracionesData)
+            setColaboraciones(Array.isArray(colaboracionesData) ? colaboracionesData : colaboracionesData?.data ?? []);
+        })
+        .catch((err) => {
+            if (!err.cancelado) {
+                setError(err.mensaje ?? 'No se encontró el proyecto.');
+            }
+        })
+        .finally(() => {
+            if (!controlador.signal.aborted) {
+                setCargando(false);
+            }
+        });
 
-        apiQuery
-            .get(`/colaboraciones/proyecto/${id}`, {
-                signal: controlador.signal,
-                alertarError: false,
-                mensajeError: 'No se pudo cargar las colaboraciones',
-            })
-            .then((data) => setColaboraciones(data))
-            .catch((err) => {
-                if (!err.cancelado) setError(err.mensaje ?? 'No se encontraron las colaboraciones.');
-            })
-            .finally(() => setCargando(false));
-
-        return () => controlador.abort();
-    }, [id]);
+    return () => controlador.abort();
+}, [id]);
 
     useEffect(() => {
         const cargarDatosColaborador = async () => {
@@ -154,9 +161,15 @@ export default function VerProyectoContenido() {
         return (
             <Card role="alert" className="items-start">
                 <p className="m-0 text-error">{error ?? 'No se encontró el proyecto solicitado.'}</p>
+                {usuario?.rol === roles.COLABORADOR &&
                 <Link href="/proyectos" className="text-sm underline text-muted">
                     ← Volver a proyectos
-                </Link>
+                </Link>}
+
+                {usuario?.rol === roles.COLECTIVO &&
+                <Link href="/colectivo/misProyectos" className="text-sm underline text-muted">
+                    ← Volver a mis proyectos
+                </Link>}
             </Card>
         );
     }
@@ -177,9 +190,15 @@ export default function VerProyectoContenido() {
             {/* Cabecera del Proyecto */}
             <header className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Link href="/proyectos" className="text-[13px] text-muted underline">
+                    {usuario?.rol === roles.COLABORADOR &&
+                    <Link href="/proyectos" className="text-sm underline text-muted">
                         ← Volver a proyectos
-                    </Link>
+                    </Link>}
+
+                    {usuario?.rol === roles.COLECTIVO &&
+                    <Link href="/colectivo/misProyectos" className="text-sm underline text-muted">
+                        ← Volver a mis proyectos
+                    </Link>}
                     <div className="flex flex-wrap gap-2">
                         {finalizado ? (
                             <Tag variant="neutral">Proyecto finalizado</Tag>

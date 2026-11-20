@@ -452,13 +452,19 @@ const NOTIFICACIONES = [
 const idsDe = (docs) => docs.map((d) => d._id);
 
 // Borra lo que haya cargado una corrida anterior (todo lo asociado a usuarios @semilla.local)
+// Borra lo que haya cargado una corrida anterior (todo lo asociado a usuarios @semilla.local)
 const limpiarDatosSemilla = async () => {
     const idsUsuarios = idsDe(await UsuarioModel.find({ email: DOMINIO_SEMILLA }, '_id'));
     const colectivos = await ColectivoModel.find({ usuario: { $in: idsUsuarios } }, 'proyectos');
     const idsColaboradores = idsDe(await ColaboradorModel.find({ usuario: { $in: idsUsuarios } }, '_id'));
     const idsProyectos = colectivos.flatMap((c) => c.proyectos);
 
-    await ColaboracionModel.deleteMany({ $or: [{ colaborador: { $in: idsColaboradores } }, { proyecto: { $in: idsProyectos } }] });
+    await ColaboracionModel.deleteMany({
+        $or: [
+            { 'colaborador.id': { $in: idsColaboradores } },
+            { 'proyecto.id': { $in: idsProyectos } },
+        ],
+    });
     await PostulacionModel.deleteMany({ $or: [{ colaborador: { $in: idsColaboradores } }, { proyecto: { $in: idsProyectos } }] });
     await NotificacionModel.deleteMany({ $or: [{ destinatario: { $in: idsColaboradores } }, { 'proyecto.id': { $in: idsProyectos } }] });
     await ProyectoModel.deleteMany({ _id: { $in: idsProyectos } });
@@ -536,6 +542,7 @@ const idPerfil = (proyecto, titulo) => {
 const cargarColaboraciones = (colaboradores, proyectos) =>
     ColaboracionModel.insertMany(COLABORACIONES.map((c) => {
         const colab = colaboradores.get(c.cuentaGit);
+        const proyecto = proyectos.get(c.proyecto);
         const esAnonima = c.esAnonima ?? false;
 
         return {
@@ -547,13 +554,18 @@ const cargarColaboraciones = (colaboradores, proyectos) =>
                     apellido: colab.apellido,
                     usuario: colab.usuario,
                 },
-            proyecto: proyectos.get(c.proyecto)._id,
-            perfil: idPerfil(proyectos.get(c.proyecto), c.perfil),
+            proyecto: {
+                id: proyecto._id,
+                titulo: proyecto.titulo,
+                descripcion: proyecto.descripcion,
+            },
+            perfil: idPerfil(proyecto, c.perfil),
             inicio: haceDias(c.inicio),
             fin: c.fin != null ? haceDias(c.fin) : null,
             esAnonima,
         };
-    }));
+    })
+);
 
 const cargarPostulaciones = async (colaboradores, proyectos) => {
     const postulaciones = await PostulacionModel.insertMany(POSTULACIONES.map((p) => ({

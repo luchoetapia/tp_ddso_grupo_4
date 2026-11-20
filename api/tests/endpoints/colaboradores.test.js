@@ -144,7 +144,15 @@ describe('Endpoints /colaboradores', () => {
     describe('POST /colaboradores/:cuentaGit/anotarProyecto/:idProyecto', () => {
         test('anota al colaborador en el proyecto', async () => {
             const colaboracion = {
-                id: 'c1', colaborador: { id: ID, cuentaGit: 'juanp' }, proyecto: { id: ID_PROY, titulo: 'Aula' },
+                id: 'c1',
+                colaborador: { id: ID, cuentaGit: 'juanp', nombre: 'Juan', apellido: 'Pérez' },
+                proyecto: { id: ID_PROY, titulo: 'Aula' },
+                inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
+            };
+            const colaboracionEsperada = {
+                id: 'c1',
+                colaborador: { nombre: 'Juan', apellido: 'Pérez' },
+                proyecto: { id: ID_PROY, titulo: 'Aula' },
                 inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
             };
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
@@ -153,7 +161,7 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracion });
+            expect(res.body).toEqual({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracionEsperada });
             expect(colaboracionService.crear).toHaveBeenCalledWith({ idColaborador: ID, idProyecto: ID_PROY });
         });
 

@@ -36,6 +36,11 @@ class ColaboracionService {
         return colaboraciones;
     }
 
+    obtenerPorColaboradorId = async (idColaborador) => {
+        const colaboraciones = await this.colaboracionRepository.findByColaboradorID(idColaborador);
+        return colaboraciones;
+    }
+
     crear = async (colaboracionData) => {
         const proyecto = await this.proyectoService.obtenerPorId(colaboracionData.idProyecto);
         const colaborador = await this.colaboradorService.obtenerPorId(colaboracionData.idColaborador);
@@ -64,11 +69,17 @@ class ColaboracionService {
             usuario: colaborador.usuario
         };
 
+        const proyectosDesnormalizado = {
+            id: proyecto.id,
+            titulo: proyecto.titulo,
+            descripcion: proyecto.descripcion
+        }
+
         const creada = await this.colaboracionRepository.save({
             colaborador: colaboradorDesnormalizado,
-            proyecto: proyecto.id,
+            proyecto: proyectosDesnormalizado,
             perfil: colaboracionData.idPerfil,
-            esAnonima,
+            esAnonima: Boolean(colaboracionData.esAnonima),
             inicio: new Date()
         });
 
@@ -90,15 +101,25 @@ class ColaboracionService {
     }
 
     validarPermisoDeBaja = async (colaboracion, usuario) => {
-        if(usuario.rol === roles.COLABORADOR){
+        if (usuario.rol === roles.COLABORADOR) {
             const colaborador = await this.colaboradorService.buscarPorUsuario(usuario.id);
-            if(colaborador && colaborador.id === colaboracion.colaborador?.id) return;
+
+            const idColaborador = colaborador?.id ?? colaborador?._id;
+            const idColaboradorColaboracion = colaboracion?.colaborador?.id ?? colaboracion?.colaborador;
+
+            const esMismoColaborador =
+                idColaborador &&
+                idColaboradorColaboracion &&
+                idColaborador.toString() === idColaboradorColaboracion.toString();
+
+            if (esMismoColaborador) return;
+
             throw new ForbiddenError("Solo la propia persona colaboradora puede darse de baja de un proyecto");
-        } 
+        }
 
         if(usuario.rol === roles.COLECTIVO){
             const colectivo = await this.colectivoService.buscarPorUsuario(usuario.id);
-            const idProyecto = colaboracion.proyecto?.id;
+            const idProyecto = (colaboracion.proyecto?.id ?? colaboracion.proyecto)?.toString();
             if(idProyecto && colectivo?.proyectos?.some(p => (p._id ?? p).toString() === idProyecto)) return;
             throw new ForbiddenError("El proyecto no pertenece a tu colectivo");
         }

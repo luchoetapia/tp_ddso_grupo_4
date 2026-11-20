@@ -28,6 +28,11 @@ router.route("/proyecto/:id")
         (req, res) => colaboracionController.obtenerColaboracionPorProyecto(req, res)
     )
 
+router.route("/colaborador/:id")
+    .get(
+        (req, res) => colaboracionController.obtenerColaboracionPorColaborador(req, res)
+    )
+
 router.route('/:id/desanotar')
     .post(
         autenticar([roles.COLABORADOR, roles.COLECTIVO]),
