@@ -8,17 +8,23 @@ class PalabraBaneadaService {
             .toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // saca tildes
             .replace(/[4@3105$7]/g, c => LEET[c])
-            .replace(/(.)\1{2,}/g, '$1$1');                     // Saca letras repetidas
+            .replace(/(.)\1+/g, '$1');                          // Saca letras repetidas
     }
 
+    _escaparRegex = (texto) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Devuelve las palabras baneadas que aparecen en el texto (lista vacía si no hay ninguna)
     detectar = async (texto) => {
-        baneadas = await palabraBaneadaRepository.listadoPalabrasBaneadas();
+        if (!texto) return [];
+
+        const baneadas = await palabraBaneadaRepository.listadoPalabrasBaneadas();
         const normalizado = this._normalizar(texto);
 
-        // Evita detectar palabras baneadas dentro de una palabra | Ej: computadora
-        return terminos.filter(t =>
-            new RegExp(`\\b${this._normalizar(texto)}\\b`).test(normalizado)
-        );
+        // Busca la palabra completa, no dentro de otra | Ej: no detecta una baneada dentro de "computadora"
+        return baneadas.filter(palabra => {
+            const termino = this._escaparRegex(this._normalizar(palabra));
+            return new RegExp(`(?<![\\p{L}\\p{N}])${termino}(?![\\p{L}\\p{N}])`, 'u').test(normalizado);
+        });
     }
 }
 
