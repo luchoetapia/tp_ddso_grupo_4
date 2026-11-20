@@ -30,6 +30,16 @@ router.post('/logout',
     (req, res) => authController.logout(req, res)
 )
 
+// Ingreso con LinkedIn (solo colaboradores). Son navegaciones del navegador, no llamadas con Axios:
+// el front pone un link a /api/auth/linkedin y LinkedIn vuelve a /api/auth/linkedin/callback
+router.get('/linkedin',
+    (req, res) => authController.linkedin(req, res)
+)
+
+router.get('/linkedin/callback',
+    (req, res) => authController.linkedinCallback(req, res)
+)
+
 router.get('/me',
     autenticar(),
     (req, res) => authController.me(req, res)

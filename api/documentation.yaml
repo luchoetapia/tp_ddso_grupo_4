@@ -31,6 +31,8 @@ tags:
     description: Gestión de colaboradoras/es
   - name: Colaboraciones
     description: Participación de colaboradoras/es en proyectos
+  - name: Auth
+    description: Sesión e ingreso con LinkedIn
 
 paths:
   /healthcheck:
@@ -51,6 +53,55 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
+
+  /auth/linkedin:
+    get:
+      summary: Inicia el ingreso con LinkedIn (solo colaboradores)
+      description: >
+        Navegación del navegador (no se llama con Axios). Guarda un `state` aleatorio en la
+        cookie httpOnly `linkedinState` (SameSite=Lax, 10 minutos) y redirige a LinkedIn para
+        que el usuario inicie sesión y acepte los permisos `openid profile email`.
+        Si el servidor no tiene configurado LinkedIn, redirige a `/ingresar?errorLinkedin=<mensaje>`.
+      tags: [Auth]
+      responses:
+        "302":
+          description: Redirección a `https://www.linkedin.com/oauth/v2/authorization` (o al login del front con el error)
+
+  /auth/linkedin/callback:
+    get:
+      summary: Vuelta desde LinkedIn (redirect URI registrada en la app de LinkedIn)
+      description: >
+        Valida el `state` contra la cookie `linkedinState` (y la borra), canjea el `code` por un
+        access token y obtiene los datos del miembro. Luego, según el email (verificado) de LinkedIn:
+        si la cuenta ya está vinculada inicia sesión; si existe un colaborador con ese email le vincula
+        LinkedIn; si no existe crea un colaborador sin contraseña con username generado desde el email.
+        Deja la sesión en las cookies `accessToken`/`refreshToken`, igual que el login.
+        Todas las respuestas son redirecciones al front.
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          description: Código de autorización que envía LinkedIn
+        - in: query
+          name: state
+          schema:
+            type: string
+          description: Debe coincidir con la cookie `linkedinState`
+        - in: query
+          name: error
+          schema:
+            type: string
+            example: user_cancelled_login
+          description: Lo envía LinkedIn si el usuario canceló
+      responses:
+        "302":
+          description: >
+            `/colaboradoras/inicio` si ya tiene perfil de colaborador;
+            `/registro?origen=linkedin` si tiene que completarlo;
+            `/ingresar?errorLinkedin=<mensaje>` ante cualquier error (cancelación, state inválido,
+            email no verificado, la cuenta es de un colectivo, LinkedIn no responde, etc.)
 
   /proyectos:
     get:

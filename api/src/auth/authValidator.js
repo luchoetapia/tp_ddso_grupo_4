@@ -20,8 +20,17 @@ const validarRegistro = z.object({
 // Mismas reglas que el registro para username y email (llegan por query string)
 const validarDisponibilidad = validarRegistro.pick({ username: true, email: true });
 
+// Query con la que LinkedIn vuelve al callback cuando el usuario aceptó.
+// (Si canceló, en lugar de code llega error=user_cancelled_login o user_cancelled_authorize.)
+// No se usa con el middleware validar: el callback es una navegación del navegador y los errores se informan redirigiendo.
+const validarCallbackLinkedin = z.object({
+    code: z.string().min(1),
+    state: z.string().min(1),
+});
+
 module.exports = {
     validarLogin,
     validarRegistro,
-    validarDisponibilidad
+    validarDisponibilidad,
+    validarCallbackLinkedin
 };
