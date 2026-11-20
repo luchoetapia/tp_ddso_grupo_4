@@ -1,14 +1,19 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const AuthRepository = require('./authRepository');
+const { usernameDesdeEmail } = require('./username');
 const { UnauthorizedError, ForbiddenError, ConflictError } = require('../errors/AppError');
 
 const MENSAJE_CREDENCIALES_INVALIDAS = 'Usuario o contraseña incorrectos';
+// Intentos con sufijo numérico antes de rendirse al generar un username libre
+const MAX_INTENTOS_USERNAME = 10;
 
 class AuthService {
     constructor() { this.repositorio = new AuthRepository() }
 
     _encriptarPassword(password) { return bcrypt.hashSync(password, 10) }
-    _verificarPassword(usuario, password) { return bcrypt.compareSync(password, usuario.password) }
+    // Las cuentas creadas con LinkedIn no tienen password: nunca pasan el login con contraseña
+    _verificarPassword(usuario, password) { return !!usuario.password && bcrypt.compareSync(password, usuario.password) }
 
     async verificarUsuario(accessKey, password) {
         // Valida si es un email con un regex que chequea el formato: algo@otracosa.ext
@@ -53,6 +58,18 @@ class AuthService {
         } catch (err) {
             throw err;
         }
+    }
+
+    async generarUsernameDisponible(email) {
+        const base = usernameDesdeEmail(email);
+        if (!(await this.repositorio.usernameEnUso(base))) return base;
+
+        for (let intento = 0; intento < MAX_INTENTOS_USERNAME; intento++) {
+            const candidato = `${base}${crypto.randomInt(1000, 10000)}`;
+            if (!(await this.repositorio.usernameEnUso(candidato))) return candidato;
+        }
+
+        throw new ConflictError('No se pudo generar un nombre de usuario disponible');
     }
 
     async verificarUsernameYEmail(username, email) {
