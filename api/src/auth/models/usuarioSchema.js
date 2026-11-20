@@ -17,7 +17,8 @@ const userSchema = new Schema({
         default: null,
         required: function () { return !this.linkedin?.sub }, // Obligatoria si no se registra mediante linkedin
     },
-    email: { type: String, required: true },
+    
+    email: { type: String, required: true, lowercase: true, trim: true },
     rol: {  type: String, enum: Object.values(roles), required: true },
     activo: { type: Boolean, default: true, required: true },
     ultimoAcceso: { type: Date, default: Date.now },
