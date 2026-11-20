@@ -1,22 +1,4 @@
-# Levanta todo el proyecto: base de datos, API y front.
-# Uso: docker compose up --build   (front en http://localhost:3001, API en http://localhost:3000)
-# Datos de prueba: docker compose exec api npm run seed:demo
 services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
-    ports:
-      # 27018 para no chocar con un Mongo local en 27017 (para conectarse con Compass: mongodb://localhost:27018)
-      - "27018:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   api:
     build:
       context: ./api
@@ -24,33 +6,33 @@ services:
     restart: unless-stopped
     env_file:
       - ./api/.env
-    environment:
-      # Pisan los valores del .env que apuntan a localhost
-      MONGO_URI: mongodb://mongo:27017
-      CORS_ORIGINS: http://localhost:3001
+    # MONGO_URI sale del .env. Para llegar al Mongo del host usar mongodb://host.docker.internal:27017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3000:3000"
-    depends_on:
-      mongo:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthcheck"]
-      interval: 5s
+      # El primer minuto chequea cada 5s (así el front arranca apenas la API responde); después cada 5m
+      start_period: 60s
+      start_interval: 5s
+      interval: 5m
       timeout: 5s
-      retries: 10
+      retries: 3
 
   frontend:
     build:
       context: ./frontend
       args:
-        # Dentro de la red de docker la API se llama "api"
+        # Las rewrites /api/* se fijan al compilar; dentro de la red de docker la API se llama "api"
         API_URL: http://api:3000
     restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    environment:
+      API_URL: http://api:3000
     ports:
       - "3001:3001"
     depends_on:
       api:
         condition: service_healthy
-
-volumes:
-  mongo_data:
