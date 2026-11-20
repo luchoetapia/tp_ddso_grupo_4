@@ -161,9 +161,15 @@ export default function VerProyectoContenido() {
         return (
             <Card role="alert" className="items-start">
                 <p className="m-0 text-error">{error ?? 'No se encontró el proyecto solicitado.'}</p>
+                {usuario?.rol === roles.COLABORADOR &&
                 <Link href="/proyectos" className="text-sm underline text-muted">
                     ← Volver a proyectos
-                </Link>
+                </Link>}
+
+                {usuario?.rol === roles.COLECTIVO &&
+                <Link href="/colectivo/misProyectos" className="text-sm underline text-muted">
+                    ← Volver a mis proyectos
+                </Link>}
             </Card>
         );
     }
@@ -184,9 +190,15 @@ export default function VerProyectoContenido() {
             {/* Cabecera del Proyecto */}
             <header className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Link href="/proyectos" className="text-[13px] text-muted underline">
+                    {usuario?.rol === roles.COLABORADOR &&
+                    <Link href="/proyectos" className="text-sm underline text-muted">
                         ← Volver a proyectos
-                    </Link>
+                    </Link>}
+
+                    {usuario?.rol === roles.COLECTIVO &&
+                    <Link href="/colectivo/misProyectos" className="text-sm underline text-muted">
+                        ← Volver a mis proyectos
+                    </Link>}
                     <div className="flex flex-wrap gap-2">
                         {finalizado ? (
                             <Tag variant="neutral">Proyecto finalizado</Tag>
