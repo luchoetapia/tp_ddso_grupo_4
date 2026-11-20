@@ -46,7 +46,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
             const res = await request(app).post('/auth/refresh').set('Cookie', `refreshToken=${refresh}`);
 
             expect(res.status).toBe(200);
-            expect(res.body.usuario).toEqual({ id: usuario.id, username: 'ana', email: 'ana@mail.com', rol: 'colectivo' });
+            expect(res.body.usuario).toEqual({ id: usuario.id, username: 'ana', email: 'ana@mail.com', rol: 'colectivo', linkedin: null });
             expect(jwt.verificarAccessToken(cookieDe(res, 'accessToken')).id).toBe(usuario.id);
             expect(jwt.verificarRefreshToken(cookieDe(res, 'refreshToken')).id).toBe(usuario.id);
             expect(res.headers['set-cookie'].every(c => c.includes('HttpOnly') && c.includes('SameSite=Strict'))).toBe(true);
@@ -137,7 +137,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
             const res = await request(app).get('/auth/me').set('Cookie', `accessToken=${jwt.generarAccessToken(usuario)}`);
 
             expect(res.status).toBe(200);
-            expect(res.body.usuario).toEqual({ id: usuario.id, username: 'ana', email: 'ana@mail.com', rol: 'colectivo' });
+            expect(res.body.usuario).toEqual({ id: usuario.id, username: 'ana', email: 'ana@mail.com', rol: 'colectivo', linkedin: null });
             expect(res.body.usuario.password).toBeUndefined();
             expect(repositorio().obtenerUsuarioPorId).toHaveBeenCalledWith(usuario.id);
         });

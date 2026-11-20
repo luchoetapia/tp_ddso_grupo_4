@@ -16,6 +16,10 @@ class AuthRepository {
 
     obtenerUsuarioPorId(id) { return Usuario.findById(id); }
 
+    obtenerUsuarioPorLinkedinSub(sub) { return Usuario.findOne({ 'linkedin.sub': sub, activo: true }); }
+
+    vincularLinkedin(id, linkedin) { return this._actualizar(id, { linkedin }) }
+
     crearUsuario(body) { return Usuario.create(body) }
 
     desactivarUsuario(id) { return this._actualizar(id, { activo: false }) }

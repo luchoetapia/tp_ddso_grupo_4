@@ -37,4 +37,11 @@ class ConflictError extends AppError {
     }
 }
 
-module.exports = { AppError, BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError };
+// Un servicio externo (por ejemplo LinkedIn) no respondió o respondió con error
+class BadGatewayError extends AppError {
+    constructor(message, details) {
+        super(message, 502, details);
+    }
+}
+
+module.exports = { AppError, BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, BadGatewayError };

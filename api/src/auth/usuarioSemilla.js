@@ -1,14 +1,8 @@
 const crypto = require('crypto');
 const AuthService = require('./authService');
+const { aUsername } = require('./username');
 
 let authService;
-
-// "Juan.Pérez Gómez" -> "juan.perez-gomez" (minúsculas, sin tildes, solo a-z 0-9 . _ -)
-const aUsername = (texto) => texto
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 
 // Crea el usuario que acompaña a un dato de prueba (colectivo o colaborador).
 // username: derivado del nombre (o la cuenta de Git); email: <username>@semilla.local.

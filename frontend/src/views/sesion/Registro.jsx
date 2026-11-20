@@ -1,12 +1,14 @@
 'use client'
 
-import { useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import apiQuery from "@/services/api/apiQuery"
 import alertas from "@/services/alertas"
+import sesion, { roles } from "@/services/sesion"
 import Link from "next/link"
-import { Button, Card } from "@/components/common"
+import { BotonLinkedin, Button, Card, SeparadorO } from "@/components/common"
 import LineaDePasos from "@/components/registro/LineaDePasos"
-import PasoTipoCuenta from "@/components/registro/PasoTipoCuenta"
+import PasoTipoCuenta, { CheckboxTerminos } from "@/components/registro/PasoTipoCuenta"
 import PasoContrasena, { LARGO_MINIMO_CONTRASENA } from "@/components/registro/PasoContrasena"
 import PasoDatosColaborador, { REGEX_CUENTA_GIT } from "@/components/registro/PasoDatosColaborador"
 import PasoDatosColectivo from "@/components/registro/PasoDatosColectivo"
@@ -47,6 +49,12 @@ export function Registro() {
     const [colectivo, setColectivo] = useState(modelo_colectivo);
     const [paso, setPaso] = useState(1);
     const [registrado, setRegistrado] = useState(false);
+    const router = useRouter();
+
+    // Viene del callback de LinkedIn: el usuario ya existe y tiene la sesión iniciada,
+    // solo falta completar los datos del colaborador (paso 3)
+    const esLinkedin = useSearchParams().get('origen') === 'linkedin';
+    const [cargandoLinkedin, setCargandoLinkedin] = useState(esLinkedin);
 
     const CANT_PASOS = 3;
 
@@ -60,7 +68,9 @@ export function Registro() {
     const actualizarColectivo = actualizar(setColectivo);
 
     const esColectivo = usuario.rol === 'colectivo';
-    const nombresPasos = ['Tipo de cuenta', 'Contraseña', esColectivo ? 'Datos del colectivo' : 'Tus datos'];
+    const nombresPasos = esLinkedin
+        ? ['Tipo de cuenta', 'LinkedIn', 'Tus datos']
+        : ['Tipo de cuenta', 'Contraseña', esColectivo ? 'Datos del colectivo' : 'Tus datos'];
 
     const lleno = (valor) => typeof valor === 'string' && valor.trim() !== '';
 
@@ -79,10 +89,13 @@ export function Registro() {
         if (esColectivo) return lleno(colectivo.nombre) && lleno(colectivo.tipo);
         return (lleno(colaborador.nombre) || lleno(colaborador.nombreFantasia))
             && REGEX_CUENTA_GIT.test(colaborador.cuentaGit ?? '')
-            && colaborador.habilidades.length > 0;
+            && colaborador.habilidades.length > 0
+            // Con LinkedIn el paso 1 se salteó: los términos se aceptan acá
+            && (!esLinkedin || usuario.aceptaTerminos);
     };
 
-    const puedoVolverAtras = () => paso > 1;
+    // Con LinkedIn los pasos 1 y 2 ya están hechos (la cuenta existe): no se puede volver
+    const puedoVolverAtras = () => paso > 1 && !esLinkedin;
     const handlerAtras = () => setPaso((anterior) => anterior - 1);
 
     const registrar = async (e) => {
@@ -114,6 +127,13 @@ export function Registro() {
                 { mensajeError: esColectivo ? 'No se pudo registrar la organización.' : 'No se pudo registrar el colaborador.' }
             );
 
+            // Con LinkedIn la sesión ya está iniciada: directo al inicio
+            if (esLinkedin) {
+                alertas.exito(`¡Bienvenido, ${colaborador.nombreFantasia || colaborador.nombre}!`);
+                router.push('/colaboradoras/inicio');
+                return true;
+            }
+
             setRegistrado(true);
             return true;
         } catch {
@@ -133,6 +153,38 @@ export function Registro() {
         setRegistrado(false);
         setEnviando(false);
     }, []);
+
+    // Con ?origen=linkedin: se trae el usuario de la sesión (/auth/me) y se precarga el paso 3.
+    // Si no hay sesión de colaborador (venció, o se entró a la URL a mano) se manda a ingresar.
+    useEffect(() => {
+        if (!esLinkedin) return;
+        let cancelado = false;
+
+        (async () => {
+            const usuarioSesion = await sesion.obtenerUsuario();
+            if (cancelado) return;
+
+            if (!usuarioSesion || usuarioSesion.rol !== roles.COLABORADOR) {
+                alertas.aviso('Ingresá con LinkedIn para completar tu perfil.');
+                router.replace('/ingresar');
+                return;
+            }
+
+            const { id, username, email, linkedin } = usuarioSesion;
+            setUsuario((anterior) => ({ ...anterior, rol: roles.COLABORADOR, username, email }));
+            // usuario = id: registrar() no vuelve a llamar a /auth/registro, solo crea el perfil
+            setColaborador((anterior) => ({
+                ...anterior,
+                usuario: id,
+                nombre: linkedin?.nombre ?? anterior.nombre,
+                apellido: linkedin?.apellido ?? anterior.apellido,
+            }));
+            setPaso(3);
+            setCargandoLinkedin(false);
+        })();
+
+        return () => { cancelado = true; };
+    }, [esLinkedin, router]);
 
     // GET /auth/validar: 200 si están libres, 409 con el campo en uso (apiQuery muestra la alerta)
     const usuarioYEmailDisponibles = async () => {
@@ -172,10 +224,28 @@ export function Registro() {
         if (paso === 1) return <PasoTipoCuenta usuario={usuario} onChange={actualizarUsuario} />;
         if (paso === 2) return <PasoContrasena usuario={usuario} onChange={actualizarUsuario} />;
         if (esColectivo) return <PasoDatosColectivo colectivo={colectivo} onChange={actualizarColectivo} />;
+        if (esLinkedin) {
+            return (
+                <div className="flex flex-col gap-[18px]">
+                    <PasoDatosColaborador colaborador={colaborador} onChange={actualizarColaborador} />
+                    <CheckboxTerminos acepta={usuario.aceptaTerminos} onChange={(valor) => actualizarUsuario('aceptaTerminos', valor)} />
+                </div>
+            );
+        }
         return <PasoDatosColaborador colaborador={colaborador} onChange={actualizarColaborador} />;
     };
 
     const esUltimoPaso = paso === CANT_PASOS;
+
+    if (cargandoLinkedin) {
+        return (
+            <div className="mx-auto w-full max-w-[680px] py-4">
+                <Card role="status" className="items-center px-6 py-10 text-center text-muted">
+                    Cargando tus datos de LinkedIn…
+                </Card>
+            </div>
+        );
+    }
 
     if (registrado) {
         return (
@@ -191,10 +261,16 @@ export function Registro() {
     return (
         <div className="mx-auto flex w-full max-w-[680px] flex-col gap-[18px] py-4">
             <div className="flex flex-col gap-1">
-                <h1 className="m-0">Creá tu cuenta</h1>
-                <p className="m-0 text-[14px] text-muted">
-                    ¿Ya tenés una cuenta? <Link href="/ingresar" className="font-semibold text-accent underline">Ingresá</Link>
-                </p>
+                <h1 className="m-0">{esLinkedin ? 'Completá tu perfil' : 'Creá tu cuenta'}</h1>
+                {esLinkedin ? (
+                    <p className="m-0 text-[14px] text-muted">
+                        Ya creamos tu cuenta con LinkedIn ({usuario.email}). Te falta contarnos tus datos de colaborador.
+                    </p>
+                ) : (
+                    <p className="m-0 text-[14px] text-muted">
+                        ¿Ya tenés una cuenta? <Link href="/ingresar" className="font-semibold text-accent underline">Ingresá</Link>
+                    </p>
+                )}
             </div>
 
             <Card className="gap-[22px] p-6">
@@ -228,6 +304,19 @@ export function Registro() {
                         </Button>
                     </div>
                 </form>
+
+                {/* Alternativa al usuario y contraseña: siempre visible, habilitada solo para colaboradores que aceptaron los términos */}
+                {paso === 1 && (
+                    <div className="flex flex-col gap-2.5">
+                        <SeparadorO />
+                        <BotonLinkedin
+                            deshabilitado={usuario.rol !== roles.COLABORADOR || !usuario.aceptaTerminos}
+                            motivoDeshabilitado="Para registrarte con LinkedIn tenés que elegir Colaborador y aceptar los términos y condiciones"
+                        >
+                            Registrate con LinkedIn
+                        </BotonLinkedin>
+                    </div>
+                )}
             </Card>
         </div>
     )
