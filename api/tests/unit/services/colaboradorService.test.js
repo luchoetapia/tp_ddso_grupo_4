@@ -1,3 +1,7 @@
+jest.mock('../../../src/services/reporteService.js', () => ({
+    revisarEnSegundoPlano: jest.fn()
+}));
+
 jest.mock('../../../src/repositories/colaboradorRepository.js', () => ({
     buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
@@ -22,6 +26,7 @@ const { ForbiddenError } = require('../../../src/errors/AppError.js');
 const colaboradorRepository = require('../../../src/repositories/colaboradorRepository.js');
 const habilidadService = require('../../../src/services/habilidadService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
+const reporteService = require('../../../src/services/reporteService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_COLAB = '507f1f77bcf86cd799439011';
@@ -107,6 +112,7 @@ describe('ColaboradorService', () => {
 
             const resultado = await colaboradorService.crear(datos, ID_USUARIO);
 
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Colaborador', resultado);
             expect(habilidadService.obtenerPorListaId).toHaveBeenCalledWith([ID_HAB]);
             expect(colaboradorRepository.save).toHaveBeenCalledWith(expect.objectContaining({
                 usuario: ID_USUARIO,

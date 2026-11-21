@@ -29,3 +29,21 @@ describe('PalabraBaneadaService.detectar', () => {
         expect(palabraBaneadaRepository.listadoPalabrasBaneadas).not.toHaveBeenCalled();
     });
 });
+
+describe('PalabraBaneadaService.detectarEnCampos', () => {
+    beforeEach(() => {
+        palabraBaneadaRepository.listadoPalabrasBaneadas.mockReset().mockResolvedValue(['tonto', 'feo']);
+    });
+
+    test('devuelve solo los campos con palabras baneadas, con una sola consulta', async () => {
+        const resultado = await palabraBaneadaService.detectarEnCampos({ titulo: 'Proyecto tonto', descripcion: 'todo bien', ubicacion: 'FEO lugar' });
+
+        expect(resultado).toEqual({ titulo: ['tonto'], ubicacion: ['feo'] });
+        expect(palabraBaneadaRepository.listadoPalabrasBaneadas).toHaveBeenCalledTimes(1);
+    });
+
+    test('ignora campos vacíos o que no son texto y no consulta si no queda ninguno', async () => {
+        await expect(palabraBaneadaService.detectarEnCampos({ a: null, b: '', c: undefined })).resolves.toEqual({});
+        expect(palabraBaneadaRepository.listadoPalabrasBaneadas).not.toHaveBeenCalled();
+    });
+});

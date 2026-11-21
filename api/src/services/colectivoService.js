@@ -9,6 +9,8 @@ const proyectoService = require('./proyectoService.js');
 const colaboradorService = require('./colaboradorService.js');
 
 const { construirOrden } = require('./ordenamiento.js');
+const reporteService = require('./reporteService.js');
+const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 // Claves por las que el front puede ordenar los colectivos (2° criterio: nombre, 3°: _id)
 const ORDENAMIENTO = {
@@ -25,6 +27,7 @@ const MENSAJE_USUARIO_CON_COLECTIVO = "El usuario ya tiene un colectivo asociado
 class ColectivoService {
     constructor() {
         this.colectivoRepository = colectivoRepository;
+        this.reporteService = reporteService;
         this.colaboracionRepository = colaboracionRepository;
         this.postulacionRepository = postulacionRepository;
         this.proyectoService = proyectoService;
@@ -54,8 +57,9 @@ class ColectivoService {
 
         const proyectos = await this.proyectoService.obtenerPorListaId(datos.proyectos ?? [])
 
+        let creado
         try {
-            return await this.colectivoRepository.save({
+            creado = await this.colectivoRepository.save({
                 usuario: idUsuario,
                 nombre: datos.nombre,
                 descripcion: datos.descripcion,
@@ -68,6 +72,9 @@ class ColectivoService {
             if (error.code === 11000 && error.keyPattern?.usuario) throw new ConflictError(MENSAJE_USUARIO_CON_COLECTIVO)
             throw error
         }
+
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.COLECTIVO, creado)
+        return creado
     }
 
     obtenerPorId = async (id) => {
@@ -130,7 +137,9 @@ class ColectivoService {
             }
         }
 
-        return await this.colectivoRepository.update(colectivo.id, cambios)
+        const actualizado = await this.colectivoRepository.update(colectivo.id, cambios)
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.COLECTIVO, actualizado)
+        return actualizado
     }
 
     obtenerEstadisticas = async (idColectivo) => {

@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 const proyectoRepository = require('../repositories/proyectoRepository.js');
 const {BadRequestError, NotFoundError} = require('../errors/AppError.js');
+const reporteService = require('./reporteService.js');
+const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 class LogroService{
     constructor(){
         this.proyectoRepository = proyectoRepository;
+        this.reporteService = reporteService;
     }
 
     obtenerTodos = async (idProyecto) => {
@@ -41,6 +44,7 @@ class LogroService{
         if (proyecto === null)
             throw new NotFoundError("Proyecto no encontrado");
 
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
         return proyecto.logros.at(-1);
     }
 
@@ -52,6 +56,7 @@ class LogroService{
         if (!proyecto)
             throw new NotFoundError("Logro o proyecto no encontrado");
 
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
         return proyecto.logros.id(idLogro);
     }
 
@@ -63,6 +68,7 @@ class LogroService{
         if (!proyecto)
             throw new NotFoundError("Logro o proyecto no encontrado");
 
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
         return {mensaje: "Logro eliminado correctamente"};
     }
 }

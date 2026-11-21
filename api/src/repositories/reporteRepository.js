@@ -45,6 +45,10 @@ class ReporteRepository {
         ).populate(REFERENCIAS);
     }
 
+    async existePendiente(idEntidad) {
+        return Boolean(await ReporteModel.exists({ 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE }));
+    }
+
     async marcarNotificado(id) {
         return await ReporteModel.findOneAndUpdate(
             { _id: id, estado: EstadoReporte.PENDIENTE },

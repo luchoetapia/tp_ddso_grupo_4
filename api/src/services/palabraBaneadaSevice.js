@@ -18,9 +18,29 @@ class PalabraBaneadaService {
         if (!texto) return [];
 
         const baneadas = await palabraBaneadaRepository.listadoPalabrasBaneadas();
+        return this._buscar(texto, baneadas);
+    }
+
+    // Revisa varios textos con una sola consulta; devuelve solo los campos que tienen palabras baneadas
+    detectarEnCampos = async (campos) => {
+        const textos = Object.entries(campos).filter(([, texto]) => typeof texto === 'string' && texto);
+        if (textos.length === 0) return {};
+
+        const baneadas = await palabraBaneadaRepository.listadoPalabrasBaneadas();
+        const resultado = {};
+        for (const [campo, texto] of textos) {
+            const encontradas = this._buscar(texto, baneadas);
+            if (encontradas.length > 0) resultado[campo] = encontradas;
+        }
+
+        return resultado;
+    }
+
+    // Busca la palabra completa, no dentro de otra | Ej: no detecta una baneada dentro de "computadora"
+    // Se usa \p{L} en lugar de \b para que las letras como la ñ cuenten como parte de la palabra
+    _buscar = (texto, baneadas) => {
         const normalizado = this._normalizar(texto);
 
-        // Busca la palabra completa, no dentro de otra | Ej: no detecta una baneada dentro de "computadora"
         return baneadas.filter(palabra => {
             const termino = this._escaparRegex(this._normalizar(palabra));
             return new RegExp(`(?<![\\p{L}\\p{N}])${termino}(?![\\p{L}\\p{N}])`, 'u').test(normalizado);

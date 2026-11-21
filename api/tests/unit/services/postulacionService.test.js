@@ -1,3 +1,7 @@
+jest.mock('../../../src/services/reporteService.js', () => ({
+    revisarEnSegundoPlano: jest.fn()
+}));
+
 jest.mock('../../../src/repositories/postulacionRepository.js', () => ({
     save: jest.fn(),
     findById: jest.fn(),
@@ -31,6 +35,7 @@ const colectivoRepository = require('../../../src/repositories/colectivoReposito
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const postulacionService = require('../../../src/services/postulacionService.js');
+const reporteService = require('../../../src/services/reporteService.js');
 const EstadoPostulacion = require('../../../src/models/Proyecto/Postulaciones/EstadoPostulacion.js');
 const { ConflictError, NotFoundError, BadRequestError } = require('../../../src/errors/AppError.js');
 
@@ -103,6 +108,7 @@ describe('PostulacionService', () => {
                 estado: EstadoPostulacion.PENDIENTE
             });
             expect(postulacionRepository.save).toHaveBeenCalled();
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Postulacion', expect.objectContaining({ id: ID_POSTULACION }));
         });
 
         test('lanza ConflictError si el proyecto está finalizado', async () => {

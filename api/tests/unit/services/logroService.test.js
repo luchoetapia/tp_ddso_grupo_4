@@ -1,3 +1,7 @@
+jest.mock('../../../src/services/reporteService.js', () => ({
+    revisarEnSegundoPlano: jest.fn()
+}));
+
 jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
     logrosDelProyecto: jest.fn(),
     agregarLogro: jest.fn(),
@@ -7,6 +11,7 @@ jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
 
 const proyectoRepository = require('../../../src/repositories/proyectoRepository.js');
 const logroService = require('../../../src/services/logroService.js');
+const reporteService = require('../../../src/services/reporteService.js');
 const { BadRequestError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -80,6 +85,7 @@ describe('LogroService', () => {
 
             expect(proyectoRepository.agregarLogro).toHaveBeenCalledWith(ID_PROY, { titulo: 'Nuevo', descripcion: 'desc' });
             expect(resultado).toEqual({ id: ID_LOGRO_2, titulo: 'Nuevo', descripcion: 'desc' });
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Proyecto', expect.objectContaining({ logros: expect.anything() }));
         });
 
         test('lanza BadRequestError con id inválido', async () => {

@@ -6,7 +6,12 @@ jest.mock('../../../src/repositories/reporteRepository.js', () => ({
     marcarNotificado: jest.fn(),
     solucionarNotificados: jest.fn(),
     eliminarEntidad: jest.fn(),
-    existeEntidad: jest.fn()
+    existeEntidad: jest.fn(),
+    existePendiente: jest.fn()
+}));
+
+jest.mock('../../../src/services/palabraBaneadaSevice.js', () => ({
+    detectarEnCampos: jest.fn()
 }));
 
 jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
@@ -16,6 +21,7 @@ jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
 
 const reporteRepository = require('../../../src/repositories/reporteRepository.js');
 const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
+const palabraBaneadaService = require('../../../src/services/palabraBaneadaSevice.js');
 const reporteService = require('../../../src/services/reporteService.js');
 const { Reporte, EstadoReporte, TipoEntidadReportada } = require('../../../src/models/Reporte.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
@@ -202,6 +208,99 @@ describe('ReporteService', () => {
 
             await expect(reporteService.solucionarPorEntidad(ID_ENTIDAD)).resolves.toBe(2);
             expect(reporteRepository.solucionarNotificados).toHaveBeenCalledWith(ID_ENTIDAD);
+        });
+    });
+
+    describe('revisarPalabrasBaneadas', () => {
+        const proyecto = {
+            id: ID_ENTIDAD,
+            titulo: 'Proyecto',
+            descripcion: 'desc',
+            perfiles: [{ titulo: 'Back', descripcion: 'perfil' }],
+            logros: [{ titulo: 'Logro', descripcion: 'logro' }]
+        };
+
+        test('revisa todos los textos del proyecto, incluidos perfiles y logros', async () => {
+            palabraBaneadaService.detectarEnCampos.mockResolvedValue({});
+
+            await reporteService.revisarPalabrasBaneadas('Proyecto', proyecto);
+
+            expect(palabraBaneadaService.detectarEnCampos).toHaveBeenCalledWith({
+                titulo: 'Proyecto',
+                descripcion: 'desc',
+                'perfiles[0].titulo': 'Back',
+                'perfiles[0].descripcion': 'perfil',
+                'logros[0].titulo': 'Logro',
+                'logros[0].descripcion': 'logro'
+            });
+        });
+
+        test('si está limpio soluciona los reportes notificados y no crea uno', async () => {
+            palabraBaneadaService.detectarEnCampos.mockResolvedValue({});
+
+            await expect(reporteService.revisarPalabrasBaneadas('Proyecto', proyecto)).resolves.toBeNull();
+
+            expect(reporteRepository.solucionarNotificados).toHaveBeenCalledWith(ID_ENTIDAD);
+            expect(reporteRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('con palabras prohibidas crea un reporte con el detalle y el dueño', async () => {
+            palabraBaneadaService.detectarEnCampos.mockResolvedValue({ descripcion: ['tonto'], 'perfiles[0].titulo': ['feo', 'tonto'] });
+            reporteRepository.existePendiente.mockResolvedValue(false);
+            colectivoRepository.findBy.mockResolvedValue([{ usuario: ID_USUARIO }]);
+
+            const reporte = await reporteService.revisarPalabrasBaneadas('Proyecto', proyecto);
+
+            expect(reporte).toEqual({
+                entidad: { tipo: 'Proyecto', id: ID_ENTIDAD },
+                motivo: 'Palabras prohibidas detectadas en: descripcion (tonto); perfiles[0].titulo (feo, tonto)',
+                duenio: ID_USUARIO
+            });
+            expect(reporteRepository.solucionarNotificados).not.toHaveBeenCalled();
+        });
+
+        test('no duplica si ya hay un reporte pendiente de la entidad', async () => {
+            palabraBaneadaService.detectarEnCampos.mockResolvedValue({ titulo: ['tonto'] });
+            reporteRepository.existePendiente.mockResolvedValue(true);
+
+            await expect(reporteService.revisarPalabrasBaneadas('Proyecto', proyecto)).resolves.toBeNull();
+            expect(reporteRepository.save).not.toHaveBeenCalled();
+        });
+
+        test.each([
+            ['Colectivo', { _id: ID_ENTIDAD, nombre: 'n', descripcion: 'd', ubicacion: 'u', tipo: 'fundacion' }, { nombre: 'n', descripcion: 'd', ubicacion: 'u' }],
+            ['Colaborador', { _id: ID_ENTIDAD, nombre: 'n', apellido: 'a', nombreFantasia: null, pronombres: 'p', presentacion: 'pr', cuentaGit: 'git' },
+                { nombre: 'n', apellido: 'a', nombreFantasia: null, pronombres: 'p', presentacion: 'pr' }],
+            ['Postulacion', { _id: ID_ENTIDAD, mensaje: 'm', estado: 'Pendiente' }, { mensaje: 'm' }]
+        ])('%s revisa solo sus campos de texto libre', async (tipo, entidad, campos) => {
+            palabraBaneadaService.detectarEnCampos.mockResolvedValue({});
+
+            await reporteService.revisarPalabrasBaneadas(tipo, entidad);
+
+            expect(palabraBaneadaService.detectarEnCampos).toHaveBeenCalledWith(campos);
+            expect(reporteRepository.solucionarNotificados).toHaveBeenCalledWith(ID_ENTIDAD);
+        });
+    });
+
+    describe('revisarEnSegundoPlano', () => {
+        const entidad = { id: ID_ENTIDAD, mensaje: 'algo' };
+
+        test('no espera la revisión', () => {
+            palabraBaneadaService.detectarEnCampos.mockReturnValue(new Promise(() => {}));
+
+            expect(reporteService.revisarEnSegundoPlano('Postulacion', entidad)).toBeUndefined();
+            expect(palabraBaneadaService.detectarEnCampos).toHaveBeenCalled();
+        });
+
+        test('si la revisión falla solo loguea el error', async () => {
+            const consola = jest.spyOn(console, 'error').mockImplementation(() => {});
+            palabraBaneadaService.detectarEnCampos.mockRejectedValue(new Error('se cayó mongo'));
+
+            reporteService.revisarEnSegundoPlano('Postulacion', entidad);
+            await new Promise(setImmediate);
+
+            expect(consola).toHaveBeenCalledWith(expect.stringContaining(`Postulacion ${ID_ENTIDAD} | Error: se cayó mongo`));
+            consola.mockRestore();
         });
     });
 });
