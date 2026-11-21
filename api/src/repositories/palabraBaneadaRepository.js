@@ -6,13 +6,13 @@ class PalabraBaneadaRepository {
         return baneadas.map(b => b.palabra);
     }
 
-    listadoPalabrasBaneadasPaginadas = async (pagina = 1, limite = 10, filtros = { activa: true }, orden = { palabra: 1 }) => {
+    listadoPalabrasBaneadasPaginadas = async (pagina = 1, limite = 10, filtros = {}, orden = { palabra: 1 }) => {
         limite = Math.min(100, limite);
 
-        const [palabras, total] = await Promise.all(
-            PalabraBaneada.find(filtros).paginar({ pagina, limite, orden }).populate('palabraBaneadas'),
+        const [palabras, total] = await Promise.all([
+            PalabraBaneada.find(filtros).paginar({ pagina, limite, orden }),
             PalabraBaneada.countDocuments(filtros)
-        );
+        ]);
 
         return { palabras, total, pagina, limite, totalPaginas: Math.ceil(total / limite) };
     }
@@ -22,19 +22,19 @@ class PalabraBaneadaRepository {
     }
 
     desactivarPalabra = async (id) => {
-        return await PalabraBaneada.findOneAndUpdate({ _id: id }, { $set: { activa: false } });
+        return await PalabraBaneada.findByIdAndUpdate(id, { $set: { activa: false } }, { new: true });
     }
 
     activarPalabra = async (id) => {
-        return await PalabraBaneada.findOneAndUpdate({ _id: id }, { $set: { activa: true } })
+        return await PalabraBaneada.findByIdAndUpdate(id, { $set: { activa: true } }, { new: true });
     }
 
     editarPalabra = async (id, nuevaPalabra) => {
-        return await PalabraBaneada.findOneAndUpdate({ _id: id }, { $set: { palabra: nuevaPalabra } })
+        return await PalabraBaneada.findByIdAndUpdate(id, { $set: { palabra: nuevaPalabra } }, { new: true });
     }
 
     obtenerPalabra = async (palabra) => {
-        return await PalabraBaneada.findOne({ palabra: palabra }).populate('palabraBaneadas');
+        return await PalabraBaneada.findOne({ palabra: palabra });
     }
 }
 

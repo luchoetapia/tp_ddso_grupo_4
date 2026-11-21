@@ -31,6 +31,8 @@ tags:
     description: Gestión de colaboradoras/es
   - name: Colaboraciones
     description: Participación de colaboradoras/es en proyectos
+  - name: Palabras baneadas
+    description: Palabras prohibidas que generan reportes (solo admins)
 
 paths:
   /healthcheck:
@@ -1568,6 +1570,165 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /palabrasBaneadas:
+    get:
+      summary: Obtiene las palabras baneadas (paginado)
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Palabras baneadas]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
+        - in: query
+          name: activa
+          required: false
+          description: Filtra por estado. Sin el parámetro se listan todas.
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Página de palabras baneadas, ordenadas alfabéticamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PalabraBaneada"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Agrega una palabra baneada
+      description: >
+        Requiere sesión con rol `admin` (cookie `accessToken`). La palabra se guarda en
+        minúscula y sin espacios alrededor. No se permiten campos adicionales.
+      tags: [Palabras baneadas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PalabraBaneadaInput"
+      responses:
+        "201":
+          description: Palabra baneada agregada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Palabra baneada agregada exitosamente
+                  data:
+                    $ref: "#/components/schemas/PalabraBaneada"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La palabra ya existe (activa o desactivada)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /palabrasBaneadas/{id}/activar:
+    patch:
+      summary: Activa una palabra baneada
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Palabras baneadas]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Palabra actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PalabraBaneada"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Palabra baneada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /palabrasBaneadas/{id}/desactivar:
+    patch:
+      summary: Desactiva una palabra baneada (deja de detectarse)
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Palabras baneadas]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Palabra actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PalabraBaneada"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Palabra baneada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   parameters:
     IdPath:
@@ -1646,6 +1807,32 @@ components:
         totalPaginas:
           type: integer
           example: 3
+
+    PalabraBaneadaInput:
+      type: object
+      required: [palabra]
+      additionalProperties: false
+      properties:
+        palabra:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: tonto
+
+    PalabraBaneada:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        palabra:
+          type: string
+          example: tonto
+        activa:
+          type: boolean
+          example: true
+        fechaCreacion:
+          type: string
+          format: date-time
 
     ObjectId:
       type: string

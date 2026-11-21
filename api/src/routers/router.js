@@ -6,6 +6,7 @@ const colaboradoresRouter = require('./colaboradoresRouter.js');
 const colaboracionRouter = require("./colaboracionRouter.js");
 const homeRouter = require('./homeRouter.js');
 const postulacionesRouter = require("./postulacionesRouter.js");
+const palabrasBaneadasRouter = require('./palabrasBaneadasRouter.js');
 const authRouter = require('../auth/authRouter.js');
 const swaggerUi = require('swagger-ui-express');
 const { swaggerSpec } = require('../swagger.js');
@@ -19,6 +20,7 @@ router.use('/colaboradores', colaboradoresRouter);
 router.use('/colaboraciones', colaboracionRouter);
 router.use('/home', homeRouter);
 router.use('/postulaciones', postulacionesRouter);
+router.use('/palabrasBaneadas', palabrasBaneadasRouter);
 router.use('/auth', authRouter);
 router.use('/api-documentation', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
