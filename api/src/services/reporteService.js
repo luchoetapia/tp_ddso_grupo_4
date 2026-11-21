@@ -113,6 +113,14 @@ class ReporteService {
         return reporte;
     }
 
+    // Detalle para que el admin revise: el reporte + los textos actuales de la entidad (null si se eliminó)
+    obtenerDetalle = async (id) => {
+        const reporte = await this.obtenerPorId(id);
+        const entidad = await this.reporteRepository.buscarEntidad(reporte.entidad.tipo, reporte.entidad.id);
+
+        return { reporte, contenido: entidad ? TEXTOS_POR_TIPO[reporte.entidad.tipo](entidad) : null };
+    }
+
     listar = async ({ pagina = 1, limite = 10, estado, tipoEntidad } = {}) => {
         const filtros = {};
         if (estado) filtros.estado = estado;
@@ -141,12 +149,7 @@ class ReporteService {
     // Validar = el contenido es inapropiado: se elimina la entidad reportada
     validar = async (id, idAdmin, comentario) => {
         const reporte = await this.obtenerPendiente(id);
-
-        // entidad.id viene populado; si es null la entidad ya no existe
-        const entidad = reporte.entidad.id;
-        if (entidad) {
-            await this.reporteRepository.eliminarEntidad(reporte.entidad.tipo, entidad._id ?? entidad);
-        }
+        await this.reporteRepository.eliminarEntidad(reporte.entidad.tipo, reporte.entidad.id);
 
         return await this.cerrar(id, EstadoReporte.VALIDADO, idAdmin, comentario);
     }

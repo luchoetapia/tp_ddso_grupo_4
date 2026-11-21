@@ -7,6 +7,7 @@ jest.mock('../../../src/repositories/reporteRepository.js', () => ({
     solucionarNotificados: jest.fn(),
     eliminarEntidad: jest.fn(),
     existeEntidad: jest.fn(),
+    buscarEntidad: jest.fn(),
     existePendiente: jest.fn()
 }));
 
@@ -100,6 +101,26 @@ describe('ReporteService', () => {
         });
     });
 
+    describe('obtenerDetalle', () => {
+        test('devuelve el reporte con los textos actuales de la entidad', async () => {
+            const reporte = reporteCon(EstadoReporte.PENDIENTE);
+            reporteRepository.findById.mockResolvedValue(reporte);
+            reporteRepository.buscarEntidad.mockResolvedValue({ titulo: 'T', descripcion: 'D', perfiles: [], logros: [], finalizado: false });
+
+            const detalle = await reporteService.obtenerDetalle(ID_REPORTE);
+
+            expect(reporteRepository.buscarEntidad).toHaveBeenCalledWith('Proyecto', ID_ENTIDAD);
+            expect(detalle).toEqual({ reporte, contenido: { titulo: 'T', descripcion: 'D' } });
+        });
+
+        test('contenido null si la entidad fue eliminada', async () => {
+            reporteRepository.findById.mockResolvedValue(reporteCon(EstadoReporte.VALIDADO));
+            reporteRepository.buscarEntidad.mockResolvedValue(null);
+
+            await expect(reporteService.obtenerDetalle(ID_REPORTE)).resolves.toMatchObject({ contenido: null });
+        });
+    });
+
     describe('listar', () => {
         test('arma los filtros por estado y tipo de entidad', async () => {
             await reporteService.listar({ pagina: 2, limite: 5, estado: EstadoReporte.PENDIENTE, tipoEntidad: 'Proyecto' });
@@ -143,9 +164,7 @@ describe('ReporteService', () => {
 
     describe('validar', () => {
         test('elimina la entidad y deja el reporte validado', async () => {
-            const reporte = reporteCon(EstadoReporte.PENDIENTE);
-            reporte.entidad.id = { _id: ID_ENTIDAD, titulo: 'Proyecto populado' };
-            reporteRepository.findById.mockResolvedValue(reporte);
+            reporteRepository.findById.mockResolvedValue(reporteCon(EstadoReporte.PENDIENTE));
             reporteRepository.resolver.mockResolvedValue({ estado: EstadoReporte.VALIDADO });
 
             const resultado = await reporteService.validar(ID_REPORTE, ID_ADMIN, 'ofensivo');
@@ -156,15 +175,11 @@ describe('ReporteService', () => {
         });
 
         test('si la entidad ya no existe igual valida el reporte', async () => {
-            const reporte = reporteCon(EstadoReporte.PENDIENTE);
-            reporte.entidad.id = null;
-            reporteRepository.findById.mockResolvedValue(reporte);
+            reporteRepository.findById.mockResolvedValue(reporteCon(EstadoReporte.PENDIENTE));
+            reporteRepository.eliminarEntidad.mockResolvedValue(null);
             reporteRepository.resolver.mockResolvedValue({ estado: EstadoReporte.VALIDADO });
 
-            await reporteService.validar(ID_REPORTE, ID_ADMIN);
-
-            expect(reporteRepository.eliminarEntidad).not.toHaveBeenCalled();
-            expect(reporteRepository.resolver).toHaveBeenCalled();
+            await expect(reporteService.validar(ID_REPORTE, ID_ADMIN)).resolves.toEqual({ estado: EstadoReporte.VALIDADO });
         });
 
         test('409 sin eliminar nada si el reporte ya estaba resuelto', async () => {

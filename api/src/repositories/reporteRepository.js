@@ -9,8 +9,8 @@ require('../database/schemas/colaboradorSchema.js');
 require('../database/schemas/colectivoSchema.js');
 require('../auth/models/usuarioSchema.js');
 
+// entidad.id no se popula: si la entidad se eliminó, populate lo pisaría con null y se perdería el id
 const REFERENCIAS = [
-    { path: 'entidad.id' },
     { path: 'duenio', select: 'username email' },
     { path: 'revisadoPor', select: 'username' }
 ];
@@ -69,6 +69,10 @@ class ReporteRepository {
     // No limpia las referencias a la entidad en otros documentos (decisión aceptada)
     async eliminarEntidad(tipo, id) {
         return await mongoose.model(tipo).findByIdAndDelete(id);
+    }
+
+    async buscarEntidad(tipo, id) {
+        return await mongoose.model(tipo).findById(id);
     }
 
     async existeEntidad(tipo, id) {
