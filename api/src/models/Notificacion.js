@@ -1,18 +1,22 @@
 const { MedioDeContacto } = require('./Contacto');
 
 class Notificacion {
-    constructor(id, destinatario, proyecto, perfil, mensaje, fecha = new Date()) {
+    constructor(id, destinatario, proyecto, perfil, mensaje, fecha = new Date(), automatica = false) {
         this.id = id,
         this.destinatario = destinatario,
         this.proyecto = proyecto,
         this.perfil = perfil,
         this.mensaje = mensaje,
-        this.fecha = fecha
+        this.fecha = fecha,
+        this.automatica = automatica
     }
 
     generarTexto() {
         const titulo = this.proyecto?.titulo ?? 'un proyecto';
         const perfil = this.perfil?.descripcion ?? 'un perfil';
+        if (this.automatica) {
+            return `Encontramos un proyecto para vos: "${titulo}", perfil "${perfil}". ${this.mensaje}`;
+        }
         return `El proyecto "${titulo}" te contactó por el perfil "${perfil}": ${this.mensaje}`;
     }
 }

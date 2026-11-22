@@ -95,6 +95,10 @@ class Perfil {
                 .every(id => habilidades.includes(id)
         );
     }
+
+    estaAbierto(ahora = new Date()) {
+        return Boolean(this.busquedaAbierta) && (!this.fechaFinBusqueda || this.fechaFinBusqueda > ahora)
+    }
 }
 
 class TipoCompromiso {
