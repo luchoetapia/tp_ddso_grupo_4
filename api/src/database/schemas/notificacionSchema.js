@@ -14,6 +14,7 @@ const notificacionSchema = new Schema({
         descripcion: { type: String, required: true }
     },
     mensaje: { type: String, required: true },
+    automatica: { type: Boolean, default: false },
     fecha: { type: Date, default: Date.now }
 }, {
     timestamps: true,

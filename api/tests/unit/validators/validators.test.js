@@ -98,12 +98,19 @@ describe('Validadores', () => {
             });
         });
 
+        test('creación permite una colaboradora anónima: solo cuentaGit y nombre de fantasía', () => {
+            expect(esValido(validarCreacionColaborador, { cuentaGit: 'jp', nombreFantasia: 'Juani' })).toBe(true);
+        });
+
+        test('creación acepta nombre y apellido omitidos', () => {
+            expect(esValido(validarCreacionColaborador, { cuentaGit: 'jp' })).toBe(true);
+        });
+
         test('creación acepta contactos válidos', () => {
             expect(esValido(validarCreacionColaborador, { ...valido, contactos: [{ medio: 'Email', valor: 'a@b.com' }] })).toBe(true);
         });
 
         test.each([
-            ['sin nombre', { apellido: 'P', cuentaGit: 'jp' }],
             ['nombre vacío', { ...valido, nombre: '' }],
             ['cuentaGit con espacios', { ...valido, cuentaGit: 'juan p' }],
             ['cuentaGit muy larga', { ...valido, cuentaGit: 'a'.repeat(40) }],

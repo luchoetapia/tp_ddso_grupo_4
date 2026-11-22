@@ -22,8 +22,8 @@ const campos = {
 };
 
 const validarCreacionColaborador = z.object({
-    nombre: campos.nombre,
-    apellido: campos.apellido,
+    nombre: campos.nombre.optional(),
+    apellido: campos.apellido.optional(),
     cuentaGit,
     nombreFantasia: campos.nombreFantasia.optional(),
     pronombres: campos.pronombres.optional(),

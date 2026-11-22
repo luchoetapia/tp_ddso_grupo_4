@@ -12,8 +12,8 @@ const contactoSchema = new Schema({
 });
 
 const colaboradorSchema = new Schema({
-    nombre: { type: String, required: true },
-    apellido: { type: String, required: true },
+    nombre: { type: String, default: null},
+    apellido: { type: String, default: null },
     usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     nombreFantasia: { type: String, default: null },
     cuentaGit: { type: String, required: true },

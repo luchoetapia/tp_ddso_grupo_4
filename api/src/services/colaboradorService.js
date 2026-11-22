@@ -8,6 +8,7 @@ const habilidadService = require("./habilidadService.js");
 
 const { construirOrden } = require('./ordenamiento.js');
 const reporteService = require('./reporteService.js');
+const notificacionAutomaticaService = require('./notificacionAutomaticaService.js');
 const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 // Claves por las que el front puede ordenar las colaboradoras (2° criterio: cuenta de Git, 3°: _id)
@@ -29,6 +30,7 @@ class ColaboradorService {
         this.habilidadService = habilidadService;
         this.colectivoRepository = colectivoRepository;
         this.postulacionRepository = postulacionRepository;
+        this.notificacionAutomaticaService = notificacionAutomaticaService;
     }
 
     obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
@@ -70,6 +72,7 @@ class ColaboradorService {
         }
 
         this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.COLABORADOR, creado)
+        this.notificacionAutomaticaService.notificarProyectosCompatiblesEnSegundoPlano(creado)
         return creado
     }
 

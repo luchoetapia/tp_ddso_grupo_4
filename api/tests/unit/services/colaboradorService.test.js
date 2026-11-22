@@ -19,6 +19,11 @@ jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
 jest.mock('../../../src/repositories/postulacionRepository.js', () => ({
     existeAceptadaEnProyectos: jest.fn(),
 }));
+jest.mock('../../../src/services/notificacionAutomaticaService.js', () => ({
+    notificarColaboradoresCompatiblesEnSegundoPlano: jest.fn(),
+    notificarProyectosCompatiblesEnSegundoPlano: jest.fn(),
+}));
+
 const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
 const postulacionRepository = require('../../../src/repositories/postulacionRepository.js');
 const { ForbiddenError } = require('../../../src/errors/AppError.js');
