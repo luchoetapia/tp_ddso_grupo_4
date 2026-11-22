@@ -31,6 +31,10 @@ tags:
     description: Gestión de colaboradoras/es
   - name: Colaboraciones
     description: Participación de colaboradoras/es en proyectos
+  - name: Palabras baneadas
+    description: Palabras prohibidas que generan reportes (solo admins)
+  - name: Reportes
+    description: Revisión de contenido reportado (solo admins)
   - name: Auth
     description: Sesión e ingreso con LinkedIn
 
@@ -1619,6 +1623,401 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /palabrasBaneadas:
+    get:
+      summary: Obtiene las palabras baneadas (paginado)
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Palabras baneadas]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
+        - in: query
+          name: activa
+          required: false
+          description: Filtra por estado. Sin el parámetro se listan todas.
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Página de palabras baneadas, ordenadas alfabéticamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PalabraBaneada"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Agrega una palabra baneada
+      description: >
+        Requiere sesión con rol `admin` (cookie `accessToken`). La palabra se guarda en
+        minúscula y sin espacios alrededor. No se permiten campos adicionales.
+      tags: [Palabras baneadas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PalabraBaneadaInput"
+      responses:
+        "201":
+          description: Palabra baneada agregada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Palabra baneada agregada exitosamente
+                  data:
+                    $ref: "#/components/schemas/PalabraBaneada"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La palabra ya existe (activa o desactivada)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /palabrasBaneadas/{id}/activar:
+    patch:
+      summary: Activa una palabra baneada
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Palabras baneadas]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Palabra actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PalabraBaneada"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Palabra baneada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /palabrasBaneadas/{id}/desactivar:
+    patch:
+      summary: Desactiva una palabra baneada (deja de detectarse)
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Palabras baneadas]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Palabra actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PalabraBaneada"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Palabra baneada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /reportes:
+    get:
+      summary: Obtiene los reportes (paginado, más recientes primero)
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Reportes]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
+        - in: query
+          name: estado
+          required: false
+          schema:
+            $ref: "#/components/schemas/EstadoReporte"
+        - in: query
+          name: tipoEntidad
+          required: false
+          schema:
+            $ref: "#/components/schemas/TipoEntidadReportada"
+      responses:
+        "200":
+          description: Página de reportes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Reporte"
+                  paginacion:
+                    $ref: "#/components/schemas/Paginacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /reportes/{id}:
+    get:
+      summary: Obtiene un reporte con el contenido actual de la entidad reportada
+      description: Requiere sesión con rol `admin` (cookie `accessToken`).
+      tags: [Reportes]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Reporte encontrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Reporte"
+                  - type: object
+                    properties:
+                      contenido:
+                        type: object
+                        nullable: true
+                        description: >
+                          Campos de texto actuales de la entidad (ej. titulo, descripcion,
+                          perfiles[0].titulo). Es null si la entidad fue eliminada.
+                        additionalProperties:
+                          type: string
+                          nullable: true
+                        example:
+                          titulo: Huerta comunitaria
+                          descripcion: Proyecto de color negro
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Reporte no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /reportes/{id}/notificar:
+    patch:
+      summary: Notifica al usuario para que edite el contenido
+      description: >
+        Requiere sesión con rol `admin` (cookie `accessToken`). El reporte sigue pendiente y queda marcado como notificado. Si el usuario
+        edita la entidad y el contenido queda limpio, el reporte pasa a Solucionado.
+      tags: [Reportes]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Reporte notificado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reporte"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Reporte no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El reporte ya fue resuelto (no está pendiente)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /reportes/{id}/validar:
+    patch:
+      summary: Valida el reporte y elimina la entidad reportada
+      description: >
+        Requiere sesión con rol `admin` (cookie `accessToken`). El contenido es inapropiado - se elimina la entidad y el reporte pasa a Validado.
+      tags: [Reportes]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolucionReporteInput"
+      responses:
+        "200":
+          description: Reporte resuelto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reporte"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Reporte no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El reporte ya fue resuelto (no está pendiente)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /reportes/{id}/rechazar:
+    patch:
+      summary: Rechaza el reporte (falso positivo)
+      description: >
+        Requiere sesión con rol `admin` (cookie `accessToken`). El contenido es válido en su contexto - solo cambia el estado a Rechazado.
+      tags: [Reportes]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolucionReporteInput"
+      responses:
+        "200":
+          description: Reporte resuelto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reporte"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Reporte no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El reporte ya fue resuelto (no está pendiente)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   parameters:
     IdPath:
@@ -1697,6 +2096,107 @@ components:
         totalPaginas:
           type: integer
           example: 3
+
+    PalabraBaneadaInput:
+      type: object
+      required: [palabra]
+      additionalProperties: false
+      properties:
+        palabra:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: tonto
+
+    PalabraBaneada:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        palabra:
+          type: string
+          example: tonto
+        activa:
+          type: boolean
+          example: true
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    EstadoReporte:
+      type: string
+      enum: [Pendiente, Rechazado, Validado, Solucionado]
+
+    TipoEntidadReportada:
+      type: string
+      enum: [Proyecto, Postulacion, Colaborador, Colectivo]
+
+    ResolucionReporteInput:
+      type: object
+      additionalProperties: false
+      properties:
+        comentario:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: En este contexto "negro" se usa como color
+
+    Reporte:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        entidad:
+          type: object
+          properties:
+            tipo:
+              $ref: "#/components/schemas/TipoEntidadReportada"
+            id:
+              $ref: "#/components/schemas/ObjectId"
+        motivo:
+          type: string
+          example: "Palabras prohibidas detectadas en: descripcion (negro)"
+        estado:
+          $ref: "#/components/schemas/EstadoReporte"
+        duenio:
+          type: object
+          nullable: true
+          description: Usuario dueño (solo proyectos y colectivos)
+          properties:
+            id:
+              $ref: "#/components/schemas/ObjectId"
+            username:
+              type: string
+            email:
+              type: string
+        notificado:
+          type: boolean
+        fechaNotificacion:
+          type: string
+          format: date-time
+          nullable: true
+        fechaSolucion:
+          type: string
+          format: date-time
+          nullable: true
+        revisadoPor:
+          type: object
+          nullable: true
+          properties:
+            id:
+              $ref: "#/components/schemas/ObjectId"
+            username:
+              type: string
+        fechaRevision:
+          type: string
+          format: date-time
+          nullable: true
+        comentarioRevision:
+          type: string
+          nullable: true
+        fechaCreacion:
+          type: string
+          format: date-time
 
     ObjectId:
       type: string

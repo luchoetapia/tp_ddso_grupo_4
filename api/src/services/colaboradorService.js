@@ -7,6 +7,8 @@ const { roles } = require('../auth/models/usuario.js');
 const habilidadService = require("./habilidadService.js");
 
 const { construirOrden } = require('./ordenamiento.js');
+const reporteService = require('./reporteService.js');
+const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 // Claves por las que el front puede ordenar las colaboradoras (2° criterio: cuenta de Git, 3°: _id)
 const ORDENAMIENTO = {
@@ -23,6 +25,7 @@ const MENSAJE_USUARIO_CON_COLABORADOR = "El usuario ya tiene un perfil de colabo
 class ColaboradorService {
     constructor() {
         this.colaboradorRepository = colaboradorRepository;
+        this.reporteService = reporteService;
         this.habilidadService = habilidadService;
         this.colectivoRepository = colectivoRepository;
         this.postulacionRepository = postulacionRepository;
@@ -46,8 +49,9 @@ class ColaboradorService {
 
         const habilidades = await this.habilidadService.obtenerPorListaId(datos.habilidades ?? [])
 
+        let creado
         try {
-            return await this.colaboradorRepository.save({
+            creado = await this.colaboradorRepository.save({
                 usuario: idUsuario,
                 nombre: datos.nombre,
                 apellido: datos.apellido,
@@ -64,6 +68,9 @@ class ColaboradorService {
             if (error.code === 11000 && error.keyPattern?.usuario) throw new ConflictError(MENSAJE_USUARIO_CON_COLABORADOR)
             throw error
         }
+
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.COLABORADOR, creado)
+        return creado
     }
 
     obtenerPorId = async (id) => {

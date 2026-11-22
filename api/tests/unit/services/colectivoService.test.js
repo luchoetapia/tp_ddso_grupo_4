@@ -1,3 +1,7 @@
+jest.mock('../../../src/services/reporteService.js', () => ({
+    revisarEnSegundoPlano: jest.fn()
+}));
+
 jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
     buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
@@ -22,6 +26,7 @@ const colectivoRepository = require('../../../src/repositories/colectivoReposito
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colectivoService = require('../../../src/services/colectivoService.js');
+const reporteService = require('../../../src/services/reporteService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_COLECTIVO = '507f1f77bcf86cd799439051';
@@ -72,6 +77,7 @@ describe('ColectivoService', () => {
 
             const resultado = await colectivoService.crear(datos, ID_USUARIO);
 
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Colectivo', resultado);
             expect(proyectoService.obtenerPorListaId).toHaveBeenCalledWith([ID_PROY]);
             expect(colectivoRepository.save).toHaveBeenCalledWith(expect.objectContaining({
                 usuario: ID_USUARIO,

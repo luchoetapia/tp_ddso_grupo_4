@@ -1,0 +1,33 @@
+const EstadoReporte = {
+    PENDIENTE: 'Pendiente',
+    RECHAZADO: 'Rechazado',
+    VALIDADO: 'Validado',
+    // Se notificó y el usuario editó la entidad reportada
+    SOLUCIONADO: 'Solucionado'
+}
+
+const TipoEntidadReportada = {
+    PROYECTO: 'Proyecto',
+    POSTULACION: 'Postulacion',
+    COLABORADOR: 'Colaborador',
+    COLECTIVO: 'Colectivo'
+}
+
+class Reporte {
+    constructor(entidad, motivo, duenio = null, estado = EstadoReporte.PENDIENTE) {
+        this.entidad = entidad;
+        this.motivo = motivo;
+        this.duenio = duenio;
+        this.estado = estado;
+        this.notificado = false;
+        this.fechaNotificacion = null;
+        this.fechaSolucion = null;
+        this.revisadoPor = null;
+        this.fechaRevision = null;
+        this.comentarioRevision = null;
+    }
+
+    estaPendiente() { return this.estado === EstadoReporte.PENDIENTE }
+}
+
+module.exports = { Reporte, EstadoReporte, TipoEntidadReportada };

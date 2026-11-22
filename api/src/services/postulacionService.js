@@ -6,6 +6,8 @@ const colectivoRepository = require('../repositories/colectivoRepository.js');
 const colaboracionRepository = require('../repositories/colaboracionRepository.js');
 const EstadoPostulacion = require('../models/Proyecto/Postulaciones/EstadoPostulacion.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const reporteService = require('./reporteService.js');
+const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 class PostulacionService {
     constructor() {
@@ -14,6 +16,7 @@ class PostulacionService {
         this.colaboradorService = colaboradorService;
         this.colectivoRepository = colectivoRepository;
         this.colaboracionRepository = colaboracionRepository;
+        this.reporteService = reporteService;
     }
 
     crear = async (datos) => {
@@ -69,6 +72,7 @@ class PostulacionService {
             estado: EstadoPostulacion.PENDIENTE,
             fecha: new Date()
         });
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.POSTULACION, nuevaPostulacion);
 
         // 8. Evaluar postulación según la estrategia de aceptación del proyecto
         if (proyecto.estrategiaAceptacion) {

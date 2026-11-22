@@ -1,3 +1,7 @@
+jest.mock('../../../src/services/reporteService.js', () => ({
+    revisarEnSegundoPlano: jest.fn()
+}));
+
 jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
     buscarConPaginacion: jest.fn(),
     findAll: jest.fn(),
@@ -31,6 +35,7 @@ const proyectoRepository = require('../../../src/repositories/proyectoRepository
 const habilidadService = require('../../../src/services/habilidadService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const proyectoService = require('../../../src/services/proyectoService.js');
+const reporteService = require('../../../src/services/reporteService.js');
 const { Proyecto, Perfil } = require('../../../src/models/proyecto.js');
 const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../../../src/errors/AppError.js');
@@ -106,6 +111,19 @@ describe('ProyectoService', () => {
                 enlaceCodigoFuente: null,
             });
             expect(resultado.id).toBe(ID_PROY);
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Proyecto', resultado);
+        });
+
+        test('revisa las palabras baneadas después de asociarlo al colectivo', async () => {
+            proyectoRepository.findByTitulo.mockResolvedValue(null);
+            colectivoRepository.findByUsuario.mockResolvedValue({ id: 'col' });
+            proyectoRepository.save.mockResolvedValue(proyectoDoc());
+
+            await proyectoService.crear({ titulo: 'x', descripcion: 'y' }, 'usuario');
+
+            const ordenPush = colectivoRepository.update.mock.invocationCallOrder[0];
+            const ordenRevision = reporteService.revisarEnSegundoPlano.mock.invocationCallOrder[0];
+            expect(ordenRevision).toBeGreaterThan(ordenPush);
         });
 
         test('usa lista de perfiles vacía si no se envía', async () => {
@@ -174,6 +192,7 @@ describe('ProyectoService', () => {
             expect(colectivoRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
             expect(proyectoRepository.update).toHaveBeenCalledWith(ID_PROY, { descripcion: 'nueva' });
             expect(resultado.descripcion).toBe('nueva');
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Proyecto', resultado);
         });
 
         test('lanza ForbiddenError si el proyecto es de otro colectivo', async () => {
@@ -575,6 +594,7 @@ describe('ProyectoService', () => {
             await proyectoService.eliminarPerfil(ID_PROY, ID_PERFIL);
 
             expect(proyectoRepository.eliminarPerfil).toHaveBeenCalledWith(ID_PROY, ID_PERFIL);
+            expect(reporteService.revisarEnSegundoPlano).toHaveBeenCalledWith('Proyecto', expect.objectContaining({ id: ID_PROY }));
         });
 
         test('lanza NotFoundError si el proyecto o el perfil no existen', async () => {

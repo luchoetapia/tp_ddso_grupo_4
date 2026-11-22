@@ -6,6 +6,8 @@ const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/i
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 const { construirOrden } = require('./ordenamiento.js');
+const reporteService = require('./reporteService.js');
+const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 // Claves por las que el front puede ordenar los proyectos (2° criterio: título, 3°: _id)
 const ORDENAMIENTO = {
@@ -27,6 +29,7 @@ const DIAS_RECIENTE = 30;
 class ProyectoService {
     constructor() {
         this.proyectoRepository = proyectoRepository;
+        this.reporteService = reporteService;
         this.habilidadService = habilidadService;
         this.colaboradorService = colaboradorService;
         this.colectivoRepository = colectivoRepository;
@@ -115,6 +118,8 @@ class ProyectoService {
         if (colectivo)
             await this.colectivoRepository.update(colectivo.id, { $push: { proyectos: creado.id } });
 
+        // Después de asociarlo al colectivo, para que el reporte encuentre al dueño
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, creado);
         return creado;
     }
 
@@ -163,7 +168,9 @@ class ProyectoService {
             }
         }
 
-        return await this.proyectoRepository.update(id, cambios)
+        const actualizado = await this.proyectoRepository.update(id, cambios)
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, actualizado)
+        return actualizado
     }
 
     obtenerPorListaId = async (listaDeIDs) => {
@@ -303,6 +310,7 @@ class ProyectoService {
 
         const proyecto = await this.proyectoRepository.agregarPerfil(idProyecto, datos);
         if (!proyecto) throw new NotFoundError("Proyecto no encontrado");
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
 
         return proyecto.perfiles.at(-1);
     }
@@ -312,6 +320,7 @@ class ProyectoService {
 
         const proyecto = await this.proyectoRepository.modificarPerfil(idProyecto, idPerfil, cambios);
         if (!proyecto) throw new NotFoundError("Proyecto o perfil no encontrado");
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
 
         return proyecto.perfiles.id(idPerfil);
     }
@@ -319,6 +328,8 @@ class ProyectoService {
     eliminarPerfil = async (idProyecto, idPerfil) => {
         const proyecto = await this.proyectoRepository.eliminarPerfil(idProyecto, idPerfil);
         if (!proyecto) throw new NotFoundError("Proyecto o perfil no encontrado");
+        // Eliminar el perfil con la palabra prohibida también cuenta como solucionado
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
     }
 
     finalizarVariosProyectos = async (idsProyectos) => {
