@@ -117,6 +117,7 @@ class Notificacion {
   proyecto: Proyecto
   mensaje: String
   fecha: LocalDate
+  automatica : Boolean
 }
 
 

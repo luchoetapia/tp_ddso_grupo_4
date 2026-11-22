@@ -7,6 +7,7 @@ const colectivoRepository = require('../repositories/colectivoRepository.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 const { construirOrden } = require('./ordenamiento.js');
 const reporteService = require('./reporteService.js');
+const notificacionAutomaticaService = require('./notificacionAutomaticaService.js');
 const { TipoEntidadReportada } = require('../models/Reporte.js');
 
 // Claves por las que el front puede ordenar los proyectos (2° criterio: título, 3°: _id)
@@ -33,6 +34,7 @@ class ProyectoService {
         this.habilidadService = habilidadService;
         this.colaboradorService = colaboradorService;
         this.colectivoRepository = colectivoRepository;
+        this.notificacionAutomaticaService = notificacionAutomaticaService;
     }
 
     buscar = async (filtros = {}, { pagina, limite, orden, direccion } = {}) => {
@@ -120,6 +122,7 @@ class ProyectoService {
 
         // Después de asociarlo al colectivo, para que el reporte encuentre al dueño
         this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, creado);
+        this.notificacionAutomaticaService.notificarColaboradoresCompatiblesEnSegundoPlano(creado);
         return creado;
     }
 
@@ -312,7 +315,9 @@ class ProyectoService {
         if (!proyecto) throw new NotFoundError("Proyecto no encontrado");
         this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.PROYECTO, proyecto);
 
-        return proyecto.perfiles.at(-1);
+        const nuevoPerfil = proyecto.perfiles.at(-1);
+        this.notificacionAutomaticaService.notificarColaboradoresCompatiblesEnSegundoPlano(proyecto, [nuevoPerfil]);
+        return nuevoPerfil;
     }
 
     modificarPerfil = async (idProyecto, idPerfil, cambios) => {

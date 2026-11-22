@@ -30,6 +30,10 @@ jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
     findByUsuario: jest.fn(),
     update: jest.fn(),
 }));
+jest.mock('../../../src/services/notificacionAutomaticaService.js', () => ({
+    notificarColaboradoresCompatiblesEnSegundoPlano: jest.fn(),
+    notificarProyectosCompatiblesEnSegundoPlano: jest.fn(),
+}));
 
 const proyectoRepository = require('../../../src/repositories/proyectoRepository.js');
 const habilidadService = require('../../../src/services/habilidadService.js');

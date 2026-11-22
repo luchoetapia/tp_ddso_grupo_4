@@ -38,6 +38,19 @@ class ProyectoRepository {
         return await ProyectoModel.find(condition).populate(HABILIDADES_PERFILES);
     }
 
+    async findAbiertosCumplibles(idsHabilidades, ahora = new Date()) {
+        return await ProyectoModel.find({
+            finalizado: false,
+            perfiles: {
+                $elemMatch: {
+                    busquedaAbierta: true,
+                    $or: [{ fechaFinBusqueda: null }, { fechaFinBusqueda: { $gt: ahora } }],
+                    habilidadesRequeridas: { $not: { $elemMatch: { $nin: idsHabilidades } } }
+                }
+            }
+        }).populate(HABILIDADES_PERFILES);
+    }
+
     async obtenerActivos() {
         return await ProyectoModel.find({ finalizado: false }).lean();
     }
