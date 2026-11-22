@@ -122,8 +122,8 @@ const PasoDatosColaborador = ({ colaborador, onChange }) => {
                 name="deseaSerContactado"
                 checked={!!colaborador.deseaSerContactado}
                 onChange={(e) => onChange('deseaSerContactado', e.target.checked)}
-                className="min-h-11"
-                label={<span className="text-[14px] text-text">Acepto que los colectivos me contacten</span>}
+                className="min-h-11 gap-2.5 [&_input]:h-5 [&_input]:w-5"
+                label={<span className="text-[16px] text-text">Acepto que los colectivos me contacten</span>}
             />
         </div>
     );

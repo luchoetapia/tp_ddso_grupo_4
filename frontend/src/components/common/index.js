@@ -1,3 +1,4 @@
+export { default as BotonLinkedin } from "./BotonLinkedin";
 export { default as Button } from "./Button";
 export { default as Card } from "./Card";
 export { default as Checkbox } from "./Checkbox";
@@ -8,6 +9,7 @@ export { default as Modal } from "./Modal";
 export { default as Paginacion } from "./Paginacion";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as Select } from "./Select";
+export { default as SeparadorO } from "./SeparadorO";
 export { default as Skeleton } from "./Skeleton";
 export { default as Tag } from "./Tag";
 export { default as Textarea } from "./Textarea";

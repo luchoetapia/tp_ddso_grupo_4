@@ -1,9 +1,10 @@
 'use client'
 
-import { useLayoutEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
-import { Button, InputContrasena } from '@/components/common'
+import alertas from '@/services/alertas'
+import { BotonLinkedin, Button, InputContrasena, SeparadorO } from '@/components/common'
 
 const Ingresar = () => {
     const [accessKey, setAccessKey] = useState('');
@@ -16,6 +17,17 @@ const Ingresar = () => {
         setCargando(false);
     }, []);
     const router = useRouter();
+    const errorLinkedin = useSearchParams().get('errorLinkedin');
+    const errorMostrado = useRef(false);
+
+    // Si el ingreso con LinkedIn falló, la API redirige acá con ?errorLinkedin=<mensaje>:
+    // se muestra la alerta y se limpia la URL (así no reaparece al recargar)
+    useEffect(() => {
+        if (!errorLinkedin || errorMostrado.current) return;
+        errorMostrado.current = true;
+        alertas.error(errorLinkedin);
+        router.replace('/ingresar');
+    }, [errorLinkedin, router]);
 
     const ingresarUsuario = async (e) => {
         e.preventDefault();
@@ -47,6 +59,9 @@ const Ingresar = () => {
                     {cargando ? 'Ingresando…' : 'Ingresar'}
                 </Button>
             </form>
+            <SeparadorO />
+            <BotonLinkedin />
+            <p className="m-0 text-center text-[12px] text-muted">Solo para colaboradores</p>
         </section>
     );
 };

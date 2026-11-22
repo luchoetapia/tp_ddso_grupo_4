@@ -16,6 +16,17 @@ const tipos = [
     },
 ];
 
+// Checkbox de términos y condiciones (también lo usa el registro con LinkedIn, que saltea este paso)
+export const CheckboxTerminos = ({ acepta, onChange }) => (
+    <Checkbox
+        name="aceptaTerminos"
+        checked={!!acepta}
+        onChange={(e) => onChange(e.target.checked)}
+        className="min-h-11 gap-2.5 [&_input]:h-5 [&_input]:w-5"
+        label={<span className="text-[16px] text-text">Acepto los <Link href="#" className="font-semibold text-accent underline">términos y condiciones</Link></span>}
+    />
+);
+
 const PasoTipoCuenta = ({ usuario, onChange }) => {
     return (
         <div className="flex flex-col gap-[18px]">
@@ -72,13 +83,7 @@ const PasoTipoCuenta = ({ usuario, onChange }) => {
                 />
             </div>
 
-            <Checkbox
-                name="aceptaTerminos"
-                checked={!!usuario.aceptaTerminos}
-                onChange={(e) => onChange('aceptaTerminos', e.target.checked)}
-                className="min-h-11"
-                label={<span className="text-[14px] text-text">Acepto los <Link href="#" className="font-semibold text-accent underline">términos y condiciones</Link></span>}
-            />
+            <CheckboxTerminos acepta={usuario.aceptaTerminos} onChange={(valor) => onChange('aceptaTerminos', valor)} />
         </div>
     );
 };
