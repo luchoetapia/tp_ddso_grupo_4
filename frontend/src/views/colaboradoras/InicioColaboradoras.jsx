@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { Card, Skeleton, Tag } from "@/components/common";
+import AvisosModeracion from "@/components/moderacion/AvisosModeracion";
 
 const CANTIDAD_PROYECTOS = 5;
 
@@ -63,6 +64,8 @@ export default function InicioColaboradora() {
 
     return (
         <section className="flex flex-col gap-6">
+            <AvisosModeracion url="/colaboradores/me/avisosModeracion" />
+
             <header className="flex flex-col gap-2">
                 <h1>{perfil ? `Hola, ${perfil.nombreFantasia || perfil.nombre}` : "Hola"}</h1>
                 {perfil && (

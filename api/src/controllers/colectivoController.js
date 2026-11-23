@@ -6,6 +6,8 @@ const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
 const { Paginado } = require('../dtos/paginado.js');
 const { ColaboradorCompatible } = require('../dtos/colaboradorPublic.js');
 const { AdministradorPublic } = require('../dtos/administradorPublic.js');
+const { AvisoModeracion } = require('../dtos/reportePublic.js');
+const reporteService = require('../services/reporteService.js');
 const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
 const { roles } = require('../auth/models/usuario.js');
 
@@ -82,6 +84,14 @@ class ColectivoController {
     actualizarMiColectivo = async (req, res) => {
         const colectivo = await this.colectivoService.actualizarPorUsuario(req.usuario.id, req.body)
         res.status(200).json({ message: 'Colectivo actualizado exitosamente', data: ColectivoPublic.desde(colectivo) })
+    }
+
+    obtenerMisAvisosModeracion = async (req, res) => {
+        const colectivo = await this.colectivoService.buscarPorUsuario(req.usuario.id);
+        if (!colectivo) throw new NotFoundError('El usuario no tiene un colectivo asociado');
+
+        const avisos = await reporteService.obtenerAvisosDe(colectivo.usuario);
+        res.status(200).json(avisos.map(AvisoModeracion.desde));
     }
 
     obtenerMisEstadisticas = async (req, res) => {

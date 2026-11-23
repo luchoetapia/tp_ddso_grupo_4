@@ -14,14 +14,16 @@ const TipoEntidadReportada = {
 }
 
 class Reporte {
-    constructor(entidad, motivo, duenio = null, estado = EstadoReporte.PENDIENTE) {
+    constructor(entidad, motivo, duenio = null, estado = EstadoReporte.PENDIENTE, reglas = []) {
         this.entidad = entidad;
         this.motivo = motivo;
+        this.reglas = reglas;
         this.duenio = duenio;
         this.estado = estado;
         this.notificado = false;
         this.fechaNotificacion = null;
         this.fechaSolucion = null;
+        this.fechaUltimoCambio = null;
         this.revisadoPor = null;
         this.fechaRevision = null;
         this.comentarioRevision = null;

@@ -10,6 +10,8 @@ const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
 const { ProyectoPublic } = require('../dtos/proyectoPublic.js');
 const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
 const { Paginado } = require('../dtos/paginado.js');
+const { AvisoModeracion } = require('../dtos/reportePublic.js');
+const reporteService = require('../services/reporteService.js');
 const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
 const { roles } = require('../auth/models/usuario.js');
 
@@ -107,6 +109,11 @@ class ColaboradorController {
             { texto: texto || undefined, habilidades }
         );
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
+    }
+
+    obtenerMisAvisosModeracion = async (req, res) => {
+        const avisos = await reporteService.obtenerAvisosDe(req.usuario.id);
+        res.status(200).json(avisos.map(AvisoModeracion.desde));
     }
 
     obtenerMisNotificaciones = async (req, res) => {

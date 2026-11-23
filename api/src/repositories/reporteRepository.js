@@ -49,15 +49,22 @@ class ReporteRepository {
         return Boolean(await ReporteModel.exists({ 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE }));
     }
 
-    async marcarNotificado(id) {
+    async marcarNotificado(id, duenio = undefined) {
+        const cambios = { notificado: true, fechaNotificacion: new Date() };
+        if (duenio) cambios.duenio = duenio;
+
         return await ReporteModel.findOneAndUpdate(
             { _id: id, estado: EstadoReporte.PENDIENTE },
-            { notificado: true, fechaNotificacion: new Date() },
+            cambios,
             { new: true }
         ).populate(REFERENCIAS);
     }
 
-    // Solo pasan a solucionado los pendientes que ya fueron notificados
+    async buscarNotificadosPendientesDe(duenio) {
+        return await ReporteModel.find({ duenio, estado: EstadoReporte.PENDIENTE, notificado: true })
+            .sort({ fechaNotificacion: -1 });
+    }
+
     async solucionarNotificados(idEntidad) {
         const { modifiedCount } = await ReporteModel.updateMany(
             { 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE, notificado: true },
@@ -66,7 +73,26 @@ class ReporteRepository {
         return modifiedCount;
     }
 
-    // No limpia las referencias a la entidad en otros documentos (decisión aceptada)
+    async solucionarPendientes(idEntidad) {
+        const pendientes = await ReporteModel.find({ 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE }, { _id: 1 });
+        if (pendientes.length === 0) return [];
+
+        const ids = pendientes.map(({ _id }) => _id);
+        await ReporteModel.updateMany(
+            { _id: { $in: ids }, estado: EstadoReporte.PENDIENTE },
+            { estado: EstadoReporte.SOLUCIONADO, fechaSolucion: new Date() }
+        );
+        return await ReporteModel.find({ _id: { $in: ids }, estado: EstadoReporte.SOLUCIONADO }).populate(REFERENCIAS);
+    }
+
+    async actualizarPendiente(idEntidad, motivo, reglas) {
+        return await ReporteModel.findOneAndUpdate(
+            { 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE },
+            { motivo, reglas, fechaUltimoCambio: new Date() },
+            { new: true }
+        ).populate(REFERENCIAS);
+    }
+
     async eliminarEntidad(tipo, id) {
         return await mongoose.model(tipo).findByIdAndDelete(id);
     }
