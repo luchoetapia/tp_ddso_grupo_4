@@ -44,7 +44,6 @@ class ProyectoController {
 
     eliminarProyecto = async (req, res) => {
         const { proyecto, colectivo } = await this.proyectoService.eliminar(req.params.id, req.usuario.id)
-        // Para la auditoría: el proyecto ya no existe, así que no se puede deducir su colectivo después
         res.locals.idColectivo = colectivo.id
         res.locals.tituloProyecto = proyecto.titulo
         res.status(200).json({ message: 'Proyecto eliminado exitosamente' })

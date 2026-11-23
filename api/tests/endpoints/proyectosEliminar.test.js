@@ -1,7 +1,6 @@
 jest.mock('../../src/services/proyectoService.js', () => ({
     eliminar: jest.fn(),
 }));
-// El middleware auditar() guarda un registro por cada acción exitosa: se mockea para no escribir en la base
 jest.mock('../../src/services/auditoriaService.js', () => ({
     registrar: jest.fn().mockResolvedValue(undefined),
 }));

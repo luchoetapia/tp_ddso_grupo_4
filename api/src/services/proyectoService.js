@@ -142,7 +142,6 @@ class ProyectoService {
         return proyecto
     }
 
-    // Devuelve el colectivo del usuario si el proyecto es suyo
     verificarPertenencia = async (proyecto, idUsuarioColectivo) => {
         const colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo)
         const esDelColectivo = (colectivo?.proyectos ?? []).some(p => (p._id ?? p).toString() === proyecto.id)
@@ -213,9 +212,6 @@ class ProyectoService {
         return actualizado;
     }
 
-    // Baja definitiva de un proyecto (también si está finalizado).
-    // Si alguien colaboró no se puede: las colaboraciones forman el historial público de las colaboradoras,
-    // así que en ese caso hay que finalizarlo. Las postulaciones (pendientes o rechazadas) se borran con el proyecto.
     eliminar = async (id, idUsuarioColectivo) => {
         const proyecto = await this.obtenerPorId(id)
         const colectivo = await this.verificarPertenencia(proyecto, idUsuarioColectivo)

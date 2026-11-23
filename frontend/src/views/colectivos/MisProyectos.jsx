@@ -66,7 +66,6 @@ export default function MisProyectos() {
         }
     };
 
-    // Si el proyecto tiene colaboraciones la API responde 409 y apiQuery muestra el motivo
     const eliminarProyecto = async () => {
         const proyecto = aEliminar;
         setProcesando(true);

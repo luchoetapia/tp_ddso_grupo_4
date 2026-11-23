@@ -7,9 +7,7 @@ const LARGO_MAXIMO_UBICACION = 100;
 
 const campos = {
     nombre: z.string({ error: "El nombre del colectivo es obligatorio" }).min(1, "El nombre del colectivo no puede estar vacío"),
-    // Obligatoria según el enunciado: los colectivos deben indicar nombre, descripción y tipo
     descripcion: z.string({ error: "La descripción es obligatoria" }).trim().min(1, "La descripción no puede estar vacía"),
-    // Opcional: vacío o null la borra. Las predefinidas (país, CABA, provincias) se guardan con su nombre oficial
     ubicacion: z.string({ error: "La ubicación debe ser un texto" })
         .trim()
         .max(LARGO_MAXIMO_UBICACION, `La ubicación no puede superar los ${LARGO_MAXIMO_UBICACION} caracteres`)

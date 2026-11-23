@@ -6,11 +6,7 @@ import { PROVINCIAS, esUbicacionPredefinida } from '@/helpers/ubicaciones'
 
 const OTRA = 'otra';
 
-// Ubicación de un colectivo: "Argentina", CABA, una provincia o una ciudad/barrio en texto libre.
-// `valor` es el texto que se guarda ('' = sin ubicación); `onChange` recibe el texto nuevo.
 const SelectorUbicacion = ({ valor = '', onChange }) => {
-    // Un texto que no es predefinido es una ciudad/barrio. Además se recuerda si se eligió "Otra",
-    // porque recién elegida el texto está vacío y mirando solo `valor` no se puede saber
     const [eligioOtra, setEligioOtra] = useState(false);
     const esOtra = eligioOtra || (valor !== '' && !esUbicacionPredefinida(valor));
     const opcion = esOtra ? OTRA : valor;
