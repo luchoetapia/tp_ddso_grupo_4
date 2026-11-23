@@ -12,6 +12,22 @@ import { formatearFecha, formatearMoneda } from '@/helpers/formatos';
 const varianteEstado = { Pendiente: 'highlight', Aceptada: 'accent', Rechazada: 'neutral' };
 const grilla = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3';
 
+const nombreVisible = (c) => {
+    if (!c) return 'Colaboración anónima';
+    return c.nombreFantasia || [c.nombre, c.apellido].filter(Boolean).join(' ') || c.cuentaGit || 'Colaboradora';
+};
+
+const Ocupante = ({ colaboracion }) => (
+    <li className="flex items-center gap-2 text-sm">
+        <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full bg-accent" />
+        {colaboracion.esAnonima || !colaboracion.colaborador ? (
+            <span className="italic text-muted">Colaboración anónima</span>
+        ) : (
+            <span className="font-semibold">{nombreVisible(colaboracion.colaborador)}</span>
+        )}
+    </li>
+);
+
 export default function VerProyectoContenido() {
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
@@ -185,6 +201,8 @@ export default function VerProyectoContenido() {
         logros = [],
     } = proyecto;
 
+    const tituloPerfil = Object.fromEntries(perfiles.map((perfil) => [perfil.id, perfil.titulo]));
+
     return (
         <section className="flex flex-col gap-6" aria-labelledby="proyecto-titulo">
             {/* Cabecera del Proyecto */}
@@ -286,6 +304,7 @@ export default function VerProyectoContenido() {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         {perfiles.map((perfil) => {
                             const estadoPostulacion = postulaciones[perfil.id];
+                            const ocupantes = colaboraciones.filter((c) => c.activa && c.idPerfil === perfil.id);
                             const puedePostularse =
                                 usuario?.rol === roles.COLABORADOR &&
                                 perfil.busquedaAbierta &&
@@ -375,7 +394,9 @@ export default function VerProyectoContenido() {
                                             {perfil.limiteColaboraciones && (
                                                 <div>
                                                     <span className="font-semibold text-muted">Vacantes: </span>
-                                                    <span>{perfil.limiteColaboraciones}</span>
+                                                    <span>
+                                                        {ocupantes.length} de {perfil.limiteColaboraciones} ocupadas
+                                                    </span>
                                                 </div>
                                             )}
 
@@ -386,6 +407,22 @@ export default function VerProyectoContenido() {
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Quién ocupa este rol */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-xs font-semibold uppercase text-muted">
+                                            {ocupantes.length === 1 ? 'Ocupa este rol' : 'Ocupan este rol'}
+                                        </span>
+                                        {ocupantes.length === 0 ? (
+                                            <p className="m-0 text-sm text-muted">Todavía nadie ocupa este rol.</p>
+                                        ) : (
+                                            <ul className="m-0 flex list-none flex-col gap-1 p-0" aria-label={`Quiénes ocupan el rol ${perfil.titulo}`}>
+                                                {ocupantes.map((colaboracion) => (
+                                                    <Ocupante key={colaboracion.id} colaboracion={colaboracion} />
+                                                ))}
+                                            </ul>
+                                        )}
                                     </div>
 
                                     {/* Acción o estado de postulación */}
@@ -476,9 +513,21 @@ export default function VerProyectoContenido() {
                     <ul className="m-0 flex list-none flex-col gap-3 p-0">
                         {colaboraciones.map((colaboracion) => (
                             <Card as="li" key={colaboracion.id} className="gap-1.5">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="m-0 text-base font-bold">{colaboracion.colaborador.nombre}  {colaboracion.colaborador.apellido}</h3>
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <h3 className="m-0 text-base font-bold">
+                                        {colaboracion.esAnonima || !colaboracion.colaborador ? (
+                                            <span className="italic font-normal text-muted">Colaboración anónima</span>
+                                        ) : (
+                                            nombreVisible(colaboracion.colaborador)
+                                        )}
+                                    </h3>
+                                    <Tag variant={colaboracion.activa ? 'accent' : 'neutral'}>
+                                        {colaboracion.activa ? 'En curso' : 'Finalizada'}
+                                    </Tag>
                                 </div>
+                                {tituloPerfil[colaboracion.idPerfil] && (
+                                    <p className="m-0 text-sm text-muted">Rol: {tituloPerfil[colaboracion.idPerfil]}</p>
+                                )}
                             </Card>
                         ))}
                     </ul>

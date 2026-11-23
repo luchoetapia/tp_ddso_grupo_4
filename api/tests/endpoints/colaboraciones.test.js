@@ -3,13 +3,22 @@ jest.mock('../../src/services/colaboracionService.js', () => ({
     crear: jest.fn(),
     desanotar: jest.fn(),
 }));
+// El middleware auditar() guarda un registro por cada acción exitosa: se mockea para no escribir en la base
+jest.mock('../../src/services/auditoriaService.js', () => ({
+    registrar: jest.fn().mockResolvedValue(undefined),
+}));
 
 const request = require('supertest');
 const app = require('../../src/app.js');
 const colaboracionService = require('../../src/services/colaboracionService.js');
+const auditoriaService = require('../../src/services/auditoriaService.js');
 const { ConflictError, ForbiddenError, NotFoundError } = require('../../src/errors/AppError.js');
 const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 const { roles } = require('../../src/auth/models/usuario.js');
+const { AccionAuditada, TipoEntidadAuditada } = require('../../src/models/Auditoria.js');
+
+// Crear colaboraciones a mano es solo para administradores
+const admin = cookieDeSesion(roles.ADMIN);
 
 const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_COLAB = '507f1f77bcf86cd799439011';
@@ -65,15 +74,27 @@ describe('Endpoints /colaboraciones', () => {
         test('crea la colaboración', async () => {
             colaboracionService.crear.mockResolvedValue(colaboracion);
 
-            const res = await request(app).post('/colaboraciones').send(body);
+            const res = await request(app).post('/colaboraciones').set('Cookie', admin).send(body);
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colaboracion creada exitosamente', data: colaboracionPublica });
             expect(colaboracionService.crear).toHaveBeenCalledWith(body);
+            expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                accion: AccionAuditada.COLABORACION_CREADA,
+                entidad: { tipo: TipoEntidadAuditada.COLABORACION, id: colaboracionPublica.id },
+                idProyecto: ID_PROY,
+            }));
+        });
+
+        test('responde 403 si no es administrador', async () => {
+            const res = await request(app).post('/colaboraciones').set('Cookie', cookieDeSesion(roles.COLABORADOR)).send(body);
+
+            expect(res.status).toBe(403);
+            expect(colaboracionService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 400 con ids inválidos', async () => {
-            const res = await request(app).post('/colaboraciones').send({ idProyecto: '1', idColaborador: ID_COLAB });
+            const res = await request(app).post('/colaboraciones').set('Cookie', admin).send({ idProyecto: '1', idColaborador: ID_COLAB });
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Id de proyecto inválido');
@@ -81,7 +102,7 @@ describe('Endpoints /colaboraciones', () => {
         });
 
         test('responde 400 sin body', async () => {
-            const res = await request(app).post('/colaboraciones');
+            const res = await request(app).post('/colaboraciones').set('Cookie', admin);
 
             expect(res.status).toBe(400);
         });
@@ -89,7 +110,7 @@ describe('Endpoints /colaboraciones', () => {
         test('responde 404 si el proyecto no existe', async () => {
             colaboracionService.crear.mockRejectedValue(new NotFoundError('Proyecto no encontrado'));
 
-            const res = await request(app).post('/colaboraciones').send(body);
+            const res = await request(app).post('/colaboraciones').set('Cookie', admin).send(body);
 
             expect(res.status).toBe(404);
         });
@@ -97,10 +118,12 @@ describe('Endpoints /colaboraciones', () => {
         test('responde 409 si el proyecto está finalizado', async () => {
             colaboracionService.crear.mockRejectedValue(new ConflictError('El proyecto ya fue finalizado'));
 
-            const res = await request(app).post('/colaboraciones').send(body);
+            const res = await request(app).post('/colaboraciones').set('Cookie', admin).send(body);
 
             expect(res.status).toBe(409);
             expect(res.body.message).toBe('El proyecto ya fue finalizado');
+            // Las acciones que fallan no se auditan
+            expect(auditoriaService.registrar).not.toHaveBeenCalled();
         });
     });
 
@@ -118,6 +141,10 @@ describe('Endpoints /colaboraciones', () => {
         expect(colaboracionService.desanotar).toHaveBeenCalledWith(
             colaboracionPublica.id, expect.objectContaining({ id: ID_USUARIO, rol: roles.COLABORADOR })
         );
+        expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+            accion: AccionAuditada.COLABORACION_DADA_DE_BAJA,
+            detalle: 'Dada de baja por: la colaboradora',
+        }));
     });
 
     test('responde 401 sin sesión', async () => {

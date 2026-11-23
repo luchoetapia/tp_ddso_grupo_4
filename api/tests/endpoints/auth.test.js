@@ -12,9 +12,15 @@ const JwtUtils = require('../../src/token/jwtUtils.js');
 
 const jwt = new JwtUtils();
 
-// El AuthService instancia el repositorio una sola vez al cargar el router: se captura antes de que clearAllMocks limpie mock.instances
-const instanciaRepo = AuthRepository.mock.instances[0];
-const repositorio = () => instanciaRepo;
+// Guardar referencias al cargar la app: beforeEach limpia mock.instances,
+// pero las instancias siguen siendo las que usan AuthService y el middleware.
+const instanciasRepo = [...AuthRepository.mock.instances];
+const repositorios = () => instanciasRepo;
+const configurarUsuarioPorId = (usuario) => {
+    repositorios().forEach((repo) => {
+        repo.obtenerUsuarioPorId.mockResolvedValue(usuario);
+    });
+};
 const usuario = { id: '507f1f77bcf86cd799439011', username: 'ana', email: 'ana@mail.com', rol: 'colectivo', activo: true };
 
 // Valor de la cookie (sin atributos) a partir de los Set-Cookie de la respuesta
@@ -40,7 +46,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
 
     describe('POST /auth/refresh', () => {
         test('con refresh token válido renueva ambas cookies y devuelve el usuario', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue(usuario);
+            configurarUsuarioPorId(usuario);
             const refresh = jwt.generarRefreshToken(usuario);
 
             const res = await request(app).post('/auth/refresh').set('Cookie', `refreshToken=${refresh}`);
@@ -53,7 +59,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
         });
 
         test('las cookies duran lo configurado en JWT_ACCESS_TIME y JWT_REFRESH_TIME', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue(usuario);
+            configurarUsuarioPorId(usuario);
             const refresh = jwt.generarRefreshToken(usuario);
 
             const res = await request(app).post('/auth/refresh').set('Cookie', `refreshToken=${refresh}`);
@@ -64,7 +70,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
         });
 
         test('usa el rol actual de la base y no el del token viejo', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue({ ...usuario, rol: 'admin' });
+            configurarUsuarioPorId({ ...usuario, rol: 'admin' });
             const refresh = jwt.generarRefreshToken(usuario);
 
             const res = await request(app).post('/auth/refresh').set('Cookie', `refreshToken=${refresh}`);
@@ -95,7 +101,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
         });
 
         test('401 si el usuario ya no existe', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue(null);
+            configurarUsuarioPorId(null);
 
             const res = await request(app).post('/auth/refresh').set('Cookie', `refreshToken=${jwt.generarRefreshToken(usuario)}`);
 
@@ -104,7 +110,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
         });
 
         test('403 y borra cookies si el usuario fue desactivado', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue({ ...usuario, activo: false });
+            configurarUsuarioPorId({ ...usuario, activo: false });
 
             const res = await request(app).post('/auth/refresh').set('Cookie', `refreshToken=${jwt.generarRefreshToken(usuario)}`);
 
@@ -132,14 +138,16 @@ describe('Endpoints /auth (sesión por cookies)', () => {
 
     describe('GET /auth/me', () => {
         test('devuelve el usuario de la sesión con la cookie accessToken', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue(usuario);
+            configurarUsuarioPorId(usuario);
 
             const res = await request(app).get('/auth/me').set('Cookie', `accessToken=${jwt.generarAccessToken(usuario)}`);
 
             expect(res.status).toBe(200);
             expect(res.body.usuario).toEqual({ id: usuario.id, username: 'ana', email: 'ana@mail.com', rol: 'colectivo', linkedin: null });
             expect(res.body.usuario.password).toBeUndefined();
-            expect(repositorio().obtenerUsuarioPorId).toHaveBeenCalledWith(usuario.id);
+            expect(repositorios().some((repo) =>
+                repo.obtenerUsuarioPorId.mock.calls.some(([id]) => id === usuario.id)
+            )).toBe(true);
         });
 
         test('401 sin cookie', async () => {
@@ -161,7 +169,7 @@ describe('Endpoints /auth (sesión por cookies)', () => {
         });
 
         test('403 si el usuario fue desactivado después de emitir el token', async () => {
-            repositorio().obtenerUsuarioPorId.mockResolvedValue({ ...usuario, activo: false });
+            configurarUsuarioPorId({ ...usuario, activo: false });
 
             const res = await request(app).get('/auth/me').set('Cookie', `accessToken=${jwt.generarAccessToken(usuario)}`);
 

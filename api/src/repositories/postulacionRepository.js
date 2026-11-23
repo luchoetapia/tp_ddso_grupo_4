@@ -57,6 +57,13 @@ class PostulacionRepository {
             estado: EstadoPostulacion.PENDIENTE
         });
     }
+
+    async rechazarPendientesDeColaborador(idColaborador) {
+        return PostulacionModel.updateMany(
+            { colaborador: idColaborador, estado: EstadoPostulacion.PENDIENTE },
+            { $set: { estado: EstadoPostulacion.RECHAZADA } }
+        );
+    }
 }
 
 module.exports = new PostulacionRepository();

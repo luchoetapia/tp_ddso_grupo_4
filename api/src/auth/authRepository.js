@@ -1,4 +1,5 @@
 const Usuario = require('./models/usuarioSchema')
+const { roles } = require('./models/usuario')
 const { NotFoundError } = require('../errors/AppError')
 
 class AuthRepository {
@@ -16,13 +17,29 @@ class AuthRepository {
 
     obtenerUsuarioPorId(id) { return Usuario.findById(id); }
 
+    obtenerAdministradoresActivos() { return Usuario.find({ rol: roles.ADMIN, activo: true }, { username: 1, email: 1 }); }
+
     obtenerUsuarioPorLinkedinSub(sub) { return Usuario.findOne({ 'linkedin.sub': sub, activo: true }); }
 
     vincularLinkedin(id, linkedin) { return this._actualizar(id, { linkedin }) }
 
     crearUsuario(body) { return Usuario.create(body) }
 
-    desactivarUsuario(id) { return this._actualizar(id, { activo: false }) }
+    async desactivarUsuario(id) {
+        const usuario = await Usuario.findById(id);
+        if (!usuario) throw new NotFoundError(`No existe el usuario con id ${id}`);
+
+        // El user y mail se liberan al desactivar la cuenta
+        // El perfil de colaborador y sus habilidades se conservan para el historial
+        usuario.activo = false;
+        usuario.username = `eliminado-${id}`;
+        usuario.email = `eliminado-${id}@usuario.invalid`;
+        usuario.password = null;
+        usuario.linkedin = undefined;
+        await usuario.save();
+
+        return usuario;
+    }
 
     modificarRol(id, nuevoRol) { return this._actualizar(id, { rol: nuevoRol }) }
 

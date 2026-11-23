@@ -5,12 +5,18 @@ jest.mock('../../src/services/reporteService.js', () => ({
     validar: jest.fn(),
     rechazar: jest.fn(),
 }));
+// El middleware auditar() guarda un registro por cada acción exitosa: se mockea para no escribir en la base
+jest.mock('../../src/services/auditoriaService.js', () => ({
+    registrar: jest.fn().mockResolvedValue(undefined),
+}));
 
 const request = require('supertest');
 const app = require('../../src/app.js');
 const reporteService = require('../../src/services/reporteService.js');
+const auditoriaService = require('../../src/services/auditoriaService.js');
 const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
 const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
+const { AccionAuditada, TipoEntidadAuditada } = require('../../src/models/Auditoria.js');
 
 const ID = '507f1f77bcf86cd799439091';
 const ID_ENTIDAD = '507f1f77bcf86cd799439041';
@@ -138,6 +144,13 @@ describe('Endpoints /reportes', () => {
             expect(res.status).toBe(200);
             expect(res.body).toMatchObject({ estado, revisadoPor: { id: ID_USUARIO, username: 'admin' } });
             expect(reporteService[accion]).toHaveBeenCalledWith(ID, ID_USUARIO, 'contexto');
+            // El reporte es sobre un proyecto: la auditoría queda asociada a ese proyecto
+            expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                accion: accion === 'validar' ? AccionAuditada.REPORTE_VALIDADO : AccionAuditada.REPORTE_RECHAZADO,
+                entidad: { tipo: TipoEntidadAuditada.REPORTE, id: ID },
+                idProyecto: ID_ENTIDAD,
+                idColectivo: null,
+            }));
         });
 
         test('el comentario es opcional', async () => {

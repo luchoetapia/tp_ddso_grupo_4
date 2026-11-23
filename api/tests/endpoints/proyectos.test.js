@@ -9,9 +9,7 @@ jest.mock('../../src/services/proyectoService.js', () => ({
     modificarPerfil: jest.fn(),
     eliminarPerfil: jest.fn(),
     obtenerEditablePorColectivo: jest.fn(),
-}));
-jest.mock('../../src/services/colectivoService.js', () => ({
-    finalizarProyecto: jest.fn(),
+    finalizar: jest.fn(),
 }));
 jest.mock('../../src/services/notificacionService.js', () => ({
     contactarColaborador: jest.fn(),
@@ -23,20 +21,28 @@ jest.mock('../../src/services/logroService.js', () => ({
     actualizar: jest.fn(),
     eliminar: jest.fn(),
 }));
+// El middleware auditar() guarda un registro por cada acción exitosa: se mockea para no escribir en la base
+jest.mock('../../src/services/auditoriaService.js', () => ({
+    registrar: jest.fn().mockResolvedValue(undefined),
+}));
 
 const request = require('supertest');
 const app = require('../../src/app.js');
 const proyectoService = require('../../src/services/proyectoService.js');
-const colectivoService = require('../../src/services/colectivoService.js');
 const notificacionService = require('../../src/services/notificacionService.js');
 const logroService = require('../../src/services/logroService.js');
+const auditoriaService = require('../../src/services/auditoriaService.js');
 const { ConflictError, ForbiddenError, NotFoundError } = require('../../src/errors/AppError.js');
 const { roles } = require('../../src/auth/models/usuario.js');
 const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
+const { AccionAuditada, TipoEntidadAuditada } = require('../../src/models/Auditoria.js');
+
+// Las rutas que modifican un proyecto son del colectivo dueño; cargar datos de prueba, del administrador
+const colectivo = cookieDeSesion(roles.COLECTIVO);
+const admin = cookieDeSesion(roles.ADMIN);
 
 const ID = '507f1f77bcf86cd799439041';
 const ID_PERFIL = '507f1f77bcf86cd799439031';
-const ID_COLECTIVO = '507f1f77bcf86cd799439051';
 const ID_LOGRO = '507f1f77bcf86cd799439071';
 
 const proyecto = {
@@ -273,27 +279,53 @@ describe('Endpoints /proyectos', () => {
     });
 
     describe('POST /proyectos/:id/finalizar', () => {
-        test('finaliza el proyecto a través del colectivo', async () => {
-            colectivoService.finalizarProyecto.mockResolvedValue({ ...proyecto, finalizado: true });
+        const url = `/proyectos/${ID}/finalizar`;
 
-            const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({ idColectivo: ID_COLECTIVO });
+        test('finaliza el proyecto del colectivo de la sesión', async () => {
+            proyectoService.obtenerEditablePorColectivo.mockResolvedValue(proyecto);
+            proyectoService.finalizar.mockResolvedValue({ ...proyecto, finalizado: true });
+
+            const res = await request(app).post(url).set('Cookie', colectivo).send({});
 
             expect(res.status).toBe(200);
             expect(res.body.data.finalizado).toBe(true);
-            expect(colectivoService.finalizarProyecto).toHaveBeenCalledWith(ID_COLECTIVO, ID);
+            expect(proyectoService.obtenerEditablePorColectivo).toHaveBeenCalledWith(ID, ID_USUARIO);
+            expect(proyectoService.finalizar).toHaveBeenCalledWith(ID);
+            expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                accion: AccionAuditada.PROYECTO_FINALIZADO,
+                entidad: { tipo: TipoEntidadAuditada.PROYECTO, id: ID },
+                idProyecto: ID,
+            }));
         });
 
-        test('responde 400 sin idColectivo', async () => {
-            const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({});
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).post(url).send({});
+
+            expect(res.status).toBe(401);
+            expect(proyectoService.finalizar).not.toHaveBeenCalled();
+        });
+
+        test('responde 400 con un idColectivo inválido', async () => {
+            const res = await request(app).post(url).set('Cookie', colectivo).send({ idColectivo: 'abc' });
 
             expect(res.status).toBe(400);
-            expect(colectivoService.finalizarProyecto).not.toHaveBeenCalled();
+            expect(proyectoService.finalizar).not.toHaveBeenCalled();
         });
 
-        test('responde 404 si el colectivo no existe', async () => {
-            colectivoService.finalizarProyecto.mockRejectedValue(new NotFoundError('Colectivo no encontrado'));
+        test('responde 403 si el proyecto no es del colectivo de la sesión', async () => {
+            proyectoService.obtenerEditablePorColectivo.mockRejectedValueOnce(new ForbiddenError('El proyecto no pertenece a tu colectivo'));
 
-            const res = await request(app).post(`/proyectos/${ID}/finalizar`).send({ idColectivo: ID_COLECTIVO });
+            const res = await request(app).post(url).set('Cookie', colectivo).send({});
+
+            expect(res.status).toBe(403);
+            expect(proyectoService.finalizar).not.toHaveBeenCalled();
+            expect(auditoriaService.registrar).not.toHaveBeenCalled();
+        });
+
+        test('responde 404 si el proyecto no existe', async () => {
+            proyectoService.obtenerEditablePorColectivo.mockRejectedValueOnce(new NotFoundError('Proyecto no encontrado'));
+
+            const res = await request(app).post(url).set('Cookie', colectivo).send({});
 
             expect(res.status).toBe(404);
         });
@@ -338,7 +370,7 @@ describe('Endpoints /proyectos', () => {
             test('crea el perfil aplicando defaults', async () => {
                 proyectoService.agregarPerfil.mockResolvedValue(perfil);
 
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', colectivo).send(body);
 
                 expect(res.status).toBe(201);
                 expect(proyectoService.agregarPerfil).toHaveBeenCalledWith(ID, {
@@ -347,19 +379,41 @@ describe('Endpoints /proyectos', () => {
                     modalidadColaboracion: { incentivoEconomico: 0, posibleContratacion: false },
                     busquedaAbierta: true,
                 });
+                expect(proyectoService.obtenerEditablePorColectivo).toHaveBeenCalledWith(ID, ID_USUARIO);
+                expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                    accion: AccionAuditada.PERFIL_CREADO,
+                    idProyecto: ID,
+                    detalle: `Perfil: ${perfil.titulo} (${ID_PERFIL})`,
+                }));
+            });
+
+            test('responde 403 si el proyecto no es del colectivo de la sesión', async () => {
+                proyectoService.obtenerEditablePorColectivo.mockRejectedValueOnce(new ForbiddenError('El proyecto no pertenece a tu colectivo'));
+
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', colectivo).send(body);
+
+                expect(res.status).toBe(403);
+                expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
+            });
+
+            test('responde 401 sin sesión', async () => {
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+
+                expect(res.status).toBe(401);
+                expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
             });
 
             test('responde 400 sin título', async () => {
                 const { titulo, ...sinTitulo } = body;
 
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(sinTitulo);
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', colectivo).send(sinTitulo);
 
                 expect(res.status).toBe(400);
                 expect(proyectoService.agregarPerfil).not.toHaveBeenCalled();
             });
 
             test('responde 400 sin tipo de compromiso', async () => {
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`)
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', colectivo)
                     .send({ titulo: 'x', descripcion: 'x', modalidadColaboracion: {} });
 
                 expect(res.status).toBe(400);
@@ -369,7 +423,7 @@ describe('Endpoints /proyectos', () => {
             test('responde 404 si alguna habilidad no existe', async () => {
                 proyectoService.agregarPerfil.mockRejectedValue(new NotFoundError('Habilidades no encontradas', [ID_HAB]));
 
-                const res = await request(app).post(`/proyectos/${ID}/perfiles`).send(body);
+                const res = await request(app).post(`/proyectos/${ID}/perfiles`).set('Cookie', colectivo).send(body);
 
                 expect(res.status).toBe(404);
                 expect(res.body.details).toEqual([ID_HAB]);
@@ -407,7 +461,7 @@ describe('Endpoints /proyectos', () => {
             test('actualiza solo los campos enviados', async () => {
                 proyectoService.modificarPerfil.mockResolvedValue({ ...perfil, descripcion: 'Nuevo' });
 
-                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({ descripcion: 'Nuevo' });
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', colectivo).send({ descripcion: 'Nuevo' });
 
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe('Perfil actualizado exitosamente');
@@ -416,7 +470,7 @@ describe('Endpoints /proyectos', () => {
             });
 
             test('responde 400 con body vacío', async () => {
-                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({});
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', colectivo).send({});
 
                 // Al no haber defaults, el objeto está vacío y Zod lanza el error correspondiente
                 expect(res.status).toBe(400);
@@ -426,7 +480,7 @@ describe('Endpoints /proyectos', () => {
             test('responde 404 si no existe', async () => {
                 proyectoService.modificarPerfil.mockRejectedValue(new NotFoundError('Proyecto o perfil no encontrado'));
 
-                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).send({ descripcion: 'x' });
+                const res = await request(app).put(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', colectivo).send({ descripcion: 'x' });
 
                 expect(res.status).toBe(404);
             });
@@ -436,17 +490,21 @@ describe('Endpoints /proyectos', () => {
             test('elimina el perfil', async () => {
                 proyectoService.eliminarPerfil.mockResolvedValue();
 
-                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', colectivo);
 
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual({ message: 'Perfil eliminado exitosamente' });
                 expect(proyectoService.eliminarPerfil).toHaveBeenCalledWith(ID, ID_PERFIL);
+                expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                    accion: AccionAuditada.PERFIL_ELIMINADO,
+                    detalle: `Perfil: ${ID_PERFIL}`,
+                }));
             });
 
             test('responde 404 si no existe', async () => {
                 proyectoService.eliminarPerfil.mockRejectedValue(new NotFoundError('Proyecto o perfil no encontrado'));
 
-                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`);
+                const res = await request(app).delete(`/proyectos/${ID}/perfiles/${ID_PERFIL}`).set('Cookie', colectivo);
 
                 expect(res.status).toBe(404);
             });
@@ -505,7 +563,7 @@ describe('Endpoints /proyectos', () => {
             const { destinatario, ...notificacionPublica } = notificacion;
             notificacionService.contactarColaborador.mockResolvedValue(notificacion);
 
-            const res = await request(app).post(url).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
+            const res = await request(app).post(url).set('Cookie', colectivo).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colaborador contactado exitosamente', data: notificacionPublica });
@@ -513,7 +571,7 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 sin mensaje', async () => {
-            const res = await request(app).post(url).send({ cuentaGit: 'juanp' });
+            const res = await request(app).post(url).set('Cookie', colectivo).send({ cuentaGit: 'juanp' });
 
             expect(res.status).toBe(400);
         });
@@ -521,7 +579,7 @@ describe('Endpoints /proyectos', () => {
         test('responde 409 si el colaborador no acepta ser contactado', async () => {
             notificacionService.contactarColaborador.mockRejectedValue(new ConflictError('El colaborador no acepta ser contactado'));
 
-            const res = await request(app).post(url).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
+            const res = await request(app).post(url).set('Cookie', colectivo).send({ cuentaGit: 'juanp', mensaje: 'Hola' });
 
             expect(res.status).toBe(409);
         });
@@ -656,7 +714,7 @@ describe('Endpoints /proyectos', () => {
         test('crea un proyecto por defecto con sus perfiles embebidos', async () => {
             proyectoService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/proyectos/llenarDatosPrueba');
+            const res = await request(app).post('/proyectos/llenarDatosPrueba').set('Cookie', admin);
 
             expect(res.status).toBe(201);
             expect(res.body.data).toHaveLength(1);
@@ -665,7 +723,7 @@ describe('Endpoints /proyectos', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/proyectos/llenarDatosPrueba').send([{ titulo: 'Sin descripción' }]);
+            const res = await request(app).post('/proyectos/llenarDatosPrueba').set('Cookie', admin).send([{ titulo: 'Sin descripción' }]);
 
             expect(res.status).toBe(400);
         });

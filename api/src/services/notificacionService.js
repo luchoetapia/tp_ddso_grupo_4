@@ -25,6 +25,10 @@ class NotificacionService {
         const perfil = await this.proyectoService.perfilPerteneceAProyecto(idProyecto, idPerfil);
 
         const colaborador = await this.obtenerColaborador(cuentaGit);
+        if (colaborador.usuario?.activo === false) {
+            throw new ConflictError('No se puede contactar a una cuenta inactiva');
+        }
+        
         if (!colaborador.deseaSerContactado) {
             throw new ConflictError("El colaborador no acepta ser contactado");
         }

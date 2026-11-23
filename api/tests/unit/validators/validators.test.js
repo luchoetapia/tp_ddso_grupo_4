@@ -254,9 +254,12 @@ describe('Validadores', () => {
             expect(esValido(validarActualizacionProyecto, { titulo: 'Nuevo' })).toBe(true);
         });
 
-        test('finalización exige idColectivo', () => {
+        // El colectivo sale de la sesión: idColectivo es opcional, pero si viene tiene que ser un id válido
+        test('finalización acepta body vacío o un idColectivo válido', () => {
+            expect(esValido(validarFinalizacionProyecto, {})).toBe(true);
             expect(esValido(validarFinalizacionProyecto, { idColectivo: ID })).toBe(true);
-            expect(esValido(validarFinalizacionProyecto, {})).toBe(false);
+            expect(esValido(validarFinalizacionProyecto, { idColectivo: 'no-es-un-id' })).toBe(false);
+            expect(esValido(validarFinalizacionProyecto, { otroCampo: 1 })).toBe(false);
         });
 
         test('contacto exige cuentaGit y mensaje', () => {

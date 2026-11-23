@@ -225,6 +225,8 @@ class PostulacionService {
                 id: colaborador.id ?? colaborador._id,
                 nombre: colaborador.nombre,
                 apellido: colaborador.apellido,
+                nombreFantasia: colaborador.nombreFantasia,
+                cuentaGit: colaborador.cuentaGit,
                 usuario: colaborador.usuario
             },
             proyecto: {

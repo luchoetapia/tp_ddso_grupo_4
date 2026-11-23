@@ -36,6 +36,10 @@ router.route('/me')
         autenticar(roles.COLABORADOR),
         (req, res) => colaboradorController.obtenerMiPerfil(req, res)
     )
+    .delete(
+        autenticar(roles.COLABORADOR),
+        (req, res) => colaboradorController.eliminarMiCuenta(req, res)
+    )
     .patch(
         autenticar(roles.COLABORADOR),
         validar(validarActualizacionColaborador, 'body'),
@@ -75,6 +79,12 @@ router.route('/:cuentaGit/buscarPotencialesProyectos')
         validar(validarCuentaGitColaborador, 'params'),
         validar(validarFiltrosProyecto, 'query'),
         (req, res) => colaboradorController.buscarPotencialesProyectos(req, res)
+    )
+
+router.route('/me/avisosModeracion')
+    .get(
+        autenticar(roles.COLABORADOR),
+        (req, res) => colaboradorController.obtenerMisAvisosModeracion(req, res)
     )
 
 router.route('/me/notificaciones')
