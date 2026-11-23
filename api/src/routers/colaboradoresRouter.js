@@ -11,6 +11,7 @@ const {
     validarCreacionColaborador,
     validarCuentaGitColaborador,
     validarAnotacionAProyecto,
+    validarActualizacionColaborador,
 } = require('../validators/colaboradoresValidator.js')
 
 const auditar = require('../middlewares/auditar.js')
@@ -34,6 +35,11 @@ router.route('/me')
     .get(
         autenticar(roles.COLABORADOR),
         (req, res) => colaboradorController.obtenerMiPerfil(req, res)
+    )
+    .patch(
+        autenticar(roles.COLABORADOR),
+        validar(validarActualizacionColaborador, 'body'),
+        (req, res) => colaboradorController.actualizarMiPerfil(req, res)
     )
 
 router.route('/:cuentaGit')
