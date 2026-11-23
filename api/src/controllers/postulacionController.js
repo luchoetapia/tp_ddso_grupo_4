@@ -18,7 +18,7 @@ class PostulacionController {
     }
 
     crear = async (req, res) => {
-        const nueva = await this.postulacionService.crear(req.body);
+        const nueva = await this.postulacionService.crearComoColaboradora(req.body, req.usuario.id);
         res.status(201).json({
             message: 'Postulación creada exitosamente',
             data: PostulacionPublic.desde(nueva)
@@ -28,7 +28,7 @@ class PostulacionController {
     actualizarEstado = async (req, res) => {
         const { id } = req.params;
         const { estado } = req.body;
-        const actualizada = await this.postulacionService.actualizarEstado(id, estado);
+        const actualizada = await this.postulacionService.actualizarEstadoComoColectivo(id, estado, req.usuario.id);
         res.status(200).json({
             message: `Postulación actualizada a '${estado}' exitosamente`,
             data: PostulacionPublic.desde(actualizada)

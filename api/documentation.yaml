@@ -35,6 +35,12 @@ tags:
     description: Palabras prohibidas que generan reportes (solo admins)
   - name: Reportes
     description: Revisión de contenido reportado (solo admins)
+  - name: Administradores
+    description: Cuentas que administran un colectivo (titular + adicionales)
+  - name: Auditoría
+    description: Trazabilidad de acciones sobre colectivos, proyectos y colaboraciones
+  - name: Postulaciones
+    description: Postulaciones de colaboradoras a perfiles de proyectos
   - name: Auth
     description: Sesión e ingreso con LinkedIn
 
@@ -246,7 +252,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}:
     get:
       summary: Obtiene un proyecto por id
@@ -354,22 +371,22 @@ paths:
     post:
       summary: Finaliza un proyecto
       description: >
-        Un colectivo marca el proyecto como finalizado. Un proyecto finalizado
-        no admite nuevas personas colaboradoras ni contactos.
+        Requiere sesión con rol `colectivo`, del colectivo dueño del proyecto (titular o
+        administrador adicional). Un proyecto finalizado no admite nuevas personas colaboradoras ni contactos.
       tags: [Proyectos]
       parameters:
         - $ref: "#/components/parameters/IdPath"
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
                 idColectivo:
-                  $ref: "#/components/schemas/ObjectId"
-              required:
-                - idColectivo
+                  allOf:
+                    - $ref: "#/components/schemas/ObjectId"
+                  description: Opcional y se ignora (el colectivo sale de la sesión)
       responses:
         "200":
           description: Proyecto finalizado exitosamente
@@ -395,7 +412,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}/perfiles/{idPerfil}/buscarPotencialesColaboradores:
     get:
       summary: Busca potenciales colaboradoras/es para un perfil del proyecto
@@ -484,7 +512,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}/logros:
     parameters:
       - $ref: "#/components/parameters/IdPath"
@@ -727,7 +766,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}/perfiles/{idPerfil}:
     parameters:
       - $ref: "#/components/parameters/IdPath"
@@ -796,6 +846,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       summary: Elimina un perfil de un proyecto
       tags: [Perfiles]
@@ -822,7 +884,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colectivos:
     get:
       summary: Obtiene los colectivos (paginado)
@@ -934,7 +1007,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colectivos/me:
     get:
       summary: Obtiene el colectivo de la sesión
@@ -1021,6 +1105,183 @@ paths:
                 $ref: "#/components/schemas/Error"
         "409":
           description: Ya existe otro colectivo con ese nombre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colectivos/me/administradores:
+    get:
+      summary: Lista las cuentas que administran el colectivo de la sesión
+      description: >
+        Requiere sesión con rol `colectivo`. Devuelve la cuenta titular (la que registró el
+        colectivo) y los administradores adicionales. `puedeGestionar` indica si la sesión es
+        la titular, única cuenta que puede agregar o quitar administradores.
+      tags: [Administradores]
+      responses:
+        "200":
+          description: Equipo administrativo del colectivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  puedeGestionar:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Administrador"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no administra ningún colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Agrega un administrador al colectivo
+      description: >
+        Solo la cuenta titular. Crea una cuenta nueva con rol `colectivo` (mismas reglas que el
+        registro) y la asocia al colectivo: al ingresar con ella se administra el mismo colectivo
+        (proyectos, postulaciones, perfil, etc.). Queda registrado en la auditoría.
+      tags: [Administradores]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdministradorInput"
+      responses:
+        "201":
+          description: Administrador agregado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Administrador agregado exitosamente
+                  data:
+                    $ref: "#/components/schemas/Administrador"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es la cuenta titular del colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El username o el email ya están en uso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colectivos/me/administradores/{idUsuario}:
+    delete:
+      summary: Quita un administrador del colectivo
+      description: >
+        Solo la cuenta titular. Quita al administrador y desactiva su cuenta (libera su username
+        y email). La cuenta titular no se puede quitar. Queda registrado en la auditoría.
+      tags: [Administradores]
+      parameters:
+        - in: path
+          name: idUsuario
+          required: true
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+      responses:
+        "200":
+          description: Administrador quitado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Administrador quitado exitosamente
+        "400":
+          description: Id inválido o se intentó quitar a la cuenta titular
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es la cuenta titular del colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no es administrador del colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colectivos/me/auditoria:
+    get:
+      summary: Historial de acciones sobre el colectivo de la sesión
+      description: >
+        Requiere sesión con rol `colectivo`. Devuelve, más recientes primero, las acciones
+        registradas sobre el colectivo, sus proyectos, postulaciones y colaboraciones, con autor y fecha.
+      tags: [Auditoría]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
+        - $ref: "#/components/parameters/AccionAuditadaQuery"
+        - $ref: "#/components/parameters/TipoEntidadAuditadaQuery"
+        - $ref: "#/components/parameters/IdEntidadQuery"
+        - $ref: "#/components/parameters/IdAutorQuery"
+        - $ref: "#/components/parameters/DesdeQuery"
+        - $ref: "#/components/parameters/HastaQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/PaginaAuditoria"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no administra ningún colectivo
           content:
             application/json:
               schema:
@@ -1138,6 +1399,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    delete:
+      summary: Da de baja un colectivo (y finaliza sus proyectos)
+      description: >
+        Requiere sesión: la cuenta titular del colectivo o un `admin` de la plataforma.
+        Queda registrado en la auditoría.
+      tags: [Colectivos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Colectivo dado de baja
+        "400":
+          description: Id inválido o el colectivo ya estaba dado de baja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es la cuenta titular del colectivo ni un admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colectivo inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 
   /habilidades:
     get:
@@ -1206,7 +1503,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /habilidades/llenarDatosPrueba:
     post:
       summary: Carga habilidades iniciales
@@ -1238,7 +1546,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /habilidades/{id}:
     get:
       summary: Obtiene una habilidad por id
@@ -1386,7 +1705,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colaboradores/{cuentaGit}:
     get:
       summary: Obtiene una colaboradora/colaborador por cuenta de Git
@@ -1488,7 +1818,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colaboradores/{cuentaGit}/buscarPotencialesProyectos:
     get:
       summary: Busca potenciales proyectos para una colaboradora/colaborador
@@ -1622,7 +1963,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /palabrasBaneadas:
     get:
       summary: Obtiene las palabras baneadas (paginado)
@@ -2018,6 +2370,151 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /auditoria:
+    get:
+      summary: Historial completo de acciones de la plataforma
+      description: >
+        Requiere sesión con rol `admin`. Trazabilidad de toda acción realizada sobre colectivos,
+        proyectos, postulaciones y colaboraciones (altas, ediciones, bajas, cierres, aceptaciones,
+        revisión de denuncias, administradores agregados/quitados), con autor y fecha.
+        Más recientes primero. Solo se registran las acciones que terminaron bien.
+      tags: [Auditoría]
+      parameters:
+        - $ref: "#/components/parameters/PaginaQuery"
+        - $ref: "#/components/parameters/LimiteQuery"
+        - $ref: "#/components/parameters/AccionAuditadaQuery"
+        - $ref: "#/components/parameters/TipoEntidadAuditadaQuery"
+        - $ref: "#/components/parameters/IdEntidadQuery"
+        - in: query
+          name: idColectivo
+          required: false
+          description: Solo las acciones que afectan a este colectivo
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/parameters/IdAutorQuery"
+        - $ref: "#/components/parameters/DesdeQuery"
+        - $ref: "#/components/parameters/HastaQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/PaginaAuditoria"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Falta la sesión o el token es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /postulaciones:
+    post:
+      summary: La colaboradora de la sesión se postula a un perfil de un proyecto
+      description: >
+        Requiere sesión con rol `colaborador`. La postulación siempre queda a nombre de la
+        colaboradora de la sesión: si se envía `idColaborador` o `cuentaGit` de otra persona, falla con 403.
+        Solo se puede si la búsqueda del perfil está abierta y la colaboradora cumple las habilidades requeridas.
+      tags: [Postulaciones]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idProyecto, idPerfil]
+              properties:
+                idProyecto:
+                  $ref: "#/components/schemas/ObjectId"
+                idPerfil:
+                  $ref: "#/components/schemas/ObjectId"
+                mensaje:
+                  type: string
+                  example: Me interesa sumarme al proyecto
+      responses:
+        "201":
+          description: Postulación creada
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de una colaboradora o intenta postular a otra persona
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto, perfil o colaboradora inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Búsqueda cerrada, proyecto finalizado, faltan habilidades o ya hay una postulación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /postulaciones/{id}/estado:
+    patch:
+      summary: Acepta o rechaza una postulación
+      description: >
+        Requiere sesión con rol `colectivo`, del colectivo dueño del proyecto (titular o administrador adicional).
+      tags: [Postulaciones]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado:
+                  type: string
+                  enum: [Aceptada, Rechazada]
+      responses:
+        "200":
+          description: Postulación actualizada
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Postulación inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La postulación ya fue resuelta, el proyecto está finalizado o se alcanzó el límite del perfil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+
 components:
   parameters:
     IdPath:
@@ -2065,7 +2562,64 @@ components:
         maximum: 100
         default: 10
 
+    AccionAuditadaQuery:
+      in: query
+      name: accion
+      required: false
+      schema:
+        $ref: "#/components/schemas/AccionAuditada"
+    TipoEntidadAuditadaQuery:
+      in: query
+      name: tipoEntidad
+      required: false
+      schema:
+        $ref: "#/components/schemas/TipoEntidadAuditada"
+    IdEntidadQuery:
+      in: query
+      name: idEntidad
+      required: false
+      description: Solo las acciones sobre esta entidad
+      schema:
+        $ref: "#/components/schemas/ObjectId"
+    IdAutorQuery:
+      in: query
+      name: idAutor
+      required: false
+      description: Solo las acciones de este usuario
+      schema:
+        $ref: "#/components/schemas/ObjectId"
+    DesdeQuery:
+      in: query
+      name: desde
+      required: false
+      description: Fecha inicial (inclusive)
+      schema:
+        type: string
+        format: date-time
+        example: "2026-11-01"
+    HastaQuery:
+      in: query
+      name: hasta
+      required: false
+      description: Fecha final (inclusive; sin hora incluye todo ese día)
+      schema:
+        type: string
+        format: date-time
+        example: "2026-11-23"
   responses:
+    PaginaAuditoria:
+      description: Página del historial de auditoría
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegistroAuditoria"
+              paginacion:
+                $ref: "#/components/schemas/Paginacion"
     DatosInvalidos:
       description: Datos inválidos
       content:
@@ -2198,6 +2752,82 @@ components:
           type: string
           format: date-time
 
+    AccionAuditada:
+      type: string
+      enum: [colectivo_creado, colectivo_actualizado, colectivo_dado_de_baja, administrador_agregado, administrador_quitado, proyecto_creado, proyecto_actualizado, proyecto_finalizado, perfil_creado, perfil_actualizado, perfil_eliminado, logro_creado, logro_actualizado, logro_eliminado, postulacion_creada, postulacion_aceptada, postulacion_rechazada, colaboracion_creada, colaboracion_dada_de_baja, reporte_notificado, reporte_validado, reporte_rechazado]
+    TipoEntidadAuditada:
+      type: string
+      enum: [Colectivo, Proyecto, Postulacion, Colaboracion, Reporte]
+    RegistroAuditoria:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        accion:
+          $ref: "#/components/schemas/AccionAuditada"
+        entidad:
+          type: object
+          properties:
+            tipo:
+              $ref: "#/components/schemas/TipoEntidadAuditada"
+            id:
+              $ref: "#/components/schemas/ObjectId"
+        autor:
+          type: object
+          nullable: true
+          description: Quién hizo la acción (null si fue sin sesión)
+          properties:
+            id:
+              $ref: "#/components/schemas/ObjectId"
+            username:
+              type: string
+              example: ana
+            rol:
+              type: string
+              enum: [admin, colaborador, colectivo]
+        idColectivo:
+          type: string
+          nullable: true
+          description: Colectivo afectado por la acción
+          example: 507f1f77bcf86cd799439051
+        detalle:
+          type: string
+          nullable: true
+          example: "Campos modificados: titulo, descripcion"
+        fecha:
+          type: string
+          format: date-time
+    AdministradorInput:
+      type: object
+      additionalProperties: false
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          example: maria-huerta
+        email:
+          type: string
+          format: email
+          example: maria@huerta.org
+        password:
+          type: string
+          minLength: 8
+          example: unaClaveSegura
+    Administrador:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        username:
+          type: string
+          example: maria-huerta
+        email:
+          type: string
+          example: maria@huerta.org
+        esTitular:
+          type: boolean
+          description: Si es la cuenta que registró el colectivo
     ObjectId:
       type: string
       pattern: "^[0-9a-fA-F]{24}$"

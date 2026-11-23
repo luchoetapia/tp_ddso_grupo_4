@@ -1,5 +1,9 @@
 const ColectivoModel = require('../database/schemas/colectivoSchema.js');
 
+const DATOS_ADMINISTRADOR = 'username email activo';
+
+const filtroAdministradoPor = (usuario) => ({ $or: [{ usuario }, { administradores: usuario }] });
+
 class ColectivoRepository {
     async buscarConPaginacion(pagina = 1, limite = 10, filtros = {}, orden = {}, datosNecesarios = null) {
         limite = Math.min(limite, 100); // Tope de documentos por página
@@ -23,11 +27,25 @@ class ColectivoRepository {
     }
 
     async findByUsuario(usuario) {
-        return await ColectivoModel.findOne({ usuario });
+        return await ColectivoModel.findOne(filtroAdministradoPor(usuario));
     }
 
     async findByUsuarioConProyectos(usuario) {
-        return await ColectivoModel.findOne({ usuario }).populate('proyectos');
+        return await ColectivoModel.findOne(filtroAdministradoPor(usuario)).populate('proyectos');
+    }
+
+    async obtenerAdministradores(id) {
+        return await ColectivoModel.findById(id, { usuario: 1, administradores: 1 })
+            .populate('usuario', DATOS_ADMINISTRADOR)
+            .populate('administradores', DATOS_ADMINISTRADOR);
+    }
+
+    async agregarAdministrador(id, idUsuario) {
+        return await ColectivoModel.findByIdAndUpdate(id, { $addToSet: { administradores: idUsuario } }, { new: true });
+    }
+
+    async quitarAdministrador(id, idUsuario) {
+        return await ColectivoModel.findByIdAndUpdate(id, { $pull: { administradores: idUsuario } }, { new: true });
     }
 
     async findById(id) {

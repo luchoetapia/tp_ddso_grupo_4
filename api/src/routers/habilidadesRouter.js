@@ -6,6 +6,9 @@ const validar = require('../middlewares/validar.js')
 const { validarListado } = require('../validators/comunes.js')
 const { validarCreacionHabilidad, validarIdsHabilidad } = require('../validators/habilidadesValidator.js')
 
+const autenticar = require('../middlewares/autenticar.js')
+const { roles } = require('../auth/models/usuario.js')
+
 const habilidadController = new HabilidadController()
 const router = express.Router()
 
@@ -15,6 +18,7 @@ router.route('/')
         (req, res) => habilidadController.obtenerHabilidades(req, res)
     )
     .post(
+        autenticar(roles.ADMIN),
         validar(validarCreacionHabilidad, 'body'),
         (req, res) => habilidadController.crearHabilidad(req, res)
     )
@@ -26,6 +30,6 @@ router.route('/:id')
     )
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => habilidadController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => habilidadController.llenarDatosPrueba(req, res));
 
 module.exports = router

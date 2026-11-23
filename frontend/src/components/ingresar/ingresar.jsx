@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
 import alertas from '@/services/alertas'
+import { INICIO_POR_ROL } from '@/services/sesion'
 import { BotonLinkedin, Button, InputContrasena, SeparadorO } from '@/components/common'
 
 const Ingresar = () => {
@@ -36,7 +37,7 @@ const Ingresar = () => {
         try {
             // Si falla, apiQuery ya muestra la alerta con el error
             const data = await apiQuery.post('/auth/login', { accessKey, password }, { mensajeError: 'No se pudo ingresar.' });
-             router.push(data.usuario.rol === 'colaborador' ? '/colaboradoras/inicio' : '/colectivo/inicio');
+            router.push(INICIO_POR_ROL[data.usuario.rol] ?? '/');
             return data.usuario;
         } catch {
             setCargando(false);
