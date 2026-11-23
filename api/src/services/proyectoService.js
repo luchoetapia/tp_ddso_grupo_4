@@ -215,6 +215,20 @@ class ProyectoService {
         return perfiles.length > 0;
     }
 
+    marcarProyectosSinActualizaciones = async (
+        diasSinActualizacion = Number(process.env.DIAS_SIN_ACTUALIZACION ?? 30)
+    ) => {
+        if (!Number.isInteger(diasSinActualizacion) || diasSinActualizacion < 1) {
+            throw new BadRequestError('DIAS_SIN_ACTUALIZACION debe ser un entero mayor a cero');
+        }
+
+        const fechaLimite = new Date(
+            Date.now() - diasSinActualizacion * 24 * 60 * 60 * 1000
+        );
+
+        return this.proyectoRepository.marcarParaRevisionPorFaltaDeActualizaciones(fechaLimite);
+    }
+
     // Ranking de relevancia: 1° cantidad de perfiles que cumple, 2° cantidad de habilidades cumplidas
     // (ambos según la dirección; desc = más relevantes primero). Empates: título alfabético y después id
     ordenarPorCantidadHabilidadesCumplidas = (proyectos, idsHabilidades, direccion = 'desc') => {
@@ -285,6 +299,7 @@ class ProyectoService {
 
         return await this.colaboradorService.obtenerColaboradoresPotenciales([perfil], paginacion);
     }
+    
 
     // ---------- Perfiles (subdocumentos del proyecto) ----------
 
