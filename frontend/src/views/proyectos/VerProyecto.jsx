@@ -8,6 +8,8 @@ import alertas from '@/services/alertas';
 import sesion, { roles } from '@/services/sesion';
 import { Button, Card, Modal, ProgressBar, Skeleton, Tag, Textarea } from '@/components/common';
 import { formatearFecha, formatearMoneda } from '@/helpers/formatos';
+import CompartirEnLinkedin from '@/components/linkedin/CompartirEnLinkedin';
+import useRetornoLinkedin from '@/hooks/useRetornoLinkedin';
 
 const varianteEstado = { Pendiente: 'highlight', Aceptada: 'accent', Rechazada: 'neutral' };
 const grilla = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3';
@@ -47,6 +49,9 @@ export default function VerProyectoContenido() {
     const [enviandoPostulacion, setEnviandoPostulacion] = useState(false);
 
     const [colaboraciones, setColaboraciones] = useState([]);
+    // Colaboración activa del usuario logueado en este proyecto (para compartirlo en LinkedIn)
+    const [miColaboracion, setMiColaboracion] = useState(null);
+    const { proyectoAPublicar, limpiar: limpiarProyectoAPublicar } = useRetornoLinkedin();
 
 
     useEffect(() => {
@@ -109,6 +114,11 @@ export default function VerProyectoContenido() {
                             mapeo[p.idPerfil] = p.estado;
                         });
                     setPostulaciones(mapeo);
+
+                    const misColaboraciones = await apiQuery.get(`/colaboraciones/colaborador/${colab.id}`, { alertarError: false });
+                    setMiColaboracion(
+                        (misColaboraciones ?? []).find((c) => String(c.proyecto?.id ?? c.proyecto) === id && c.activa) ?? null
+                    );
                 }
             } catch {
                 // Si falla o no está logueado como colaborador, simplemente no se habilitan las acciones de postulación
@@ -217,7 +227,15 @@ export default function VerProyectoContenido() {
                     <Link href="/colectivo/misProyectos" className="text-sm underline text-muted">
                         ← Volver a mis proyectos
                     </Link>}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {miColaboracion && (
+                            <CompartirEnLinkedin
+                                proyecto={{ id, titulo }}
+                                perfil={tituloPerfil[miColaboracion.idPerfil]}
+                                abrirAlCargar={proyectoAPublicar === id}
+                                onAbierto={limpiarProyectoAPublicar}
+                            />
+                        )}
                         {finalizado ? (
                             <Tag variant="neutral">Proyecto finalizado</Tag>
                         ) : (
