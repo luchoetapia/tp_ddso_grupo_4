@@ -19,6 +19,7 @@ export const TEXTO_ACCION = {
     postulacion_rechazada: "Rechazó una postulación",
     colaboracion_creada: "Se sumó una colaboración",
     colaboracion_dada_de_baja: "Dio de baja una colaboración",
+    publicacion_linkedin: "Compartió el proyecto en LinkedIn",
     reporte_notificado: "Moderación: pidió corregir contenido denunciado",
     reporte_validado: "Moderación: dio de baja contenido denunciado",
     reporte_rechazado: "Moderación: desestimó una denuncia",

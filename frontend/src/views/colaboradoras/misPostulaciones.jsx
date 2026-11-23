@@ -6,6 +6,8 @@ import apiQuery from "@/services/api/apiQuery"
 import alertas from "@/services/alertas"
 import { Button, Card, Modal, Skeleton, Tag } from "@/components/common"
 import { formatearFecha } from "@/helpers/formatos"
+import CompartirEnLinkedin from "@/components/linkedin/CompartirEnLinkedin"
+import useRetornoLinkedin from "@/hooks/useRetornoLinkedin"
 
 const varianteEstado = {
     Pendiente: "highlight",
@@ -25,6 +27,9 @@ export default function MisPostulaciones() {
     // Estado para el modal de desanotarse
     const [itemADesanotar, setItemADesanotar] = useState(null);
     const [desanotando, setDesanotando] = useState(false);
+
+    // Al volver de conectar LinkedIn se reabre el modal de publicación del proyecto
+    const { proyectoAPublicar, limpiar: limpiarProyectoAPublicar } = useRetornoLinkedin();
 
     useEffect(() => {
         const controlador = new AbortController();
@@ -177,6 +182,13 @@ export default function MisPostulaciones() {
                                             <Link href={`/proyectos/ver?id=${idProyecto}`} className={estiloLink}>
                                                 Ver proyecto
                                             </Link>
+                                        )}
+                                        {idProyecto && (
+                                            <CompartirEnLinkedin
+                                                proyecto={{ id: idProyecto, titulo: tituloProyecto }}
+                                                abrirAlCargar={proyectoAPublicar === idProyecto}
+                                                onAbierto={limpiarProyectoAPublicar}
+                                            />
                                         )}
                                         <Button
                                             variant="danger"

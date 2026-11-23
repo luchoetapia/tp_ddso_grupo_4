@@ -46,6 +46,8 @@ tags:
     description: Postulaciones de colaboradoras a perfiles de proyectos
   - name: Auth
     description: Sesión e ingreso con LinkedIn
+  - name: LinkedIn
+    description: Publicaciones en LinkedIn de colaboradores
 
 paths:
   /healthcheck:
@@ -71,14 +73,43 @@ paths:
     get:
       summary: Inicia el ingreso con LinkedIn (solo colaboradores)
       description: >
-        Navegación del navegador (no se llama con Axios). Guarda un `state` aleatorio en la
-        cookie httpOnly `linkedinState` (SameSite=Lax, 10 minutos) y redirige a LinkedIn para
-        que el usuario inicie sesión y acepte los permisos `openid profile email`.
+        Navegación del navegador (no se llama con Axios). Guarda un `state` aleatorio (dentro de un JWT
+        firmado) en la cookie httpOnly `linkedinState` (SameSite=Lax, 10 minutos) y redirige a LinkedIn para
+        que el usuario inicie sesión y acepte los permisos `openid profile email w_member_social`.
         Si el servidor no tiene configurado LinkedIn, redirige a `/ingresar?errorLinkedin=<mensaje>`.
       tags: [Auth]
       responses:
         "302":
           description: Redirección a `https://www.linkedin.com/oauth/v2/authorization` (o al login del front con el error)
+
+  /auth/linkedin/vincular:
+    get:
+      summary: Conecta LinkedIn a la cuenta del colaborador logueado (para poder publicar)
+      description: >
+        Navegación del navegador. Requiere sesión de colaborador. Igual que `/auth/linkedin`, pero el
+        callback vincula la cuenta de LinkedIn al usuario actual (o renueva el token si ya estaba
+        vinculada) en lugar de iniciar sesión. Al terminar vuelve a `volverA` con `?linkedin=vinculado`
+        (y `publicar` si vino), o con `?errorLinkedin=<mensaje>`.
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: volverA
+          schema:
+            type: string
+            example: /colaboradoras/misPostulaciones
+          description: Ruta interna del front a la que volver. Si no es válida se usa `/colaboradoras/datos-personales`
+        - in: query
+          name: publicar
+          schema:
+            type: string
+          description: Id del proyecto sobre el que se quería publicar (el front reabre el modal al volver)
+      responses:
+        "302":
+          description: Redirección a LinkedIn
+        "401":
+          description: No hay sesión
+        "403":
+          description: El usuario no es colaborador
 
   /auth/linkedin/callback:
     get:
@@ -89,6 +120,8 @@ paths:
         si la cuenta ya está vinculada inicia sesión; si existe un colaborador con ese email le vincula
         LinkedIn; si no existe crea un colaborador sin contraseña con username generado desde el email.
         Deja la sesión en las cookies `accessToken`/`refreshToken`, igual que el login.
+        Si el flujo empezó en `/auth/linkedin/vincular`, en cambio, vincula LinkedIn al usuario que lo
+        inició y vuelve a la pantalla de origen. En ambos casos guarda cifrado el token de LinkedIn.
         Todas las respuestas son redirecciones al front.
       tags: [Auth]
       parameters:
@@ -115,6 +148,62 @@ paths:
             `/registro?origen=linkedin` si tiene que completarlo;
             `/ingresar?errorLinkedin=<mensaje>` ante cualquier error (cancelación, state inválido,
             email no verificado, la cuenta es de un colectivo, LinkedIn no responde, etc.)
+
+  /linkedin/publicaciones:
+    post:
+      summary: Publica en el LinkedIn del colaborador sobre un proyecto en el que colabora
+      description: >
+        Requiere sesión de colaborador con una colaboración activa en el proyecto. El texto se revisa
+        contra las palabras baneadas. Si el usuario no tiene LinkedIn conectado con permiso para
+        publicar (o LinkedIn rechaza el token), responde 403 con `details: [{ codigo: LINKEDIN_NO_VINCULADO }]`
+        y el front tiene que mandarlo a `/auth/linkedin/vincular`.
+      tags: [LinkedIn]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [proyectoId, texto]
+              properties:
+                proyectoId:
+                  type: string
+                  example: 6650f1c2a1b2c3d4e5f60718
+                texto:
+                  type: string
+                  maxLength: 3000
+                  example: Estoy colaborando en este proyecto
+      responses:
+        "201":
+          description: Publicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      idPublicacion:
+                        type: string
+                        example: "urn:li:share:7000000000000000000"
+                      url:
+                        type: string
+                        nullable: true
+                      proyectoId:
+                        type: string
+                      colaboracionId:
+                        type: string
+        "400":
+          description: Datos inválidos o el texto tiene palabras baneadas
+        "401":
+          description: No hay sesión
+        "403":
+          description: No colabora en el proyecto, o no tiene LinkedIn conectado (`LINKEDIN_NO_VINCULADO`)
+        "502":
+          description: LinkedIn no respondió o rechazó la publicación
 
   /proyectos:
     get:
@@ -279,7 +368,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Proyecto"
+                allOf:
+                  - $ref: "#/components/schemas/Proyecto"
+                  - type: object
+                    properties:
+                      colectivo:
+                        type: object
+                        nullable: true
+                        description: Colectivo al que pertenece el proyecto
+                        properties:
+                          id:
+                            type: string
+                          nombre:
+                            type: string
+                            example: Cooperativa Sur
         "400":
           $ref: "#/components/responses/IdInvalido"
         "404":

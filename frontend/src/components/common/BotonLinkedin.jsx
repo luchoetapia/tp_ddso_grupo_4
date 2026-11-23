@@ -11,22 +11,43 @@ export const URL_INGRESO_LINKEDIN = "/api/auth/linkedin";
 const RUTA_LOGO = "/linkedin-logo.png";
 
 // Azul de marca de LinkedIn y su variante oscura para hover
-const estilo =
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#0A66C2] bg-[#0A66C2] px-[18px] py-2 font-semibold text-white hover:border-[#004182] hover:bg-[#004182]";
+const estiloBase =
+    "inline-flex items-center justify-center rounded-full border border-[#0A66C2] bg-[#0A66C2] px-[18px] py-2 font-semibold text-white hover:border-[#004182] hover:bg-[#004182]";
+
+// Normal: el botón grande del login/registro. Compacto: mismo alto y separación que <Button>,
+// para ponerlo al lado de otros botones (ej: "Compartir en LinkedIn" en las cards)
+const tamanos = {
+    normal: { boton: "min-h-11 gap-2", logo: "h-5 w-5" },
+    compacto: { boton: "min-h-10 gap-1.5", logo: "h-4 w-4" },
+};
 
 // Es un <a> común y no un fetch/Axios ni un <Link> de Next: el ingreso con LinkedIn es una navegación
 // completa del navegador. La API redirige a LinkedIn y LinkedIn vuelve al front con la sesión iniciada.
 // Solo para colaboradores (los colectivos no pueden ingresar con LinkedIn).
 // motivoDeshabilitado: texto del tooltip que explica por qué el botón está deshabilitado
-export default function BotonLinkedin({ children = "Continuar con LinkedIn", deshabilitado = false, motivoDeshabilitado, className }) {
+// href: a dónde navega (por defecto, el ingreso).
+// onClick: si se pasa, se renderiza un <button> en lugar del link (abrir el modal de compartir,
+// o conectar LinkedIn guardando antes un borrador y renovando la sesión)
+// compacto: tamaño de los botones comunes (ver tamanos)
+export default function BotonLinkedin({
+    children = "Continuar con LinkedIn",
+    deshabilitado = false,
+    motivoDeshabilitado,
+    className,
+    href = URL_INGRESO_LINKEDIN,
+    onClick,
+    compacto = false,
+}) {
     const [hayLogo, setHayLogo] = useState(true);
     const idTooltip = useId();
+    const tamano = tamanos[compacto ? "compacto" : "normal"];
+    const estilo = `${estiloBase} ${tamano.boton}`;
 
     const contenido = (
         <>
             {hayLogo && (
                 // eslint-disable-next-line @next/next/no-img-element -- ícono chico y fijo, no necesita next/image
-                <img src={RUTA_LOGO} alt="" aria-hidden="true" width={20} height={20} className="h-5 w-5 shrink-0" onError={() => setHayLogo(false)} />
+                <img src={RUTA_LOGO} alt="" aria-hidden="true" width={20} height={20} className={`${tamano.logo} shrink-0`} onError={() => setHayLogo(false)} />
             )}
             {children}
         </>
@@ -34,7 +55,7 @@ export default function BotonLinkedin({ children = "Continuar con LinkedIn", des
 
     if (deshabilitado) {
         const boton = (
-            <Button disabled className={`min-h-11 w-full border-[#0A66C2]! bg-[#0A66C2]! text-white! ${motivoDeshabilitado ? "pointer-events-none" : ""}`}>
+            <Button disabled className={`${compacto ? "" : "min-h-11 w-full"} border-[#0A66C2]! bg-[#0A66C2]! text-white! ${motivoDeshabilitado ? "pointer-events-none" : ""}`}>
                 {contenido}
             </Button>
         );
@@ -56,8 +77,16 @@ export default function BotonLinkedin({ children = "Continuar con LinkedIn", des
         );
     }
 
+    if (onClick) {
+        return (
+            <button type="button" onClick={onClick} className={`cursor-pointer ${estilo} ${className ?? ""}`}>
+                {contenido}
+            </button>
+        );
+    }
+
     return (
-        <a href={URL_INGRESO_LINKEDIN} className={`${estilo} ${className ?? ""}`}>
+        <a href={href} className={`${estilo} ${className ?? ""}`}>
             {contenido}
         </a>
     );
