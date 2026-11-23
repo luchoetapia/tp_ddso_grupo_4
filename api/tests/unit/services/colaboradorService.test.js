@@ -9,7 +9,14 @@ jest.mock('../../../src/repositories/colaboradorRepository.js', () => ({
     findByCuentaGit: jest.fn(),
     findByUsuario: jest.fn(),
     save: jest.fn(),
+    anonymize: jest.fn(),
+ }));
+jest.mock('../../../src/repositories/colaboracionRepository.js', () => ({
+    cerrarYAnonimizarPorColaborador: jest.fn(),
 }));
+jest.mock('../../../src/auth/authRepository.js', () => jest.fn().mockImplementation(() => ({
+    desactivarUsuario: jest.fn(),
+})));
 jest.mock('../../../src/services/habilidadService.js', () => ({
     obtenerPorListaId: jest.fn(),
 }));
@@ -29,6 +36,8 @@ const postulacionRepository = require('../../../src/repositories/postulacionRepo
 const { ForbiddenError } = require('../../../src/errors/AppError.js');
 
 const colaboradorRepository = require('../../../src/repositories/colaboradorRepository.js');
+const colaboracionRepository = require('../../../src/repositories/colaboracionRepository.js');
+const AuthRepository = require('../../../src/auth/authRepository.js');
 const habilidadService = require('../../../src/services/habilidadService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const reporteService = require('../../../src/services/reporteService.js');
@@ -262,6 +271,29 @@ describe('ColaboradorService', () => {
 
             await expect(colaboradorService.obtenerContactosAutorizados('nadie', { id: ID_USUARIO, rol: 'colaborador' }))
                 .rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe('eliminarCuenta', () => {
+        test('anonimiza el perfil, cierra y anonimiza colaboraciones, y desactiva la cuenta', async () => {
+            const perfil = colaboradorDoc();
+            colaboradorRepository.findByUsuario.mockResolvedValue(perfil);
+            const authRepository = AuthRepository.mock.instances[0];
+
+            await expect(colaboradorService.eliminarCuenta(ID_USUARIO)).resolves.toBe(true);
+
+            expect(colaboradorRepository.anonymize).toHaveBeenCalledWith(ID_COLAB);
+            expect(colaboracionRepository.cerrarYAnonimizarPorColaborador)
+                .toHaveBeenCalledWith(ID_COLAB, expect.any(Date));
+            expect(authRepository.desactivarUsuario).toHaveBeenCalledWith(ID_USUARIO);
+        });
+
+        test('no desactiva la cuenta si no existe un perfil de colaborador', async () => {
+            colaboradorRepository.findByUsuario.mockResolvedValue(null);
+
+            await expect(colaboradorService.eliminarCuenta(ID_USUARIO)).rejects.toThrow(NotFoundError);
+            expect(colaboradorRepository.anonymize).not.toHaveBeenCalled();
+            expect(colaboracionRepository.cerrarYAnonimizarPorColaborador).not.toHaveBeenCalled();
         });
     });
 });
