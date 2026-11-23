@@ -52,6 +52,7 @@ class NotificacionAutomaticaService {
     }
 
     notificar = async (colaborador, proyecto, perfil) => {
+        if (colaborador.usuario?.activo === false) return false;
         try {
             const notificacion = await this.notificacionRepository.save({
                 destinatario: colaborador.id,
