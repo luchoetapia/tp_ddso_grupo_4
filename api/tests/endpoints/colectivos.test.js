@@ -10,6 +10,10 @@ jest.mock('../../src/services/colectivoService.js', () => ({
     buscarPorUsuario: jest.fn(),
     obtenerPotencialesColaboradores: jest.fn(),
 }));
+// El middleware auditar() guarda un registro por cada acción exitosa: se mockea para no escribir en la base
+jest.mock('../../src/services/auditoriaService.js', () => ({
+    registrar: jest.fn().mockResolvedValue(undefined),
+}));
 
 const request = require('supertest');
 const app = require('../../src/app.js');
@@ -18,6 +22,10 @@ const { crearUsuarioDeSemilla } = require('../../src/auth/usuarioSemilla.js');
 const { cookieDeSesion, ID_USUARIO } = require('../helpers/sesion.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
 const { roles } = require('../../src/auth/models/usuario.js');
+const auditoriaService = require('../../src/services/auditoriaService.js');
+const { AccionAuditada, TipoEntidadAuditada } = require('../../src/models/Auditoria.js');
+
+const admin = cookieDeSesion(roles.ADMIN);
 
 const ID = '507f1f77bcf86cd799439051';
 const colectivo = { id: ID, nombre: 'Tech For Good', descripcion: 'desc', ubicacion: 'Córdoba', tipo: 'fundacion', proyectos: [] };
@@ -84,6 +92,11 @@ describe('Endpoints /colectivos', () => {
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colectivo creado exitosamente', data: colectivo });
             expect(colectivoService.crear).toHaveBeenCalledWith({ nombre: 'Tech For Good', tipo: 'fundacion', proyectos: [] }, ID_USUARIO);
+            expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                accion: AccionAuditada.COLECTIVO_CREADO,
+                entidad: { tipo: TipoEntidadAuditada.COLECTIVO, id: ID },
+                idColectivo: ID,
+            }));
         });
 
         test('responde 400 con un tipo inválido', async () => {
@@ -166,15 +179,35 @@ describe('Endpoints /colectivos', () => {
             const resultado = { mensaje: 'Colectivo Tech For Good desactivado correctamente, 2 proyectos finalizados.' };
             colectivoService.desactivarColectivo.mockResolvedValue(resultado);
 
-            const res = await request(app).delete(`/colectivos/${ID}`);
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', admin);
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual(resultado);
-            expect(colectivoService.desactivarColectivo).toHaveBeenCalledWith(ID);
+            // El service recibe el usuario de la sesión para validar que pueda dar de baja ese colectivo
+            expect(colectivoService.desactivarColectivo).toHaveBeenCalledWith(ID, expect.objectContaining({ rol: roles.ADMIN }));
+            expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                accion: AccionAuditada.COLECTIVO_DADO_DE_BAJA,
+                idColectivo: ID,
+                detalle: resultado.mensaje,
+            }));
+        });
+
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).delete(`/colectivos/${ID}`);
+
+            expect(res.status).toBe(401);
+            expect(colectivoService.desactivarColectivo).not.toHaveBeenCalled();
+        });
+
+        test('responde 403 si es colaborador', async () => {
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', cookieDeSesion(roles.COLABORADOR));
+
+            expect(res.status).toBe(403);
+            expect(colectivoService.desactivarColectivo).not.toHaveBeenCalled();
         });
 
         test('responde 400 con un id inválido', async () => {
-            const res = await request(app).delete('/colectivos/abc');
+            const res = await request(app).delete('/colectivos/abc').set('Cookie', admin);
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Id de colectivo inválido');
@@ -184,7 +217,7 @@ describe('Endpoints /colectivos', () => {
         test('responde 404 si no existe', async () => {
             colectivoService.desactivarColectivo.mockRejectedValue(new NotFoundError('Colectivo no encontrado'));
 
-            const res = await request(app).delete(`/colectivos/${ID}`);
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', admin);
 
             expect(res.status).toBe(404);
         });
@@ -192,7 +225,7 @@ describe('Endpoints /colectivos', () => {
         test('responde 400 si ya estaba desactivado', async () => {
             colectivoService.desactivarColectivo.mockRejectedValue(new BadRequestError('El colectivo ya se encuentra desactivado'));
 
-            const res = await request(app).delete(`/colectivos/${ID}`);
+            const res = await request(app).delete(`/colectivos/${ID}`).set('Cookie', admin);
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('El colectivo ya se encuentra desactivado');
@@ -204,7 +237,7 @@ describe('Endpoints /colectivos', () => {
             crearUsuarioDeSemilla.mockImplementation(async (nombre) => ({ id: `usr-${nombre}` }));
             colectivoService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/colectivos/llenarDatosPrueba');
+            const res = await request(app).post('/colectivos/llenarDatosPrueba').set('Cookie', admin);
 
             expect(res.status).toBe(201);
             expect(res.body.data.map(c => c.nombre)).toEqual(['Colectivo Software Libre', 'Tech For Good']);
@@ -215,7 +248,7 @@ describe('Endpoints /colectivos', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/colectivos/llenarDatosPrueba').send([{ nombre: 'Sin tipo' }]);
+            const res = await request(app).post('/colectivos/llenarDatosPrueba').set('Cookie', admin).send([{ nombre: 'Sin tipo' }]);
 
             expect(res.status).toBe(400);
         });

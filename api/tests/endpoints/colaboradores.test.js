@@ -15,6 +15,10 @@ jest.mock('../../src/services/habilidadService.js', () => ({
 jest.mock('../../src/services/proyectoService.js', () => ({
     buscarPotencialesProyectos: jest.fn(),
 }));
+// El middleware auditar() guarda un registro por cada acción exitosa: se mockea para no escribir en la base
+jest.mock('../../src/services/auditoriaService.js', () => ({
+    registrar: jest.fn().mockResolvedValue(undefined),
+}));
 
 
 const request = require('supertest');
@@ -27,6 +31,12 @@ const habilidadService = require('../../src/services/habilidadService.js');
 const proyectoService = require('../../src/services/proyectoService.js');
 const notificacionService = require('../../src/services/notificacionService.js');
 const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
+const auditoriaService = require('../../src/services/auditoriaService.js');
+const { roles } = require('../../src/auth/models/usuario.js');
+const { AccionAuditada } = require('../../src/models/Auditoria.js');
+
+// Anotar directo a un proyecto y cargar datos de prueba es solo para administradores
+const admin = cookieDeSesion(roles.ADMIN);
 
 const ID = '507f1f77bcf86cd799439011';
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -158,15 +168,27 @@ describe('Endpoints /colaboradores', () => {
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
             colaboracionService.crear.mockResolvedValue(colaboracion);
 
-            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`);
+            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`).set('Cookie', admin);
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ message: 'Colaboradora anotada al proyecto exitosamente', data: colaboracionEsperada });
             expect(colaboracionService.crear).toHaveBeenCalledWith({ idColaborador: ID, idProyecto: ID_PROY });
+            expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+                accion: AccionAuditada.COLABORACION_CREADA,
+                idProyecto: ID_PROY,
+                detalle: 'Anotación directa de: juanp',
+            }));
+        });
+
+        test('responde 403 si no es administrador', async () => {
+            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`).set('Cookie', cookieDeSesion(roles.COLECTIVO));
+
+            expect(res.status).toBe(403);
+            expect(colaboracionService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 400 con id de proyecto inválido', async () => {
-            const res = await request(app).post('/colaboradores/juanp/anotarProyecto/123');
+            const res = await request(app).post('/colaboradores/juanp/anotarProyecto/123').set('Cookie', admin);
 
             expect(res.status).toBe(400);
         });
@@ -175,7 +197,7 @@ describe('Endpoints /colaboradores', () => {
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
             colaboracionService.crear.mockRejectedValue(new ConflictError('No cumple'));
 
-            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`);
+            const res = await request(app).post(`/colaboradores/juanp/anotarProyecto/${ID_PROY}`).set('Cookie', admin);
 
             expect(res.status).toBe(409);
         });
@@ -226,7 +248,7 @@ describe('Endpoints /colaboradores', () => {
             crearUsuarioDeSemilla.mockImplementation(async (cuentaGit) => ({ id: `usr-${cuentaGit}` }));
             colaboradorService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/colaboradores/llenarDatosPrueba');
+            const res = await request(app).post('/colaboradores/llenarDatosPrueba').set('Cookie', admin);
 
             expect(res.status).toBe(201);
             expect(res.body.data.map(c => c.cuentaGit)).toEqual(['juanperez', 'mariagomez']);
@@ -235,7 +257,7 @@ describe('Endpoints /colaboradores', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/colaboradores/llenarDatosPrueba').send([{ nombre: 'Sin apellido' }]);
+            const res = await request(app).post('/colaboradores/llenarDatosPrueba').set('Cookie', admin).send([{ nombre: 'Sin apellido' }]);
 
             expect(res.status).toBe(400);
         });

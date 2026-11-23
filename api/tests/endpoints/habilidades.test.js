@@ -8,6 +8,11 @@ const request = require('supertest');
 const app = require('../../src/app.js');
 const habilidadService = require('../../src/services/habilidadService.js');
 const { ConflictError, NotFoundError } = require('../../src/errors/AppError.js');
+const { cookieDeSesion } = require('../helpers/sesion.js');
+const { roles } = require('../../src/auth/models/usuario.js');
+
+// Crear habilidades es solo para administradores
+const admin = cookieDeSesion(roles.ADMIN);
 
 const ID = '507f1f77bcf86cd799439021';
 const habilidad = { id: ID, titulo: 'JavaScript', tipoHabilidad: 'programacion', descripcion: 'Lenguaje' };
@@ -49,15 +54,29 @@ describe('Endpoints /habilidades', () => {
         test('crea la habilidad', async () => {
             habilidadService.crear.mockResolvedValue(habilidad);
 
-            const res = await request(app).post('/habilidades').send(body);
+            const res = await request(app).post('/habilidades').set('Cookie', admin).send(body);
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Habilidad creada exitosamente', data: habilidad });
             expect(habilidadService.crear).toHaveBeenCalledWith(body);
         });
 
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).post('/habilidades').send(body);
+
+            expect(res.status).toBe(401);
+            expect(habilidadService.crear).not.toHaveBeenCalled();
+        });
+
+        test('responde 403 si no es administrador', async () => {
+            const res = await request(app).post('/habilidades').set('Cookie', cookieDeSesion(roles.COLECTIVO)).send(body);
+
+            expect(res.status).toBe(403);
+            expect(habilidadService.crear).not.toHaveBeenCalled();
+        });
+
         test('responde 400 si el body es inválido', async () => {
-            const res = await request(app).post('/habilidades').send({ titulo: 'JS', tipoHabilidad: 'cocina' });
+            const res = await request(app).post('/habilidades').set('Cookie', admin).send({ titulo: 'JS', tipoHabilidad: 'cocina' });
 
             expect(res.status).toBe(400);
             expect(res.body.details.length).toBeGreaterThan(0);
@@ -65,7 +84,7 @@ describe('Endpoints /habilidades', () => {
         });
 
         test('responde 400 si se envían campos de más', async () => {
-            const res = await request(app).post('/habilidades').send({ ...body, extra: true });
+            const res = await request(app).post('/habilidades').set('Cookie', admin).send({ ...body, extra: true });
 
             expect(res.status).toBe(400);
         });
@@ -73,7 +92,7 @@ describe('Endpoints /habilidades', () => {
         test('responde 409 si ya existe', async () => {
             habilidadService.crear.mockRejectedValue(new ConflictError('Ya existe una habilidad con ese título'));
 
-            const res = await request(app).post('/habilidades').send(body);
+            const res = await request(app).post('/habilidades').set('Cookie', admin).send(body);
 
             expect(res.status).toBe(409);
             expect(res.body.message).toBe('Ya existe una habilidad con ese título');
@@ -111,7 +130,7 @@ describe('Endpoints /habilidades', () => {
         test('crea las habilidades por defecto si no se envía body', async () => {
             habilidadService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/habilidades/llenarDatosPrueba');
+            const res = await request(app).post('/habilidades/llenarDatosPrueba').set('Cookie', admin);
 
             expect(res.status).toBe(201);
             expect(res.body.status).toBe('success');
@@ -121,7 +140,7 @@ describe('Endpoints /habilidades', () => {
         test('crea las habilidades enviadas en el body', async () => {
             habilidadService.crear.mockImplementation(async (datos) => ({ id: ID, ...datos }));
 
-            const res = await request(app).post('/habilidades/llenarDatosPrueba')
+            const res = await request(app).post('/habilidades/llenarDatosPrueba').set('Cookie', admin)
                 .send([{ titulo: 'Figma', tipoHabilidad: 'diseño', descripcion: 'Diseño UI' }]);
 
             expect(res.status).toBe(201);
@@ -129,7 +148,7 @@ describe('Endpoints /habilidades', () => {
         });
 
         test('responde 400 si algún elemento es inválido', async () => {
-            const res = await request(app).post('/habilidades/llenarDatosPrueba').send([{ titulo: 'x' }]);
+            const res = await request(app).post('/habilidades/llenarDatosPrueba').set('Cookie', admin).send([{ titulo: 'x' }]);
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Datos inválidos');
