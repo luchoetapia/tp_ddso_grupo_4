@@ -5,7 +5,7 @@ const colaboradorService = require('./colaboradorService.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const colaboracionRepository = require('../repositories/colaboracionRepository.js');
 const EstadoPostulacion = require('../models/Proyecto/Postulaciones/EstadoPostulacion.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 const reporteService = require('./reporteService.js');
 const { TipoEntidadReportada } = require('../models/Reporte.js');
 
@@ -154,6 +154,28 @@ class PostulacionService {
         }
 
         return postulacion;
+    }
+
+    // La colaboradora de la sesión solo se postula a nombre propio
+    crearComoColaboradora = async (datos, idUsuario) => {
+        const colaborador = await this.colaboradorService.buscarPorUsuario(idUsuario);
+        if (!colaborador) throw new NotFoundError("El usuario no tiene un perfil de colaboradora");
+
+        const esOtraPersona = (datos.idColaborador && datos.idColaborador !== colaborador.id)
+            || (datos.cuentaGit && datos.cuentaGit !== colaborador.cuentaGit);
+        if (esOtraPersona) throw new ForbiddenError("Solo podés postularte a nombre propio");
+
+        const { cuentaGit, ...resto } = datos;
+        return await this.crear({ ...resto, idColaborador: colaborador.id });
+    }
+
+    // Solo el colectivo dueño del proyecto acepta o rechaza sus postulaciones
+    actualizarEstadoComoColectivo = async (id, nuevoEstado, idUsuario) => {
+        const postulacion = await this.obtenerPorId(id);
+        const idProyecto = (postulacion.proyecto?._id ?? postulacion.proyecto?.id ?? postulacion.proyecto).toString();
+        await this.proyectoService.obtenerEditablePorColectivo(idProyecto, idUsuario);
+
+        return await this.actualizarEstado(id, nuevoEstado);
     }
 
     actualizarEstado = async (id, nuevoEstado) => {

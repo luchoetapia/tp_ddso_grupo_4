@@ -33,7 +33,18 @@ const validarCreacionColaborador = z.object({
     contactos: campos.contactos.default([]),
 }).strict();
 
-const validarActualizacionColaborador = z.object(campos).partial().strict()
+const opcionalBorrable = (campo) => campo.nullable();
+
+const validarActualizacionColaborador = z.object({
+    nombre: opcionalBorrable(campos.nombre),
+    apellido: opcionalBorrable(campos.apellido),
+    nombreFantasia: opcionalBorrable(campos.nombreFantasia),
+    pronombres: opcionalBorrable(campos.pronombres),
+    presentacion: opcionalBorrable(campos.presentacion),
+    habilidades: campos.habilidades,
+    deseaSerContactado: campos.deseaSerContactado,
+    contactos: campos.contactos,
+}).partial().strict()
     .refine(...alMenosUnCampo);
 
 const validarCuentaGitColaborador = z.object({

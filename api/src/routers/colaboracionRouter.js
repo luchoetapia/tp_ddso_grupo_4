@@ -10,7 +10,17 @@ const autenticar = require('../middlewares/autenticar.js')
 const { roles } = require('../auth/models/usuario.js')
 const { validarCreacionColaboracion, validarIdsColaboracion } = require('../validators/colaboracionValidator.js')
 
+const auditar = require('../middlewares/auditar.js')
+const { AccionAuditada, TipoEntidadAuditada } = require('../models/Auditoria.js')
+
 const colaboracionController = new ColaboracionController()
+
+// Datos para la auditoría
+const colaboracionDeLaRespuesta = (detalle = () => null) => (req, body) => ({
+    entidad: { tipo: TipoEntidadAuditada.COLABORACION, id: body.data.id },
+    idProyecto: body.data.proyecto?.id,
+    detalle: detalle(req, body),
+})
 const router = express.Router()
 
 router.route('/')
@@ -19,7 +29,9 @@ router.route('/')
         (req, res) => colaboracionController.obtenerColaboraciones(req, res)
     )
     .post(
+        autenticar(roles.ADMIN),
         validar(validarCreacionColaboracion, 'body'),
+        auditar(AccionAuditada.COLABORACION_CREADA, colaboracionDeLaRespuesta()),
         (req, res) => colaboracionController.crearColaboracion(req, res)
     )
 
@@ -37,6 +49,7 @@ router.route('/:id/desanotar')
     .post(
         autenticar([roles.COLABORADOR, roles.COLECTIVO]),
         validar(validarIdsColaboracion, 'params'),
+        auditar(AccionAuditada.COLABORACION_DADA_DE_BAJA, colaboracionDeLaRespuesta((req) => `Dada de baja por: ${req.usuario.rol === roles.COLECTIVO ? 'el colectivo' : 'la colaboradora'}`)),
         (req, res) => colaboracionController.desanotarColaboracion(req, res)
     )
 

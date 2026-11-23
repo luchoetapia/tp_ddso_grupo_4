@@ -11,7 +11,11 @@ const {
     validarCreacionColaborador,
     validarCuentaGitColaborador,
     validarAnotacionAProyecto,
+    validarActualizacionColaborador,
 } = require('../validators/colaboradoresValidator.js')
+
+const auditar = require('../middlewares/auditar.js')
+const { AccionAuditada, TipoEntidadAuditada } = require('../models/Auditoria.js')
 
 const colaboradorController = new ColaboradorController()
 const router = express.Router()
@@ -36,7 +40,11 @@ router.route('/me')
         autenticar(roles.COLABORADOR),
         (req, res) => colaboradorController.eliminarMiCuenta(req, res)
     )
-    
+    .patch(
+        autenticar(roles.COLABORADOR),
+        validar(validarActualizacionColaborador, 'body'),
+        (req, res) => colaboradorController.actualizarMiPerfil(req, res)
+    )
 
 router.route('/:cuentaGit')
     .get(
@@ -53,12 +61,18 @@ router.route('/:cuentaGit/contactos')
 
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
     .post(
+        autenticar(roles.ADMIN),
         validar(validarAnotacionAProyecto, 'params'),
+        auditar(AccionAuditada.COLABORACION_CREADA, (req, body) => ({
+            entidad: { tipo: TipoEntidadAuditada.COLABORACION, id: body.data.id },
+            idProyecto: req.params.idProyecto,
+            detalle: `Anotación directa de: ${req.params.cuentaGit}`,
+        })),
         (req, res) => colaboradorController.anotarColaboradorAProyecto(req, res)
     )
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => colaboradorController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => colaboradorController.llenarDatosPrueba(req, res));
 
 router.route('/:cuentaGit/buscarPotencialesProyectos')
     .get(

@@ -87,7 +87,7 @@ const validarFiltrosProyecto = z.object({
 });
 
 const validarFinalizacionProyecto = z.object({
-    idColectivo: objectId("Id de colectivo inválido"),
+    idColectivo: objectId("Id de colectivo inválido").optional(),
 }).strict();
 
 const validarContactoColaborador = z.object({

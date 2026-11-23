@@ -78,7 +78,7 @@ const SelectorHabilidades = ({ seleccionadas, onChange }) => {
     );
 };
 
-const PasoDatosColaborador = ({ colaborador, onChange }) => {
+const PasoDatosColaborador = ({ colaborador, onChange, titulo = 'Contanos sobre vos', cuentaGitEditable = true }) => {
     const cuentaGit = colaborador.cuentaGit ?? '';
     const presentacion = colaborador.presentacion ?? '';
     const errorCuentaGit = cuentaGit && !REGEX_CUENTA_GIT.test(cuentaGit)
@@ -93,7 +93,7 @@ const PasoDatosColaborador = ({ colaborador, onChange }) => {
 
     return (
         <div className="flex flex-col gap-[18px]">
-            <h2 className="m-0 text-[24px]">Contanos sobre vos</h2>
+            {titulo && <h2 className="m-0 text-[24px]">{titulo}</h2>}
 
             <p className="m-0 text-[13px] text-muted">
                 Podés mantenerte anónima con un nombre de fantasía, o usar tu nombre real. Necesitamos al menos uno de los dos.
@@ -106,7 +106,14 @@ const PasoDatosColaborador = ({ colaborador, onChange }) => {
                 <Input label="Apellido (opcional)" {...campo('apellido')} autoComplete="family-name" />
             </div>
 
-            <Input label="Cuenta de Git" {...campo('cuentaGit')} error={errorCuentaGit} required />
+            {cuentaGitEditable ? (
+                <Input label="Cuenta de Git" {...campo('cuentaGit')} error={errorCuentaGit} required />
+            ) : (
+                <div className="flex flex-col gap-1">
+                    <Input label="Cuenta de Git" value={cuentaGit} readOnly aria-describedby="ayuda-cuenta-git" />
+                    <p id="ayuda-cuenta-git" className="m-0 text-[12px] text-muted">La cuenta de Git te identifica en la plataforma y no se puede cambiar.</p>
+                </div>
+            )}
 
             <SelectorHabilidades
                 seleccionadas={colaborador.habilidades ?? []}

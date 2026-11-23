@@ -35,6 +35,10 @@ class ColaboradorRepository {
         return await ColaboradorModel.find(condition).populate('habilidades').populate('usuario', 'activo');
     }
 
+    async update(id, cambios) {
+        return await ColaboradorModel.findByIdAndUpdate(id, cambios, { new: true, runValidators: true }).populate('habilidades');
+    }
+
     async save(datos) {
         const colaborador = new ColaboradorModel(datos);
         await colaborador.save();

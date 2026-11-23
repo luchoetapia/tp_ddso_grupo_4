@@ -7,6 +7,13 @@ export const roles = {
     COLECTIVO: 'colectivo',
 };
 
+// Pantalla de inicio de cada rol (a donde se va al ingresar y al tocar el logo)
+export const INICIO_POR_ROL = {
+    [roles.ADMIN]: '/admin/auditoria',
+    [roles.COLABORADOR]: '/colaboradoras/inicio',
+    [roles.COLECTIVO]: '/colectivo/inicio',
+};
+
 const opciones = { withCredentials: true };
 
 // Devuelve el usuario logueado o null.

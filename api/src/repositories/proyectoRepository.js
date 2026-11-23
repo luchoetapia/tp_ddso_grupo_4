@@ -1,5 +1,6 @@
 const ProyectoModel = require('../database/schemas/proyectoSchema.js');
 const HabilidadModel = require('../database/schemas/habilidadSchema.js');
+const ColaboracionModel = require('../database/schemas/colaboracionSchema.js');
 
 // Habilidades de los perfiles embebidos, necesarias para armar la vista pública del proyecto y sus perfiles
 const HABILIDADES_PERFILES = ['perfiles.habilidadesRequeridas', 'perfiles.habilidadesOpcionales'];
@@ -258,6 +259,37 @@ class ProyectoRepository {
             { $limit: limite },
             { $project: { _id: 0, id: { $toString: '$_id' }, titulo: '$habilidad.titulo', proyectos: 1 } }
         ]);
+    }
+
+    async marcarParaRevisionPorFaltaDeActualizaciones(fechaLimite) {
+        const proyectosIniciados = await ColaboracionModel.distinct('proyecto', {
+            fin: null
+        });
+
+        if (proyectosIniciados.length === 0) {
+            return { modifiedCount: 0 };
+        }
+
+        return ProyectoModel.updateMany(
+            {
+                _id: { $in: proyectosIniciados },
+                finalizado: false,
+                createdAt: { $lte: fechaLimite },
+                logros: {
+                    $not: {
+                        $elemMatch: { createdAt: { $gte: fechaLimite } }
+                    }
+                },
+                requiereRevisionManual: { $ne: true }
+            },
+            {
+                $set: {
+                    requiereRevisionManual: true,
+                    revisionManualMotivo: 'Sin actualizaciones recientes',
+                    revisionManualFecha: new Date()
+                }
+            }
+        );
     }
 }
 

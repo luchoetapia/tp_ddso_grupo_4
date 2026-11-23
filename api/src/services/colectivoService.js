@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const colaboracionRepository = require('../repositories/colaboracionRepository.js');
@@ -11,6 +11,9 @@ const colaboradorService = require('./colaboradorService.js');
 const { construirOrden } = require('./ordenamiento.js');
 const reporteService = require('./reporteService.js');
 const { TipoEntidadReportada } = require('../models/Reporte.js');
+const AuthService = require('../auth/authService.js');
+const AuthRepository = require('../auth/authRepository.js');
+const { roles } = require('../auth/models/usuario.js');
 
 // Claves por las que el front puede ordenar los colectivos (2° criterio: nombre, 3°: _id)
 const ORDENAMIENTO = {
@@ -33,6 +36,12 @@ class ColectivoService {
         this.proyectoService = proyectoService;
         this.colaboradorService = colaboradorService;
     }
+
+    get authService() { return this._authService ??= new AuthService() }
+    set authService(servicio) { this._authService = servicio }
+
+    get authRepository() { return this._authRepository ??= new AuthRepository() }
+    set authRepository(repositorio) { this._authRepository = repositorio }
 
     obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
         const sort = construirOrden(ORDENAMIENTO, { orden, direccion });
@@ -105,8 +114,14 @@ class ColectivoService {
         return await this.proyectoService.finalizar(idProyecto)
     }
 
-    desactivarColectivo = async (id) => {
+    // usuario: sesión que pide la baja. Solo la cuenta titular del colectivo o un admin de la plataforma.
+    // Sin usuario es una llamada interna y no se restringe.
+    desactivarColectivo = async (id, usuario = null) => {
         const colectivo = await this.obtenerPorId(id);
+
+        if (usuario && usuario.rol !== roles.ADMIN && !colectivo.esTitular(usuario.id)) {
+            throw new ForbiddenError("Solo la cuenta titular del colectivo puede darlo de baja");
+        }
 
         if (!colectivo.active) 
             throw new BadRequestError("El colectivo ya se encuentra desactivado");
@@ -122,6 +137,69 @@ class ColectivoService {
 
     buscarPorUsuario = async (idUsuario) => {
         return await this.colectivoRepository.findByUsuarioConProyectos(idUsuario);
+    }
+
+    // ---------- Perfiles administrativos ----------
+    // Un colectivo tiene una cuenta titular (la que lo registró) y cero o más administradores adicionales.
+    // Todos lo administran por igual; solo la titular agrega o quita administradores.
+
+    obtenerAdministradoPor = async (idUsuario) => {
+        const colectivo = await this.colectivoRepository.findByUsuario(idUsuario)
+        if (!colectivo) throw new NotFoundError("El usuario no tiene un colectivo asociado")
+        return colectivo
+    }
+
+    obtenerGestionablePorTitular = async (idUsuario) => {
+        const colectivo = await this.obtenerAdministradoPor(idUsuario)
+        if (!colectivo.esTitular(idUsuario)) {
+            throw new ForbiddenError("Solo la cuenta titular del colectivo puede gestionar sus administradores")
+        }
+        return colectivo
+    }
+
+    obtenerAdministradores = async (idUsuario) => {
+        const colectivo = await this.obtenerAdministradoPor(idUsuario)
+        const cuentas = await this.colectivoRepository.obtenerAdministradores(colectivo.id)
+
+        const administradores = [
+            { usuario: cuentas.usuario, esTitular: true },
+            ...(cuentas.administradores ?? []).map(usuario => ({ usuario, esTitular: false })),
+        ].filter(({ usuario }) => usuario) // Cuentas que ya no existen
+
+        return { colectivo, administradores, puedeGestionar: colectivo.esTitular(idUsuario) }
+    }
+
+    // Crea la cuenta del nuevo administrador (rol colectivo) y la asocia al colectivo de la titular
+    agregarAdministrador = async (idUsuario, { username, email, password }) => {
+        const colectivo = await this.obtenerGestionablePorTitular(idUsuario)
+
+        const administrador = await this.authService.registrarUsuario(username, password, email, roles.COLECTIVO)
+        try {
+            await this.colectivoRepository.agregarAdministrador(colectivo.id, administrador.id)
+        } catch (error) {
+            // Sin colectivo la cuenta quedaría huérfana: se desactiva (libera username y email)
+            await this.authRepository.desactivarUsuario(administrador.id)
+            throw error
+        }
+
+        return { colectivo, administrador }
+    }
+
+    // Quita al administrador del colectivo y desactiva su cuenta (se creó solo para administrar este colectivo)
+    quitarAdministrador = async (idUsuario, idAdministrador) => {
+        const colectivo = await this.obtenerGestionablePorTitular(idUsuario)
+
+        if (colectivo.esTitular(idAdministrador)) {
+            throw new BadRequestError("No se puede quitar a la cuenta titular del colectivo")
+        }
+        if (!colectivo.esAdministradorAdicional(idAdministrador)) {
+            throw new NotFoundError("El usuario no es administrador de tu colectivo")
+        }
+
+        await this.colectivoRepository.quitarAdministrador(colectivo.id, idAdministrador)
+        const administrador = await this.authRepository.desactivarUsuario(idAdministrador)
+
+        return { colectivo, administrador }
     }
 
     actualizarPorUsuario = async (idUsuario, cambios) => {

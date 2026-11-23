@@ -29,3 +29,4 @@ const autenticar = (rolesPermitidos) => {
 }
 
 module.exports = autenticar;
+module.exports.obtenerToken = obtenerToken;
