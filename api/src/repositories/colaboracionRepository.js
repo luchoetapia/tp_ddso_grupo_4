@@ -108,6 +108,25 @@ class ColaboracionRepository {
             colaboradores: 0
         };
     }
+
+    async cerrarYAnonimizarPorColaborador(idColaborador, fin) {
+        await ColaboracionModel.updateMany(
+            { 'colaborador.id': idColaborador, fin: null },
+            { $set: { fin } }
+        );
+
+        // Anonimiza también las colaboraciones ya finalizadas, sin borrarlas
+        return ColaboracionModel.updateMany(
+            { 'colaborador.id': idColaborador },
+            {
+                $set: {
+                    'colaborador.nombre': 'UsuarioEliminado',
+                    'colaborador.apellido': null,
+                },
+                $unset: { 'colaborador.usuario': 1 },
+            }
+        );
+    }
 }
 
 module.exports = new ColaboracionRepository();
