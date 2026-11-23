@@ -18,6 +18,7 @@ jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
     agregarPerfil: jest.fn(),
     modificarPerfil: jest.fn(),
     eliminarPerfil: jest.fn(),
+    marcarParaRevisionPorFaltaDeActualizaciones: jest.fn(),
 }));
 jest.mock('../../../src/services/habilidadService.js', () => ({
     obtenerPorListaId: jest.fn(),
@@ -607,4 +608,35 @@ describe('ProyectoService', () => {
             await expect(proyectoService.eliminarPerfil(ID_PROY, ID_PERFIL)).rejects.toThrow(NotFoundError);
         });
     });
+
+    describe('marcarProyectosSinActualizaciones', () => {
+        afterEach(() => {
+            jest.useRealTimers();
+            delete process.env.DIAS_SIN_ACTUALIZACION;
+        });
+
+        test('delega al repositorio con la fecha límite configurada', async () => {
+            jest.useFakeTimers();
+            jest.setSystemTime(new Date('2026-11-18T12:00:00.000Z'));
+            process.env.DIAS_SIN_ACTUALIZACION = '30';
+            proyectoRepository.marcarParaRevisionPorFaltaDeActualizaciones
+                .mockResolvedValue({ modifiedCount: 2 });
+
+            const resultado = await proyectoService.marcarProyectosSinActualizaciones();
+
+            expect(proyectoRepository.marcarParaRevisionPorFaltaDeActualizaciones)
+                .toHaveBeenCalledWith(new Date('2026-10-19T12:00:00.000Z'));
+            expect(resultado.modifiedCount).toBe(2);
+        });
+
+        test('rechaza un período inválido', async () => {
+            await expect(
+                proyectoService.marcarProyectosSinActualizaciones(0)
+            ).rejects.toThrow('DIAS_SIN_ACTUALIZACION debe ser un entero mayor a cero');
+
+            expect(proyectoRepository.marcarParaRevisionPorFaltaDeActualizaciones)
+                .not.toHaveBeenCalled();
+        });
+    });
 });
+
