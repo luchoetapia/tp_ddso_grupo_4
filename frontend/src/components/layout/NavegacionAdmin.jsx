@@ -6,7 +6,6 @@ import { EVENTO_MODERACION_ACTUALIZADA } from "@/helpers/moderacion";
 import EnlacesNav from "./EnlacesNav";
 import MenuUsuario from "./MenuUsuario";
 
-// Cantidad de reportes pendientes de revisión: es el aviso que reciben los admins dentro de la app
 const consultarPendientes = (signal) =>
     apiQuery
         .get("/reportes", { params: { estado: "Pendiente", limite: 1 }, signal, alertarError: false })
@@ -15,7 +14,6 @@ const consultarPendientes = (signal) =>
 export default function NavegacionAdmin({ usuario, rutaActual, onCerrarSesion }) {
     const [pendientes, setPendientes] = useState(0);
 
-    // Se vuelve a consultar al navegar y cuando la pantalla de Moderación resuelve un reporte
     useEffect(() => {
         const controlador = new AbortController();
         const actualizar = () => consultarPendientes(controlador.signal).then(setPendientes).catch(() => {});

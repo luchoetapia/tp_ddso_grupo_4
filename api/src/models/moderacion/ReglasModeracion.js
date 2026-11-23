@@ -1,10 +1,5 @@
 const { TipoEntidadReportada } = require('../Reporte.js');
 
-// Reglas de moderación automática. Cada una revisa una entidad recién guardada y devuelve:
-//   - un texto con el motivo si la entidad incumple la regla (se genera un reporte para revisión manual),
-//   - null si la cumple,
-//   - o lanza un error si no pudo verificarse (p. ej. sin red): en ese caso no se marca ni se da por cumplida.
-// Para agregar una regla nueva alcanza con crear la clase y sumarla a crearReglas().
 const NombreRegla = {
     PALABRAS_PROHIBIDAS: 'palabras_prohibidas',
     FIN_DE_LUCRO: 'fin_de_lucro',
@@ -21,7 +16,6 @@ class ReglaModeracion {
         return this.tiposAplicables.includes(tipoEntidad);
     }
 
-    // eslint-disable-next-line no-unused-vars
     async evaluar(tipoEntidad, entidad) {
         throw new Error('evaluar() debe implementarse en cada regla');
     }
@@ -30,7 +24,6 @@ class ReglaModeracion {
 const textosDeLista = (nombre, items = [], campos) =>
     Object.fromEntries(items.flatMap((item, i) => campos.map(campo => [`${nombre}[${i}].${campo}`, item[campo]])));
 
-// Campos de texto libre que se revisan de cada entidad
 const TEXTOS_POR_TIPO = {
     [TipoEntidadReportada.PROYECTO]: (p) => ({
         titulo: p.titulo,
@@ -51,7 +44,6 @@ const TEXTOS_POR_TIPO = {
 
 const textosDe = (tipoEntidad, entidad) => TEXTOS_POR_TIPO[tipoEntidad](entidad);
 
-// Incitación al odio u otro contenido inapropiado: palabras de la lista de palabras baneadas
 class ReglaPalabrasProhibidas extends ReglaModeracion {
     constructor(palabraBaneadaService) {
         super(NombreRegla.PALABRAS_PROHIBIDAS, Object.values(TipoEntidadReportada));
@@ -67,11 +59,7 @@ class ReglaPalabrasProhibidas extends ReglaModeracion {
     }
 }
 
-// Una organización con fin de lucro no puede ofrecer proyectos. No hay un dato declarado para saberlo,
-// así que se buscan indicios en los textos (forma societaria comercial o fines de lucro explícitos).
-// Es una heurística: por eso termina en revisión manual y no en una baja automática.
 const INDICIOS_FIN_DE_LUCRO = [
-    // Formas societarias comerciales (se exigen los puntos o las mayúsculas para no confundir con palabras comunes)
     /(?:^|[\s,(])(?:S\.\s?A\.(?:\s?S\.)?|S\.\s?R\.\s?L\.|S\.\s?A\.\s?U\.|SRL|SAS|SAU)(?=$|[\s,.;)])/,
     /sociedad an[oó]nima/i,
     /sociedad de responsabilidad limitada/i,
@@ -99,8 +87,6 @@ class ReglaFinDeLucro extends ReglaModeracion {
     }
 }
 
-// El código fuente de los proyectos tiene que ser público: si el enlace no se puede ver sin iniciar sesión
-// (un repositorio privado de GitHub/GitLab responde 404, otros 401/403) el proyecto se marca para revisión.
 const ESTADOS_NO_PUBLICO = [401, 403, 404];
 const TIMEOUT_VERIFICACION_MS = 8000;
 
@@ -110,14 +96,12 @@ class ReglaCodigoCerrado extends ReglaModeracion {
         this.consultar = consultar;
     }
 
-    // Solo se revisa si el proyecto cargó el enlace
     aplicaA(tipoEntidad, entidad) {
         return super.aplicaA(tipoEntidad, entidad) && Boolean(entidad.enlaceCodigoFuente);
     }
 
     async evaluar(tipoEntidad, entidad) {
         const url = entidad.enlaceCodigoFuente;
-        // Si no responde (red caída, timeout) lanza: no se puede afirmar que sea cerrado
         const respuesta = await this.consultar(url);
 
         if (ESTADOS_NO_PUBLICO.includes(respuesta.status)) {

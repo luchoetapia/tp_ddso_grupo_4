@@ -86,7 +86,6 @@ class ColectivoController {
         res.status(200).json({ message: 'Colectivo actualizado exitosamente', data: ColectivoPublic.desde(colectivo) })
     }
 
-    // Correcciones que moderación le pidió a la organización (los avisos van a la cuenta titular)
     obtenerMisAvisosModeracion = async (req, res) => {
         const colectivo = await this.colectivoService.buscarPorUsuario(req.usuario.id);
         if (!colectivo) throw new NotFoundError('El usuario no tiene un colectivo asociado');

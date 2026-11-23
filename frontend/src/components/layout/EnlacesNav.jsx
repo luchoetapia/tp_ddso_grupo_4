@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// contador (opcional): número a destacar junto al enlace (p. ej. pendientes); descripcionContador lo lee el lector de pantalla
 export default function EnlacesNav({ enlaces, rutaActual }) {
     return enlaces.map(({ href, texto, contador, descripcionContador }) => (
         <li key={href}>

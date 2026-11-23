@@ -111,7 +111,6 @@ class ColaboradorController {
         res.status(200).json(Paginado.desde(resultado.proyectos, resultado, ProyectoPublic));
     }
 
-    // Correcciones que moderación le pidió a la colaboradora (perfil o postulaciones)
     obtenerMisAvisosModeracion = async (req, res) => {
         const avisos = await reporteService.obtenerAvisosDe(req.usuario.id);
         res.status(200).json(avisos.map(AvisoModeracion.desde));

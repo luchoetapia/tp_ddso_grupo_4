@@ -48,7 +48,6 @@ const paramsDe = (filtros, pagina) => ({
 
 const enlaceEntidad = ({ tipo, id }) => (tipo === "Proyecto" ? `/proyectos/ver?id=${id}` : null);
 
-// Textos actuales de la entidad reportada (GET /reportes/:id)
 function ContenidoReportado({ idReporte }) {
     const [estado, setEstado] = useState({ contenido: undefined, error: null });
 

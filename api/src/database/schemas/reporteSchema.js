@@ -13,7 +13,6 @@ const entidadReportadaSchema = new Schema({
 const reporteSchema = new Schema({
     entidad: { type: entidadReportadaSchema, required: true },
     motivo: { type: String, required: true, trim: true },
-    // Reglas de moderación automática que lo dispararon
     reglas: { type: [{ type: String, enum: Object.values(NombreRegla) }], default: [] },
     // Solo para proyectos y postulaciones: usuario a notificar si se elimina el contenido
     duenio: { type: Schema.Types.ObjectId, ref: 'Usuario', default: null },
@@ -22,7 +21,6 @@ const reporteSchema = new Schema({
     notificado: { type: Boolean, default: false },
     fechaNotificacion: { type: Date, default: null },
     fechaSolucion: { type: Date, default: null },
-    // Última vez que el dueño editó la entidad mientras el reporte seguía pendiente
     fechaUltimoCambio: { type: Date, default: null },
     revisadoPor: { type: Schema.Types.ObjectId, ref: 'Usuario', default: null },
     fechaRevision: { type: Date, default: null },

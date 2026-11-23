@@ -14,7 +14,6 @@ const TipoEntidadReportada = {
 }
 
 class Reporte {
-    // reglas: reglas de moderación automática que dispararon el reporte (ver models/moderacion)
     constructor(entidad, motivo, duenio = null, estado = EstadoReporte.PENDIENTE, reglas = []) {
         this.entidad = entidad;
         this.motivo = motivo;

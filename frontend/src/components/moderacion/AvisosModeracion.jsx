@@ -7,7 +7,6 @@ import apiQuery from "@/services/api/apiQuery";
 import { formatearFecha } from "@/helpers/formatos";
 import { TEXTO_REGLA } from "@/helpers/moderacion";
 
-// A dónde ir para corregir cada tipo de contenido
 const DONDE_CORREGIR = {
     Proyecto: (id) => ({ href: `/colectivo/misProyectos/editar?id=${id}`, texto: "Editar proyecto" }),
     Colectivo: () => ({ href: "/colectivo/perfil", texto: "Editar datos de la organización" }),
@@ -17,8 +16,6 @@ const DONDE_CORREGIR = {
 
 const QUE_ES = { Proyecto: "Proyecto", Colectivo: "Organización", Colaborador: "Tu perfil", Postulacion: "Postulación" };
 
-// Correcciones que el equipo de moderación pidió sobre el contenido del usuario.
-// url: /colectivos/me/avisosModeracion o /colaboradores/me/avisosModeracion. Si no hay avisos no muestra nada.
 export default function AvisosModeracion({ url }) {
     const [avisos, setAvisos] = useState([]);
 

@@ -23,10 +23,8 @@ const NOMBRE_ENTIDAD = {
     [TipoEntidadReportada.POSTULACION]: 'tu postulación',
 };
 
-// "Proyecto 6b04…" para los avisos a administradores
 const describir = (reporte) => `${reporte.entidad.tipo} ${reporte.entidad.id}`;
 
-// Nombre legible de la entidad reportada (null si ya no existe)
 const nombreDe = (tipoEntidad, entidad) => {
     if (!entidad) return null;
     if (tipoEntidad === TipoEntidadReportada.PROYECTO) return entidad.titulo;
@@ -42,11 +40,9 @@ class ReporteService {
         this.colaboradorRepository = colaboradorRepository;
         this.postulacionRepository = postulacionRepository;
         this.palabraBaneadaService = palabraBaneadaService;
-        // Reglas de moderación automática (models/moderacion/ReglasModeracion.js)
         this.reglas = crearReglas({ palabraBaneadaService });
     }
 
-    // Se crea recién al usarse (solo para avisar a los administradores)
     get authRepository() { return this._authRepository ??= new AuthRepository() }
     set authRepository(repositorio) { this._authRepository = repositorio }
 
@@ -67,8 +63,7 @@ class ReporteService {
         return await this.registrar(tipoEntidad, idEntidad, motivo.trim());
     }
 
-    // reglas: reglas de moderación que lo dispararon (vacío si el reporte se cargó a mano)
-    registrar = async (tipoEntidad, idEntidad, motivo, reglas = []) => {
+        registrar = async (tipoEntidad, idEntidad, motivo, reglas = []) => {
         return await this.reporteRepository.save({
             entidad: { tipo: tipoEntidad, id: idEntidad },
             motivo,
@@ -77,16 +72,12 @@ class ReporteService {
         });
     }
 
-    // No se espera: el request responde sin esperar la revisión y un error solo se loguea
     revisarEnSegundoPlano = (tipoEntidad, entidad) => {
         this.moderar(tipoEntidad, entidad).catch(error => {
             loguearError(`Moderación automática de ${tipoEntidad} ${entidad?.id ?? entidad?._id}`, error);
         });
     }
 
-    // Moderación automática. Se llama después de guardar la entidad, con el documento completo:
-    // corre las reglas que le aplican; si incumple alguna genera un reporte para revisión manual y avisa
-    // a los administradores; si cumple todas, da por solucionados los reportes que se le habían notificado.
     moderar = async (tipoEntidad, entidad) => {
         const idEntidad = entidad.id ?? entidad._id;
         const reglas = this.reglas.filter(regla => regla.aplicaA(tipoEntidad, entidad));
@@ -96,7 +87,6 @@ class ReporteService {
         let sinVerificar = false;
         resultados.forEach((resultado, i) => {
             if (resultado.status === 'rejected') {
-                // No se pudo verificar (p. ej. sin red): no se marca ni se da por cumplida
                 sinVerificar = true;
                 loguearError(`Regla '${reglas[i].nombre}' sobre ${tipoEntidad} ${idEntidad}`, resultado.reason);
             } else if (resultado.value) {
@@ -104,7 +94,6 @@ class ReporteService {
             }
         });
 
-        // Cumple todas las reglas: si tenía reportes pendientes, el dueño lo corrigió
         if (incumplidas.length === 0) {
             if (sinVerificar) return null;
             const solucionados = await this.reporteRepository.solucionarPendientes(idEntidad);
@@ -115,7 +104,6 @@ class ReporteService {
         const motivo = incumplidas.map(({ motivo }) => motivo).join(' | ');
         const reglasIncumplidas = incumplidas.map(({ regla }) => regla);
 
-        // Ya había un reporte pendiente: no se genera otro, pero se actualiza con lo nuevo y se avisa del cambio
         if (await this.reporteRepository.existePendiente(idEntidad)) {
             const actualizado = await this.reporteRepository.actualizarPendiente(idEntidad, motivo, reglasIncumplidas);
             if (actualizado) {
@@ -131,10 +119,8 @@ class ReporteService {
         return reporte;
     }
 
-    // Nombre anterior, de cuando solo se revisaban las palabras baneadas
     revisarPalabrasBaneadas = (tipoEntidad, entidad) => this.moderar(tipoEntidad, entidad);
 
-    // El dueño corrigió el contenido: se avisa a los administradores y, si se le había pedido la corrección, al dueño
     avisarCorreccionEnSegundoPlano = (reporte) => {
         this.notificarAdministradoresEnSegundoPlano(reporte,
             `[Moderación] El dueño corrigió ${describir(reporte)} y ya cumple las reglas: el reporte se cerró como Solucionado.`);
@@ -145,7 +131,6 @@ class ReporteService {
         }
     }
 
-    // Aviso a todos los administradores activos por sus medios externos (en la app lo ven en Moderación)
     notificarAdministradoresEnSegundoPlano = (reporte, texto) => {
         this.notificarAdministradores(texto).catch(error => loguearError(`Aviso a administradores del reporte ${reporte?.id}`, error));
     }
@@ -160,7 +145,6 @@ class ReporteService {
         obtenerNotificador(MedioDeContacto.EMAIL).enviar({ medio: MedioDeContacto.EMAIL, valor: email }, { generarTexto: () => texto });
     }
 
-    // El dueño de un proyecto es el usuario del colectivo que lo tiene en su lista de proyectos
     buscarDuenio = async (tipoEntidad, idEntidad) => {
         if (tipoEntidad === TipoEntidadReportada.COLECTIVO) {
             const colectivo = await this.colectivoRepository.findById(idEntidad);
@@ -172,7 +156,6 @@ class ReporteService {
             return colectivo?.usuario ?? null;
         }
 
-        // El dueño de un perfil de colaboradora o de una postulación es la cuenta de la colaboradora
         if (tipoEntidad === TipoEntidadReportada.COLABORADOR) {
             const colaborador = await this.colaboradorRepository.findById(idEntidad);
             return colaborador?.usuario ?? null;
@@ -202,7 +185,6 @@ class ReporteService {
         return reporte;
     }
 
-    // Detalle para que el admin revise: el reporte + los textos actuales de la entidad (null si se eliminó)
     obtenerDetalle = async (id) => {
         const reporte = await this.obtenerPorId(id);
         const entidad = await this.reporteRepository.buscarEntidad(reporte.entidad.tipo, reporte.entidad.id);
@@ -218,9 +200,6 @@ class ReporteService {
         return await this.reporteRepository.buscarConPaginacion(pagina, limite, filtros);
     }
 
-    // Le avisa al usuario para que edite el contenido; si se vuelve a notificar se actualiza la fecha
-    // Le pide al dueño que corrija el contenido: le llega un email y lo ve como aviso en la app.
-    // Si vuelve a notificarse se actualiza la fecha y se reenvía el aviso.
     notificar = async (id) => {
         const pendiente = await this.obtenerPendiente(id);
 
@@ -240,7 +219,6 @@ class ReporteService {
         this.avisarDuenio(reporte).catch(error => loguearError(`Aviso al dueño del reporte ${reporte?.id}`, error));
     }
 
-    // Aviso externo (email) al dueño del contenido reportado; devuelve false si no tiene a quién avisar
     avisarDuenio = async (reporte) => {
         const email = reporte.duenio?.email;
         if (!email) return false;
@@ -251,7 +229,6 @@ class ReporteService {
         return true;
     }
 
-    // Avisos de moderación del usuario de la sesión, con el nombre de lo que tiene que corregir
     obtenerAvisosDe = async (idDuenio) => {
         const reportes = await this.reporteRepository.buscarNotificadosPendientesDe(idDuenio);
 
@@ -266,7 +243,6 @@ class ReporteService {
         return await this.reporteRepository.solucionarNotificados(idEntidad);
     }
 
-    // Validar = el contenido es inapropiado: se elimina la entidad reportada
     validar = async (id, idAdmin, comentario) => {
         const reporte = await this.obtenerPendiente(id);
         await this.reporteRepository.eliminarEntidad(reporte.entidad.tipo, reporte.entidad.id);
@@ -274,7 +250,6 @@ class ReporteService {
         return await this.cerrar(id, EstadoReporte.VALIDADO, idAdmin, comentario);
     }
 
-    // Rechazar = falso positivo, el contenido es válido en su contexto
     rechazar = async (id, idAdmin, comentario) => {
         await this.obtenerPendiente(id);
         return await this.cerrar(id, EstadoReporte.RECHAZADO, idAdmin, comentario);
@@ -292,7 +267,6 @@ class ReporteService {
 
     cerrar = async (id, estado, idAdmin, comentario = null) => {
         const resuelto = await this.reporteRepository.resolver(id, estado, idAdmin, comentario);
-        // Otro admin lo resolvió entre la lectura y la actualización
         if (!resuelto) {
             throw new ConflictError("El reporte ya fue resuelto por otro admin");
         }

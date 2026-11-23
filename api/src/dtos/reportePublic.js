@@ -33,7 +33,6 @@ class ReportePublic {
     }
 }
 
-// Lo que ve el dueño del contenido cuando moderación le pide corregirlo (sin datos internos de la revisión)
 class AvisoModeracion {
     constructor({ reporte, nombreEntidad }) {
         this.id = reporte.id

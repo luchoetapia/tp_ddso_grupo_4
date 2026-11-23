@@ -1,6 +1,3 @@
-// Textos de la pantalla de Moderación (reportes de /reportes)
-
-// Se dispara al resolver un reporte, para que la navegación actualice el contador de pendientes
 export const EVENTO_MODERACION_ACTUALIZADA = "moderacion:actualizada";
 
 export const ESTADOS_REPORTE = [
