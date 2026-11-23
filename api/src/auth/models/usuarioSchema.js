@@ -8,6 +8,10 @@ const linkedinSchema = new Schema({
     nombre: { type: String, default: null },
     apellido: { type: String, default: null },
     foto: { type: String, default: null },
+    // Access token de LinkedIn cifrado (ver linkedin/cifrado.js). Solo se lee con .select('+linkedin.tokenCifrado')
+    tokenCifrado: { type: String, select: false },
+    tokenExpiraEn: { type: Date },
+    scopes: { type: [String], default: undefined },
 }, { _id: false });
 
 const userSchema = new Schema({

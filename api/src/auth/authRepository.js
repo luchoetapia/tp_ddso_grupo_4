@@ -20,6 +20,28 @@ class AuthRepository {
 
     vincularLinkedin(id, linkedin) { return this._actualizar(id, { linkedin }) }
 
+    // token: { tokenCifrado, tokenExpiraEn, scopes }
+    guardarTokenLinkedin(id, token) {
+        return this._actualizar(id, {
+            'linkedin.tokenCifrado': token.tokenCifrado,
+            'linkedin.tokenExpiraEn': token.tokenExpiraEn,
+            'linkedin.scopes': token.scopes,
+        })
+    }
+
+    // Usuario activo con el token cifrado incluido (el resto de las consultas no lo traen)
+    obtenerUsuarioConTokenLinkedin(id) {
+        return Usuario.findOne({ _id: id, activo: true }).select('+linkedin.tokenCifrado');
+    }
+
+    // Se usa cuando LinkedIn rechaza el token (vencido o revocado): el usuario conserva el vínculo pero tiene que reconectar
+    async borrarTokenLinkedin(id) {
+        await Usuario.updateOne(
+            { _id: id },
+            { $unset: { 'linkedin.tokenCifrado': 1, 'linkedin.tokenExpiraEn': 1, 'linkedin.scopes': 1 } }
+        );
+    }
+
     crearUsuario(body) { return Usuario.create(body) }
 
     async desactivarUsuario(id) {

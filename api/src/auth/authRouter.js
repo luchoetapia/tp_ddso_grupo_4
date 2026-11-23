@@ -3,6 +3,7 @@ const { AuthController } = require('./authController.js')
 const validar = require('../middlewares/validar.js')
 const { validarLogin, validarRegistro, validarDisponibilidad } = require('./authValidator.js')
 const autenticar = require('../middlewares/autenticar.js')
+const { roles } = require('./models/usuario.js')
 
 const authController = new AuthController()
 const router = express.Router()
@@ -34,6 +35,12 @@ router.post('/logout',
 // el front pone un link a /api/auth/linkedin y LinkedIn vuelve a /api/auth/linkedin/callback
 router.get('/linkedin',
     (req, res) => authController.linkedin(req, res)
+)
+
+// Vincular LinkedIn a la cuenta de un colaborador logueado (para publicar). También es una navegación
+router.get('/linkedin/vincular',
+    autenticar(roles.COLABORADOR),
+    (req, res) => authController.vincular(req, res)
 )
 
 router.get('/linkedin/callback',

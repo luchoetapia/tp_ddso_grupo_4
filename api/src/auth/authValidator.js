@@ -28,9 +28,21 @@ const validarCallbackLinkedin = z.object({
     state: z.string().min(1),
 });
 
+// Ruta del front a la que se vuelve después de vincular LinkedIn: tiene que ser interna
+// (empieza con una sola "/", sin "\\") para que no se pueda usar para redirigir a otro sitio
+const rutaInterna = z.string().max(300).regex(/^\/(?![\/\\])[^\\]*$/);
+
+// Query de GET /auth/linkedin/vincular
+const validarVincularLinkedin = z.object({
+    volverA: rutaInterna.optional(),
+    // id del proyecto sobre el que se quería publicar (el front reabre el modal al volver)
+    publicar: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+});
+
 module.exports = {
     validarLogin,
     validarRegistro,
     validarDisponibilidad,
-    validarCallbackLinkedin
+    validarCallbackLinkedin,
+    validarVincularLinkedin
 };
