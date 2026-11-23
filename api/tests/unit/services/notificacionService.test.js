@@ -51,10 +51,10 @@ describe('NotificacionService', () => {
     });
 
     describe('contactarColaborador', () => {
-        const prepararEscenario = ({ finalizado = false, deseaSerContactado = true } = {}) => {
+        const prepararEscenario = ({ finalizado = false, deseaSerContactado = true, usuarioActivo = true } = {}) => {
             proyectoService.obtenerPorId.mockResolvedValue({ id: ID_PROY, titulo: 'Aula', finalizado });
             proyectoService.perfilPerteneceAProyecto.mockResolvedValue({ id: ID_PERFIL, descripcion: 'Backend' });
-            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ id: ID_COLAB, deseaSerContactado });
+            colaboradorService.obtenerPorCuentaGit.mockResolvedValue({ id: ID_COLAB, deseaSerContactado,usuario: { activo: usuarioActivo }});
         };
 
         test('guarda la notificación con la copia de proyecto y perfil y la replica por los medios de contacto', async () => {
@@ -101,6 +101,16 @@ describe('NotificacionService', () => {
             await expect(notificacionService.contactarColaborador(ID_PROY, ID_PERFIL, 'juanp', 'Hola'))
                 .rejects.toThrow(NotFoundError);
             expect(notificacionRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('rechaza notificar a una cuenta inactiva', async () => {
+            prepararEscenario({ usuarioActivo: false });
+
+            await expect(
+                notificacionService.contactarColaborador(ID_PROY, ID_PERFIL, 'juanp', 'Hola')
+            ).rejects.toThrow('No se puede contactar a una cuenta inactiva');
+            expect(notificacionRepository.save).not.toHaveBeenCalled();
+            expect(colaboradorService.obtenerContactos).not.toHaveBeenCalled();
         });
     });
 

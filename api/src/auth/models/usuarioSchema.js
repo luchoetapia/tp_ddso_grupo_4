@@ -15,7 +15,7 @@ const userSchema = new Schema({
     password: {
         type: String,
         default: null,
-        required: function () { return !this.linkedin?.sub }, // Obligatoria si no se registra mediante linkedin
+        required: function () { return this.activo && !this.linkedin?.sub }, // Obligatoria si no se registra mediante linkedin
     },
     
     email: { type: String, required: true, lowercase: true, trim: true },

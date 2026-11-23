@@ -5,6 +5,7 @@ jest.mock('../../src/services/colaboradorService.js', () => ({
     obtenerTodos: jest.fn(),
     crear: jest.fn(),
     obtenerPorCuentaGit: jest.fn(),
+    eliminarCuenta: jest.fn(),
 }));
 jest.mock('../../src/services/colaboracionService.js', () => ({
     crear: jest.fn(),
@@ -238,6 +239,36 @@ describe('Endpoints /colaboradores', () => {
             const res = await request(app).post('/colaboradores/llenarDatosPrueba').send([{ nombre: 'Sin apellido' }]);
 
             expect(res.status).toBe(400);
+        });
+    });
+
+    describe('DELETE /colaboradores/me', () => {
+        test('elimina la cuenta de la persona colaboradora autenticada', async () => {
+            colaboradorService.eliminarCuenta.mockResolvedValue(true);
+
+            const res = await request(app)
+                .delete('/colaboradores/me')
+                .set('Cookie', cookieDeSesion('colaborador'));
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ message: 'Cuenta eliminada exitosamente' });
+            expect(colaboradorService.eliminarCuenta).toHaveBeenCalledWith(ID_USUARIO);
+        });
+
+        test('responde 401 sin sesión', async () => {
+            const res = await request(app).delete('/colaboradores/me');
+
+            expect(res.status).toBe(401);
+            expect(colaboradorService.eliminarCuenta).not.toHaveBeenCalled();
+        });
+
+        test('responde 403 si la sesión no pertenece a una persona colaboradora', async () => {
+            const res = await request(app)
+                .delete('/colaboradores/me')
+                .set('Cookie', cookieDeSesion('colectivo'));
+
+            expect(res.status).toBe(403);
+            expect(colaboradorService.eliminarCuenta).not.toHaveBeenCalled();
         });
     });
 });

@@ -7,6 +7,7 @@ const enlaces = [
     { href: "/colaboradoras/inicio", texto: "Inicio" },
     { href: "/colaboradoras/proyectos", texto: "Proyectos" },
     { href: "/colaboradoras/misPostulaciones", texto: "Mis Trabajos"},
+    { href: "/colaboradoras/datos-personales", texto: "Datos personales" },
     { href: "/colaboradoras/miPerfil", texto: "Mi perfil" }
 ];
 

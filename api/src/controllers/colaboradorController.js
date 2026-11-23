@@ -123,6 +123,11 @@ class ColaboradorController {
         const colaborador = await this.colaboradorService.actualizarPorUsuario(req.usuario.id, req.body)
         res.status(200).json({ message: 'Perfil actualizado exitosamente', data: ColaboradorPublic.desde(colaborador) })
     }
+
+    eliminarMiCuenta = async (req, res) => {
+        await this.colaboradorService.eliminarCuenta(req.usuario.id);
+        res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
+    }
 }
 
 module.exports = { ColaboradorController };

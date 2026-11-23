@@ -36,6 +36,10 @@ router.route('/me')
         autenticar(roles.COLABORADOR),
         (req, res) => colaboradorController.obtenerMiPerfil(req, res)
     )
+    .delete(
+        autenticar(roles.COLABORADOR),
+        (req, res) => colaboradorController.eliminarMiCuenta(req, res)
+    )
     .patch(
         autenticar(roles.COLABORADOR),
         validar(validarActualizacionColaborador, 'body'),
