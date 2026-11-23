@@ -19,6 +19,13 @@ jest.mock('../../../src/repositories/proyectoRepository.js', () => ({
     modificarPerfil: jest.fn(),
     eliminarPerfil: jest.fn(),
     marcarParaRevisionPorFaltaDeActualizaciones: jest.fn(),
+    delete: jest.fn(),
+}));
+jest.mock('../../../src/repositories/colaboracionRepository.js', () => ({
+    existenDelProyecto: jest.fn(),
+}));
+jest.mock('../../../src/repositories/postulacionRepository.js', () => ({
+    eliminarPorProyecto: jest.fn(),
 }));
 jest.mock('../../../src/services/habilidadService.js', () => ({
     obtenerPorListaId: jest.fn(),
@@ -43,6 +50,8 @@ const proyectoService = require('../../../src/services/proyectoService.js');
 const reporteService = require('../../../src/services/reporteService.js');
 const { Proyecto, Perfil } = require('../../../src/models/proyecto.js');
 const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
+const colaboracionRepository = require('../../../src/repositories/colaboracionRepository.js');
+const postulacionRepository = require('../../../src/repositories/postulacionRepository.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -231,6 +240,62 @@ describe('ProyectoService', () => {
             await expect(proyectoService.actualizar(ID_PROY, { estrategiaAceptacion: 'HastaLlenarVacantes' }, ID_USUARIO))
                 .rejects.toThrow(ConflictError);
             expect(proyectoRepository.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('eliminar', () => {
+        const ID_USUARIO = '507f1f77bcf86cd7994390aa';
+        const colectivoDueño = { id: 'col', proyectos: [{ toString: () => ID_PROY }] };
+
+        test('borra el proyecto, sus postulaciones y la referencia en el colectivo', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+            colaboracionRepository.existenDelProyecto.mockResolvedValue(false);
+
+            const resultado = await proyectoService.eliminar(ID_PROY, ID_USUARIO);
+
+            expect(postulacionRepository.eliminarPorProyecto).toHaveBeenCalledWith(ID_PROY);
+            expect(colectivoRepository.update).toHaveBeenCalledWith('col', { $pull: { proyectos: ID_PROY } });
+            expect(proyectoRepository.delete).toHaveBeenCalledWith(ID_PROY);
+            // El controller los usa para la auditoría, porque después el proyecto ya no existe
+            expect(resultado.proyecto.titulo).toBe('Aula Virtual');
+            expect(resultado.colectivo).toBe(colectivoDueño);
+        });
+
+        test('permite eliminar un proyecto finalizado', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc({ finalizado: true }));
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+            colaboracionRepository.existenDelProyecto.mockResolvedValue(false);
+
+            await proyectoService.eliminar(ID_PROY, ID_USUARIO);
+
+            expect(proyectoRepository.delete).toHaveBeenCalledWith(ID_PROY);
+        });
+
+        test('lanza ConflictError si el proyecto tiene colaboraciones y no borra nada', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            colectivoRepository.findByUsuario.mockResolvedValue(colectivoDueño);
+            colaboracionRepository.existenDelProyecto.mockResolvedValue(true);
+
+            await expect(proyectoService.eliminar(ID_PROY, ID_USUARIO)).rejects.toThrow(ConflictError);
+            expect(postulacionRepository.eliminarPorProyecto).not.toHaveBeenCalled();
+            expect(colectivoRepository.update).not.toHaveBeenCalled();
+            expect(proyectoRepository.delete).not.toHaveBeenCalled();
+        });
+
+        test('lanza ForbiddenError si el proyecto es de otro colectivo', async () => {
+            proyectoRepository.findById.mockResolvedValue(proyectoDoc());
+            colectivoRepository.findByUsuario.mockResolvedValue({ id: 'otro', proyectos: [] });
+
+            await expect(proyectoService.eliminar(ID_PROY, ID_USUARIO)).rejects.toThrow(ForbiddenError);
+            expect(proyectoRepository.delete).not.toHaveBeenCalled();
+        });
+
+        test('lanza NotFoundError si el proyecto no existe', async () => {
+            proyectoRepository.findById.mockResolvedValue(null);
+
+            await expect(proyectoService.eliminar(ID_PROY, ID_USUARIO)).rejects.toThrow(NotFoundError);
+            expect(proyectoRepository.delete).not.toHaveBeenCalled();
         });
     });
 

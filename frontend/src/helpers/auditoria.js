@@ -8,6 +8,7 @@ export const TEXTO_ACCION = {
     proyecto_creado: "Creó un proyecto",
     proyecto_actualizado: "Editó un proyecto",
     proyecto_finalizado: "Finalizó un proyecto",
+    proyecto_eliminado: "Eliminó un proyecto",
     perfil_creado: "Agregó un perfil a un proyecto",
     perfil_actualizado: "Editó un perfil de un proyecto",
     perfil_eliminado: "Eliminó un perfil de un proyecto",

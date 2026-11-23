@@ -13,7 +13,7 @@ const colectivoSchema = new Schema({
     usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     // Cuentas adicionales que también administran el colectivo
     administradores: [{ type: Schema.Types.ObjectId, ref: 'Usuario' }],
-    descripcion: { type: String, default: "" },
+    descripcion: { type: String, required: true },
     ubicacion: { type: String, default: null },
     tipo: { type: String, enum: valuesTipoColectivo, required: true },
     proyectos: [{ type: Schema.Types.ObjectId, ref: 'Proyecto' }]

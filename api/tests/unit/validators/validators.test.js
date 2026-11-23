@@ -136,12 +136,12 @@ describe('Validadores', () => {
 
     describe('colectivo', () => {
         test('creación válida con defaults', () => {
-            expect(validarCreacionColectivo.parse({ nombre: 'C', tipo: 'ong' })).toEqual({ nombre: 'C', tipo: 'ong', proyectos: [] });
+            expect(validarCreacionColectivo.parse({ nombre: 'C', tipo: 'ong', descripcion: 'D' })).toEqual({ nombre: 'C', tipo: 'ong', descripcion: 'D', proyectos: [] });
         });
 
         test('creación rechaza tipo inválido o nombre vacío', () => {
-            expect(esValido(validarCreacionColectivo, { nombre: 'C', tipo: 'club' })).toBe(false);
-            expect(esValido(validarCreacionColectivo, { nombre: '', tipo: 'ong' })).toBe(false);
+            expect(esValido(validarCreacionColectivo, { nombre: 'C', tipo: 'club', descripcion: 'D' })).toBe(false);
+            expect(esValido(validarCreacionColectivo, { nombre: '', tipo: 'ong', descripcion: 'D' })).toBe(false);
         });
 
         test('actualización exige al menos un campo', () => {

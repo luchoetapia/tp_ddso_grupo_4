@@ -43,7 +43,7 @@ export default function EditarColectivo() {
 
     const cambios = original && datos ? obtenerCambios(original, datos) : {};
     const hayCambios = Object.keys(cambios).length > 0;
-    const completo = datos && datos.nombre.trim() !== "" && datos.tipo !== "";
+    const completo = datos && datos.nombre.trim() !== "" && datos.tipo !== "" && datos.descripcion.trim() !== "";
 
     const guardar = async (e) => {
         e.preventDefault();

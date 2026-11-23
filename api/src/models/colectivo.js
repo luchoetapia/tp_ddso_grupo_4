@@ -35,4 +35,21 @@ const TipoColectivo = {
     ASAMBLEA: 'asamblea',
 }
 
-module.exports = {Colectivo, TipoColectivo}
+// La ubicación puede ser "Argentina", CABA, una de las 23 provincias o una ciudad/barrio en texto libre
+const PROVINCIAS = [
+    'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa',
+    'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan',
+    'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán',
+]
+const UBICACIONES_PREDEFINIDAS = ['Argentina', 'CABA', ...PROVINCIAS]
+
+const sinTildesNiMayusculas = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+// Si el texto es una ubicación predefinida escrita distinto ("cordoba", "SANTA FE") se guarda con su nombre oficial,
+// así los colectivos de una misma provincia quedan agrupados. Si no, es una ciudad/barrio y se deja como vino.
+const normalizarUbicacion = (texto) => {
+    const buscado = sinTildesNiMayusculas(texto)
+    return UBICACIONES_PREDEFINIDAS.find(u => sinTildesNiMayusculas(u) === buscado) ?? texto
+}
+
+module.exports = { Colectivo, TipoColectivo, PROVINCIAS, UBICACIONES_PREDEFINIDAS, normalizarUbicacion }

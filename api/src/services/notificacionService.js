@@ -1,7 +1,7 @@
 const notificacionRepository = require('../repositories/notificacionRepository.js');
 const proyectoService = require('./proyectoService.js');
 const { obtenerNotificador } = require('../models/Notificacion.js');
-const { ConflictError } = require('../errors/AppError.js');
+const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 const colaboradorService = require('./colaboradorService.js');
 
 class NotificacionService {

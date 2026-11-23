@@ -1,4 +1,5 @@
 import { Input, Select, Textarea } from '@/components/common'
+import SelectorUbicacion from './SelectorUbicacion'
 
 // Mismos valores que TipoColectivo en la API
 const tiposDeOrganizacion = [
@@ -29,8 +30,14 @@ const PasoDatosColectivo = ({ colectivo, onChange, titulo = 'Contanos sobre tu o
                 </Select>
             </div>
 
-            <Input label="Ubicación (opcional)" {...campo('ubicacion')} placeholder="Barrio, ciudad" />
-            <Textarea label="Descripción (opcional)" {...campo('descripcion')} rows={4} />
+            <SelectorUbicacion valor={colectivo.ubicacion ?? ''} onChange={(valor) => onChange('ubicacion', valor)} />
+            <Textarea
+                label="Descripción"
+                {...campo('descripcion')}
+                rows={4}
+                placeholder="Contá qué causa llevan adelante y a quiénes acompañan"
+                required
+            />
         </div>
     );
 };
