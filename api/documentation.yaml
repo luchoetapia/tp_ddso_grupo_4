@@ -365,7 +365,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Proyecto"
+                allOf:
+                  - $ref: "#/components/schemas/Proyecto"
+                  - type: object
+                    properties:
+                      colectivo:
+                        type: object
+                        nullable: true
+                        description: Colectivo al que pertenece el proyecto
+                        properties:
+                          id:
+                            type: string
+                          nombre:
+                            type: string
+                            example: Cooperativa Sur
         "400":
           $ref: "#/components/responses/IdInvalido"
         "404":

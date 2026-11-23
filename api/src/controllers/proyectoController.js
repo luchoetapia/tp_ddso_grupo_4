@@ -44,7 +44,8 @@ class ProyectoController {
 
     obtenerProyectoPorId = async (req, res) => {
         const proyecto = await this.proyectoService.obtenerPorId(req.params.id)
-        res.status(200).json(ProyectoDetalle.desde(proyecto))
+        const colectivo = await this.proyectoService.obtenerColectivoDelProyecto(proyecto.id)
+        res.status(200).json(ProyectoDetalle.desde(proyecto, colectivo))
     }
 
     finalizarProyecto = async (req, res) => {

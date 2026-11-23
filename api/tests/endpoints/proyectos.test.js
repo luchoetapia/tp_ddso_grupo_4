@@ -2,6 +2,7 @@ jest.mock('../../src/services/proyectoService.js', () => ({
     buscar: jest.fn(),
     crear: jest.fn(),
     obtenerPorId: jest.fn(),
+    obtenerColectivoDelProyecto: jest.fn(),
     buscarPotencialesColaboradores: jest.fn(),
     obtenerPerfiles: jest.fn(),
     perfilPerteneceAProyecto: jest.fn(),
@@ -62,6 +63,8 @@ const perfil = {
 // Resultado paginado como lo devuelven los services
 const paginaDe = (proyectos, extra = {}) => ({ proyectos, total: proyectos.length, pagina: 1, limite: 10, totalPaginas: 1, ...extra });
 const paginacionDefault = { pagina: 1, limite: 10 };
+
+const ID_COLECTIVO_PROY = '507f1f77bcf86cd7994390cc';
 
 describe('Endpoints /proyectos', () => {
     beforeAll(() => {
@@ -232,11 +235,22 @@ describe('Endpoints /proyectos', () => {
     describe('GET /proyectos/:id', () => {
         test('devuelve el proyecto', async () => {
             proyectoService.obtenerPorId.mockResolvedValue(proyecto);
+            proyectoService.obtenerColectivoDelProyecto.mockResolvedValue(null);
 
             const res = await request(app).get(`/proyectos/${ID}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual(proyecto);
+            expect(res.body).toEqual({ ...proyecto, colectivo: null });
+        });
+
+        test('incluye el colectivo al que pertenece (solo id y nombre)', async () => {
+            proyectoService.obtenerPorId.mockResolvedValue(proyecto);
+            proyectoService.obtenerColectivoDelProyecto.mockResolvedValue({ _id: ID_COLECTIVO_PROY, nombre: 'Cooperativa Sur', usuario: 'x' });
+
+            const res = await request(app).get(`/proyectos/${ID}`);
+
+            expect(proyectoService.obtenerColectivoDelProyecto).toHaveBeenCalledWith(ID);
+            expect(res.body.colectivo).toEqual({ id: ID_COLECTIVO_PROY, nombre: 'Cooperativa Sur' });
         });
 
         test('expone el detalle de los perfiles con sus habilidades resumidas', async () => {

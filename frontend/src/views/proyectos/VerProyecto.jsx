@@ -209,6 +209,7 @@ export default function VerProyectoContenido() {
         enlaceCodigoFuente,
         perfiles = [],
         logros = [],
+        colectivo,
     } = proyecto;
 
     const tituloPerfil = Object.fromEntries(perfiles.map((perfil) => [perfil.id, perfil.titulo]));
@@ -244,9 +245,16 @@ export default function VerProyectoContenido() {
                     </div>
                 </div>
 
-                <h1 id="proyecto-titulo" className="m-0 text-3xl font-bold">
-                    {titulo}
-                </h1>
+                <div className="flex flex-col gap-1">
+                    <h1 id="proyecto-titulo" className="m-0 text-3xl font-bold">
+                        {titulo}
+                    </h1>
+                    {colectivo && (
+                        <p className="m-0 text-muted">
+                            Proyecto de <span className="font-semibold text-text">{colectivo.nombre}</span>
+                        </p>
+                    )}
+                </div>
                 <Card>
                     <p className="m-0 text-base leading-relaxed text-muted whitespace-pre-line">
                         {descripcion}

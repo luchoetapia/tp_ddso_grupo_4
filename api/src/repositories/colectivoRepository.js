@@ -52,6 +52,11 @@ class ColectivoRepository {
         return await ColectivoModel.findById(id).populate('proyectos');
     }
 
+    // Colectivo dueño del proyecto (solo los campos para mostrarlo, sin popular los proyectos)
+    async findDuenoDeProyecto(idProyecto) {
+        return await ColectivoModel.findOne({ proyectos: idProyecto }, { nombre: 1 });
+    }
+
     async findBy(query) {
         return await ColectivoModel.find(query).populate('proyectos');
     }

@@ -126,6 +126,11 @@ class ProyectoService {
         return creado;
     }
 
+    // Colectivo al que pertenece el proyecto, o null
+    obtenerColectivoDelProyecto = async (idProyecto) => {
+        return await this.colectivoRepository.findDuenoDeProyecto(idProyecto);
+    }
+
     obtenerPorId = async (id, proyeccion) => {
         if (!mongoose.isValidObjectId(id)) {
             throw new BadRequestError("Id de proyecto inválido")
