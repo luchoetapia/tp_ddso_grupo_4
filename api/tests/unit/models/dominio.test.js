@@ -17,6 +17,7 @@ describe('Modelos de dominio', () => {
                 ubicacion: 'CABA',
                 tipo: 'ong',
                 proyectos: ['p1'],
+                administradores: [],
             });
         });
     });
