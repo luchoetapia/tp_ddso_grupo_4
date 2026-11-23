@@ -5,6 +5,7 @@ const { validarCreacionColectivo } = require('../validators/colectivosValidator.
 const { ColectivoPublic } = require('../dtos/colectivoPublic.js');
 const { Paginado } = require('../dtos/paginado.js');
 const { ColaboradorCompatible } = require('../dtos/colaboradorPublic.js');
+const { AdministradorPublic } = require('../dtos/administradorPublic.js');
 const { crearUsuarioDeSemilla } = require('../auth/usuarioSemilla.js');
 const { roles } = require('../auth/models/usuario.js');
 
@@ -89,6 +90,27 @@ class ColectivoController {
 
         const estadisticas = await this.colectivoService.obtenerEstadisticas(colectivo.id);
         res.status(200).json(estadisticas);
+    }
+
+    obtenerMisAdministradores = async (req, res) => {
+        const { administradores, puedeGestionar } = await this.colectivoService.obtenerAdministradores(req.usuario.id);
+        res.status(200).json({ puedeGestionar, data: administradores.map(AdministradorPublic.desde) });
+    }
+
+    agregarAdministrador = async (req, res) => {
+        const { colectivo, administrador } = await this.colectivoService.agregarAdministrador(req.usuario.id, req.body);
+        res.locals.idColectivo = colectivo.id;
+        res.status(201).json({
+            message: 'Administrador agregado exitosamente',
+            data: AdministradorPublic.desde({ usuario: administrador, esTitular: false })
+        });
+    }
+
+    quitarAdministrador = async (req, res) => {
+        const { colectivo, administrador } = await this.colectivoService.quitarAdministrador(req.usuario.id, req.params.idUsuario);
+        res.locals.idColectivo = colectivo.id;
+        res.locals.administrador = administrador;
+        res.status(200).json({ message: 'Administrador quitado exitosamente' });
     }
 
     obtenerMisPotencialesColaboradores = async (req, res) => {

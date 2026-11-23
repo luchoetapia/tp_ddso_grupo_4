@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo, paginacion, ordenamiento } = require('./comunes.js');
 const { TipoColectivo } = require('../models/colectivo.js');
+const { validarRegistro } = require('../auth/authValidator.js');
 
 const campos = {
     nombre: z.string({ error: "El nombre del colectivo es obligatorio" }).min(1, "El nombre del colectivo no puede estar vacío"),
@@ -47,7 +48,16 @@ const validarFiltrosPotencialesColaboradores = z.object({
     ...ordenamiento,
 });
 
+// Alta de un administrador adicional: se le crea una cuenta con las mismas reglas que el registro
+const validarCreacionAdministrador = validarRegistro.pick({ username: true, email: true, password: true }).strict();
+
+const validarIdAdministrador = z.object({
+    idUsuario: objectId("Id de usuario inválido"),
+});
+
 module.exports = {
+    validarCreacionAdministrador,
+    validarIdAdministrador,
     validarCreacionColectivo,
     validarActualizacionColectivo,
     validarIdsColectivo,

@@ -9,7 +9,10 @@ const valuesTipoColectivo = Object.values(TipoColectivo);
 const colectivoSchema = new Schema({
     nombre: { type: String, required: true },
     active: { type: Boolean, default: true },
+    // Cuenta titular (la que registró el colectivo)
     usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
+    // Cuentas adicionales que también administran el colectivo
+    administradores: [{ type: Schema.Types.ObjectId, ref: 'Usuario' }],
     descripcion: { type: String, default: "" },
     ubicacion: { type: String, default: null },
     tipo: { type: String, enum: valuesTipoColectivo, required: true },
@@ -25,6 +28,8 @@ colectivoSchema.index({ nombre: 1 });
 colectivoSchema.index({ active: 1 });
 // Un usuario tiene como máximo un colectivo (parcial: ignora documentos viejos sin usuario)
 colectivoSchema.index({ usuario: 1 }, { unique: true, partialFilterExpression: { usuario: { $exists: true } } });
+// Búsqueda del colectivo de un administrador adicional (findByUsuario)
+colectivoSchema.index({ administradores: 1 });
 
 colectivoSchema.loadClass(Colectivo);
 

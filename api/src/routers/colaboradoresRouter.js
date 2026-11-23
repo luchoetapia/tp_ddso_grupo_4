@@ -13,6 +13,9 @@ const {
     validarAnotacionAProyecto,
 } = require('../validators/colaboradoresValidator.js')
 
+const auditar = require('../middlewares/auditar.js')
+const { AccionAuditada, TipoEntidadAuditada } = require('../models/Auditoria.js')
+
 const colaboradorController = new ColaboradorController()
 const router = express.Router()
 
@@ -49,6 +52,11 @@ router.route('/:cuentaGit/contactos')
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
     .post(
         validar(validarAnotacionAProyecto, 'params'),
+        auditar(AccionAuditada.COLABORACION_CREADA, (req, body) => ({
+            entidad: { tipo: TipoEntidadAuditada.COLABORACION, id: body.data.id },
+            idProyecto: req.params.idProyecto,
+            detalle: `Anotación directa de: ${req.params.cuentaGit}`,
+        })),
         (req, res) => colaboradorController.anotarColaboradorAProyecto(req, res)
     )
 
