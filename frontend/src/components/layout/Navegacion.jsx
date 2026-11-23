@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import sesion, { roles } from "@/services/sesion";
+import sesion, { INICIO_POR_ROL, roles } from "@/services/sesion";
 import EnlacesNav from "./EnlacesNav";
+import NavegacionAdmin from "./NavegacionAdmin";
 import NavegacionColaborador from "./NavegacionColaborador";
 import NavegacionColectivo from "./NavegacionColectivo";
 import SelectorTema from "./SelectorTema";
@@ -14,10 +15,6 @@ const enlacesPublicos = [
     { href: "/proyectos", texto: "Proyectos" },
 ];
 
-const inicioPorRol = {
-    [roles.COLABORADOR]: "/colaboradoras/inicio",
-    [roles.COLECTIVO]: "/colectivos/inicio",
-};
 
 export default function Navegacion() {
     const rutaActual = usePathname();
@@ -49,7 +46,7 @@ export default function Navegacion() {
    return (
         <header className="nav-barra">
             <nav className="nav">
-                <Link href={inicioPorRol[usuario?.rol] ?? "/"} className="nav-marca">
+                <Link href={INICIO_POR_ROL[usuario?.rol] ?? "/"} className="nav-marca">
                     <span className="nav-logo" aria-hidden="true">&lt;&gt;</span>
                     Código a Voluntad
                 </Link>
@@ -61,6 +58,12 @@ export default function Navegacion() {
                     />
                 ) : usuario?.rol === roles.COLECTIVO ? (
                     <NavegacionColectivo
+                        usuario={usuario}
+                        rutaActual={rutaActual}
+                        onCerrarSesion={cerrarSesion}
+                    />
+                ) : usuario?.rol === roles.ADMIN ? (
+                    <NavegacionAdmin
                         usuario={usuario}
                         rutaActual={rutaActual}
                         onCerrarSesion={cerrarSesion}
