@@ -24,6 +24,7 @@ const AccionAuditada = {
     POSTULACION_RECHAZADA: 'postulacion_rechazada',
     COLABORACION_CREADA: 'colaboracion_creada',
     COLABORACION_DADA_DE_BAJA: 'colaboracion_dada_de_baja',
+    PUBLICACION_LINKEDIN: 'publicacion_linkedin',
 
     // Revisión de denuncias (reportes)
     REPORTE_NOTIFICADO: 'reporte_notificado',
