@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const paginable = require('../plugins/paginable');
 const { Reporte, EstadoReporte, TipoEntidadReportada } = require('../../models/Reporte');
+const { NombreRegla } = require('../../models/moderacion/ReglasModeracion');
 
 const Schema = mongoose.Schema;
 
@@ -12,6 +13,8 @@ const entidadReportadaSchema = new Schema({
 const reporteSchema = new Schema({
     entidad: { type: entidadReportadaSchema, required: true },
     motivo: { type: String, required: true, trim: true },
+    // Reglas de moderación automática que lo dispararon
+    reglas: { type: [{ type: String, enum: Object.values(NombreRegla) }], default: [] },
     // Solo para proyectos y postulaciones: usuario a notificar si se elimina el contenido
     duenio: { type: Schema.Types.ObjectId, ref: 'Usuario', default: null },
     estado: { type: String, enum: Object.values(EstadoReporte), default: EstadoReporte.PENDIENTE },

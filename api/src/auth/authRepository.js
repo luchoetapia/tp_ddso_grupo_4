@@ -1,4 +1,5 @@
 const Usuario = require('./models/usuarioSchema')
+const { roles } = require('./models/usuario')
 const { NotFoundError } = require('../errors/AppError')
 
 class AuthRepository {
@@ -15,6 +16,8 @@ class AuthRepository {
     async emailEnUso(email) { return !!(await Usuario.exists({ email, activo: true })); }
 
     obtenerUsuarioPorId(id) { return Usuario.findById(id); }
+
+    obtenerAdministradoresActivos() { return Usuario.find({ rol: roles.ADMIN, activo: true }, { username: 1, email: 1 }); }
 
     obtenerUsuarioPorLinkedinSub(sub) { return Usuario.findOne({ 'linkedin.sub': sub, activo: true }); }
 

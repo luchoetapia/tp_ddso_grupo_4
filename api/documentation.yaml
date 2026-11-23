@@ -34,7 +34,10 @@ tags:
   - name: Palabras baneadas
     description: Palabras prohibidas que generan reportes (solo admins)
   - name: Reportes
-    description: Revisión de contenido reportado (solo admins)
+    description: >
+      Moderación (solo admins). Al crear o editar proyectos, organizaciones, colaboradoras y postulaciones
+      se corren reglas automáticas (palabras prohibidas, fin de lucro, código cerrado). Si alguna se incumple
+      se genera un reporte pendiente y se avisa a los administradores para su revisión manual.
   - name: Administradores
     description: Cuentas que administran un colectivo (titular + adicionales)
   - name: Auditoría
@@ -2797,6 +2800,13 @@ components:
       type: string
       enum: [Pendiente, Rechazado, Validado, Solucionado]
 
+    ReglaModeracion:
+      type: string
+      enum: [palabras_prohibidas, fin_de_lucro, codigo_cerrado]
+      description: >
+        palabras_prohibidas = contenido inapropiado o incitación al odio (lista de palabras baneadas);
+        fin_de_lucro = indicios de organización con fin de lucro (forma societaria comercial, "con fines de lucro", etc.);
+        codigo_cerrado = el enlace al código fuente del proyecto no es público (responde 401/403/404).
     TipoEntidadReportada:
       type: string
       enum: [Proyecto, Postulacion, Colaborador, Colectivo]
@@ -2826,6 +2836,11 @@ components:
         motivo:
           type: string
           example: "Palabras prohibidas detectadas en: descripcion (negro)"
+        reglas:
+          type: array
+          description: Reglas de moderación automática que dispararon el reporte
+          items:
+            $ref: "#/components/schemas/ReglaModeracion"
         estado:
           $ref: "#/components/schemas/EstadoReporte"
         duenio:

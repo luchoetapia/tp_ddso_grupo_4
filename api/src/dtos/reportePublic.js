@@ -10,6 +10,7 @@ class ReportePublic {
         this.id = reporte.id
         this.entidad = { tipo: reporte.entidad.tipo, id: reporte.entidad.id?.toString() }
         this.motivo = reporte.motivo
+        this.reglas = reporte.reglas ?? []
         this.estado = reporte.estado
         this.duenio = usuarioResumen(reporte.duenio, true)
         this.notificado = reporte.notificado

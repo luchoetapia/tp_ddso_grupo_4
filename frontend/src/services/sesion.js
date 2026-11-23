@@ -9,7 +9,7 @@ export const roles = {
 
 // Pantalla de inicio de cada rol (a donde se va al ingresar y al tocar el logo)
 export const INICIO_POR_ROL = {
-    [roles.ADMIN]: '/admin/auditoria',
+    [roles.ADMIN]: '/admin/moderacion',
     [roles.COLABORADOR]: '/colaboradoras/inicio',
     [roles.COLECTIVO]: '/colectivo/inicio',
 };

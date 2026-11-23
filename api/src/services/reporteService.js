@@ -5,34 +5,26 @@ const palabraBaneadaService = require('./palabraBaneadaSevice.js');
 const { EstadoReporte, TipoEntidadReportada } = require('../models/Reporte.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
-const textosDeLista = (nombre, items = [], campos) =>
-    Object.fromEntries(items.flatMap((item, i) => campos.map(campo => [`${nombre}[${i}].${campo}`, item[campo]])));
+const { crearReglas, textosDe } = require('../models/moderacion/ReglasModeracion.js');
+const { obtenerNotificador } = require('../models/Notificacion.js');
+const { MedioDeContacto } = require('../models/Contacto.js');
+const AuthRepository = require('../auth/authRepository.js');
 
-// Campos de texto libre que se revisan de cada entidad
-const TEXTOS_POR_TIPO = {
-    [TipoEntidadReportada.PROYECTO]: (p) => ({
-        titulo: p.titulo,
-        descripcion: p.descripcion,
-        ...textosDeLista('perfiles', p.perfiles, ['titulo', 'descripcion']),
-        ...textosDeLista('logros', p.logros, ['titulo', 'descripcion'])
-    }),
-    [TipoEntidadReportada.COLECTIVO]: (c) => ({ nombre: c.nombre, descripcion: c.descripcion, ubicacion: c.ubicacion }),
-    [TipoEntidadReportada.COLABORADOR]: (c) => ({
-        nombre: c.nombre,
-        apellido: c.apellido,
-        nombreFantasia: c.nombreFantasia,
-        pronombres: c.pronombres,
-        presentacion: c.presentacion
-    }),
-    [TipoEntidadReportada.POSTULACION]: (p) => ({ mensaje: p.mensaje })
-};
+const loguearError = (contexto, error) =>
+    console.error(`\x1b[31m${new Date().toISOString()} | ${contexto} | ${error.name}: ${error.message}\n${error.stack}\x1b[0m`);
 
 class ReporteService {
     constructor() {
         this.reporteRepository = reporteRepository;
         this.colectivoRepository = colectivoRepository;
         this.palabraBaneadaService = palabraBaneadaService;
+        // Reglas de moderación automática (models/moderacion/ReglasModeracion.js)
+        this.reglas = crearReglas({ palabraBaneadaService });
     }
+
+    // Se crea recién al usarse (solo para avisar a los administradores)
+    get authRepository() { return this._authRepository ??= new AuthRepository() }
+    set authRepository(repositorio) { this._authRepository = repositorio }
 
     crear = async ({ tipoEntidad, idEntidad, motivo }) => {
         if (!Object.values(TipoEntidadReportada).includes(tipoEntidad)) {
@@ -51,38 +43,78 @@ class ReporteService {
         return await this.registrar(tipoEntidad, idEntidad, motivo.trim());
     }
 
-    registrar = async (tipoEntidad, idEntidad, motivo) => {
+    // reglas: reglas de moderación que lo dispararon (vacío si el reporte se cargó a mano)
+    registrar = async (tipoEntidad, idEntidad, motivo, reglas = []) => {
         return await this.reporteRepository.save({
             entidad: { tipo: tipoEntidad, id: idEntidad },
             motivo,
+            reglas,
             duenio: await this.buscarDuenio(tipoEntidad, idEntidad)
         });
     }
 
     // No se espera: el request responde sin esperar la revisión y un error solo se loguea
     revisarEnSegundoPlano = (tipoEntidad, entidad) => {
-        this.revisarPalabrasBaneadas(tipoEntidad, entidad).catch(error => {
-            const id = entidad?.id ?? entidad?._id;
-            console.error(`\x1b[31m${new Date().toISOString()} | Revisión de palabras baneadas de ${tipoEntidad} ${id} | ${error.name}: ${error.message}\n${error.stack}\x1b[0m`);
+        this.moderar(tipoEntidad, entidad).catch(error => {
+            loguearError(`Moderación automática de ${tipoEntidad} ${entidad?.id ?? entidad?._id}`, error);
         });
     }
 
-    // Se llama después de guardar la entidad, con el documento completo:
-    // si quedó limpia soluciona los reportes notificados, si no genera un reporte
-    revisarPalabrasBaneadas = async (tipoEntidad, entidad) => {
+    // Moderación automática. Se llama después de guardar la entidad, con el documento completo:
+    // corre las reglas que le aplican; si incumple alguna genera un reporte para revisión manual y avisa
+    // a los administradores; si cumple todas, da por solucionados los reportes que se le habían notificado.
+    moderar = async (tipoEntidad, entidad) => {
         const idEntidad = entidad.id ?? entidad._id;
-        const encontradas = await this.palabraBaneadaService.detectarEnCampos(TEXTOS_POR_TIPO[tipoEntidad](entidad));
+        const reglas = this.reglas.filter(regla => regla.aplicaA(tipoEntidad, entidad));
+        const resultados = await Promise.allSettled(reglas.map(regla => regla.evaluar(tipoEntidad, entidad)));
 
-        if (Object.keys(encontradas).length === 0) {
-            await this.solucionarPorEntidad(idEntidad);
+        const incumplidas = [];
+        let sinVerificar = false;
+        resultados.forEach((resultado, i) => {
+            if (resultado.status === 'rejected') {
+                // No se pudo verificar (p. ej. sin red): no se marca ni se da por cumplida
+                sinVerificar = true;
+                loguearError(`Regla '${reglas[i].nombre}' sobre ${tipoEntidad} ${idEntidad}`, resultado.reason);
+            } else if (resultado.value) {
+                incumplidas.push({ regla: reglas[i].nombre, motivo: resultado.value });
+            }
+        });
+
+        if (incumplidas.length === 0) {
+            if (!sinVerificar) await this.solucionarPorEntidad(idEntidad);
             return null;
         }
 
         // Mientras haya un reporte pendiente de la entidad no se genera otro
         if (await this.reporteRepository.existePendiente(idEntidad)) return null;
 
-        const detalle = Object.entries(encontradas).map(([campo, palabras]) => `${campo} (${palabras.join(', ')})`).join('; ');
-        return await this.registrar(tipoEntidad, idEntidad, `Palabras prohibidas detectadas en: ${detalle}`);
+        const reporte = await this.registrar(
+            tipoEntidad,
+            idEntidad,
+            incumplidas.map(({ motivo }) => motivo).join(' | '),
+            incumplidas.map(({ regla }) => regla)
+        );
+        this.notificarAdministradoresEnSegundoPlano(reporte);
+        return reporte;
+    }
+
+    // Nombre anterior, de cuando solo se revisaban las palabras baneadas
+    revisarPalabrasBaneadas = (tipoEntidad, entidad) => this.moderar(tipoEntidad, entidad);
+
+    // Aviso a todos los administradores activos por sus medios externos (en la app lo ven en Moderación)
+    notificarAdministradoresEnSegundoPlano = (reporte) => {
+        this.notificarAdministradores(reporte).catch(error => loguearError(`Aviso a administradores del reporte ${reporte?.id}`, error));
+    }
+
+    notificarAdministradores = async (reporte) => {
+        const administradores = await this.authRepository.obtenerAdministradoresActivos();
+        const notificador = obtenerNotificador(MedioDeContacto.EMAIL);
+        const aviso = {
+            generarTexto: () => `[Moderación] Nuevo reporte automático sobre ${reporte.entidad.tipo} ${reporte.entidad.id}: ${reporte.motivo}. Revisalo en Moderación.`,
+        };
+
+        administradores.forEach(admin => notificador.enviar({ medio: MedioDeContacto.EMAIL, valor: admin.email }, aviso));
+        return administradores.length;
     }
 
     // El dueño de un proyecto es el usuario del colectivo que lo tiene en su lista de proyectos
@@ -118,7 +150,7 @@ class ReporteService {
         const reporte = await this.obtenerPorId(id);
         const entidad = await this.reporteRepository.buscarEntidad(reporte.entidad.tipo, reporte.entidad.id);
 
-        return { reporte, contenido: entidad ? TEXTOS_POR_TIPO[reporte.entidad.tipo](entidad) : null };
+        return { reporte, contenido: entidad ? textosDe(reporte.entidad.tipo, entidad) : null };
     }
 
     listar = async ({ pagina = 1, limite = 10, estado, tipoEntidad } = {}) => {
