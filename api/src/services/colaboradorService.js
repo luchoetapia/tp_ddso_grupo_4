@@ -151,6 +151,32 @@ class ColaboradorService {
     buscarPorUsuario = async (idUsuario) => {
         return await this.colaboradorRepository.findByUsuario(idUsuario);
     }
+
+    obtenerPorUsuario = async (idUsuario) => {
+        const colaborador = await this.colaboradorRepository.findByUsuario(idUsuario);
+        if (!colaborador) throw new NotFoundError("El usuario no tiene un perfil de colaboradora");
+        return colaborador;
+    }
+
+    actualizarPorUsuario = async (idUsuario, cambios) => {
+        const colaborador = await this.obtenerPorUsuario(idUsuario);
+
+        const nombre = cambios.nombre !== undefined ? cambios.nombre : colaborador.nombre;
+        const nombreFantasia = cambios.nombreFantasia !== undefined ? cambios.nombreFantasia : colaborador.nombreFantasia;
+        if (!nombre?.trim() && !nombreFantasia?.trim()) {
+            throw new BadRequestError("Indicá tu nombre o un nombre de fantasía");
+        }
+
+        const datos = { ...cambios };
+        if (cambios.habilidades) {
+            const habilidades = await this.habilidadService.obtenerPorListaId(cambios.habilidades);
+            datos.habilidades = habilidades.map(h => h.id);
+        }
+
+        const actualizado = await this.colaboradorRepository.update(colaborador.id, datos);
+        this.reporteService.revisarEnSegundoPlano(TipoEntidadReportada.COLABORADOR, actualizado);
+        return actualizado;
+    }
 }
 
 module.exports = new ColaboradorService();

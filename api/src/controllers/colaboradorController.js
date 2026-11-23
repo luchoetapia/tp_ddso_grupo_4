@@ -114,9 +114,14 @@ class ColaboradorController {
     res.status(200).json(notificaciones.map(NotificacionPublic.desde));
     }
 
-     obtenerMiPerfil = async (req, res) => {
-    const colaborador = await this.colaboradorService.buscarPorUsuario(req.usuario.id)
-    res.status(200).json(ColaboradorPublic.desde(colaborador))
+    obtenerMiPerfil = async (req, res) => {
+        const colaborador = await this.colaboradorService.obtenerPorUsuario(req.usuario.id)
+        res.status(200).json(ColaboradorPublic.desde(colaborador))
+    }
+
+    actualizarMiPerfil = async (req, res) => {
+        const colaborador = await this.colaboradorService.actualizarPorUsuario(req.usuario.id, req.body)
+        res.status(200).json({ message: 'Perfil actualizado exitosamente', data: ColaboradorPublic.desde(colaborador) })
     }
 }
 
