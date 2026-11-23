@@ -86,7 +86,7 @@ export function Registro() {
             return (usuario.password ?? '').length >= LARGO_MINIMO_CONTRASENA
                 && usuario.password === usuario.repeat_password;
         }
-        if (esColectivo) return lleno(colectivo.nombre) && lleno(colectivo.tipo);
+        if (esColectivo) return lleno(colectivo.nombre) && lleno(colectivo.tipo) && lleno(colectivo.descripcion);
         return (lleno(colaborador.nombre) || lleno(colaborador.nombreFantasia))
             && REGEX_CUENTA_GIT.test(colaborador.cuentaGit ?? '')
             && colaborador.habilidades.length > 0

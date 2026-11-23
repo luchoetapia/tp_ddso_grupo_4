@@ -56,6 +56,15 @@ router.route('/:id')
         validar(validarActualizacionProyecto, 'body'),
         auditar(AccionAuditada.PROYECTO_ACTUALIZADO, proyectoDeLaRuta(camposModificados)),
         (req, res) => proyectoController.actualizarProyecto(req, res)
+    )
+    .delete(
+        autenticar(roles.COLECTIVO),
+        validar(validarIdsProyecto, 'params'),
+        auditar(AccionAuditada.PROYECTO_ELIMINADO, (req, body, res) => ({
+            ...proyecto(req.params.id, `Título: ${res.locals.tituloProyecto}`),
+            idColectivo: res.locals.idColectivo,
+        })),
+        (req, res) => proyectoController.eliminarProyecto(req, res)
     );
 
 router.route('/:id/finalizar')

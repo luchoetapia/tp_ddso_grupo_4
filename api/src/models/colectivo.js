@@ -35,4 +35,18 @@ const TipoColectivo = {
     ASAMBLEA: 'asamblea',
 }
 
-module.exports = {Colectivo, TipoColectivo}
+const PROVINCIAS = [
+    'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa',
+    'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan',
+    'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán',
+]
+const UBICACIONES_PREDEFINIDAS = ['Argentina', 'CABA', ...PROVINCIAS]
+
+const sinTildesNiMayusculas = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+const normalizarUbicacion = (texto) => {
+    const buscado = sinTildesNiMayusculas(texto)
+    return UBICACIONES_PREDEFINIDAS.find(u => sinTildesNiMayusculas(u) === buscado) ?? texto
+}
+
+module.exports = { Colectivo, TipoColectivo, PROVINCIAS, UBICACIONES_PREDEFINIDAS, normalizarUbicacion }

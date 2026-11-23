@@ -16,7 +16,8 @@ export default function MisProyectos() {
     const router = useRouter();
     const [estado, setEstado] = useState(INICIAL);
     const [intento, setIntento] = useState(0);
-    const [aCerrar, setACerrar] = useState(null); 
+    const [aCerrar, setACerrar] = useState(null);
+    const [aEliminar, setAEliminar] = useState(null);
     const [procesando, setProcesando] = useState(false);
 
     useEffect(() => {
@@ -62,6 +63,24 @@ export default function MisProyectos() {
         } finally {
             setProcesando(false);
             setACerrar(null);
+        }
+    };
+
+    const eliminarProyecto = async () => {
+        const proyecto = aEliminar;
+        setProcesando(true);
+        try {
+            await apiQuery.delete(`/proyectos/${proyecto.id}`, { mensajeError: 'No se pudo eliminar el proyecto.' });
+            setEstado((e) => ({
+                ...e,
+                colectivo: { ...e.colectivo, proyectos: e.colectivo.proyectos.filter((p) => p.id !== proyecto.id) },
+            }));
+            alertas.exito('Proyecto eliminado.');
+        } catch {
+            // apiQuery ya mostró la alerta de error
+        } finally {
+            setProcesando(false);
+            setAEliminar(null);
         }
     };
 
@@ -128,6 +147,7 @@ export default function MisProyectos() {
                                 {!proyecto.finalizado && (
                                     <Button onClick={() => setACerrar(proyecto)}>Cerrar proyecto</Button>
                                 )}
+                                <Button variant="danger" onClick={() => setAEliminar(proyecto)}>Eliminar</Button>
                             </div>
                         </Card>
                     ))}
@@ -149,8 +169,33 @@ export default function MisProyectos() {
             >
                 {aCerrar && (
                     <p className="m-0">
-                        Vas a cerrar "{aCerrar.titulo}". Va a dejar de recibir postulaciones y no se puede volver a abrir.
+                        Vas a cerrar “{aCerrar.titulo}”. Va a dejar de recibir postulaciones y no se puede volver a abrir.
                     </p>
+                )}
+            </Modal>
+
+            <Modal
+                open={aEliminar !== null}
+                onClose={() => !procesando && setAEliminar(null)}
+                title="Eliminar proyecto"
+                footer={
+                    <>
+                        <Button onClick={() => setAEliminar(null)} disabled={procesando}>Cancelar</Button>
+                        <Button variant="danger" onClick={eliminarProyecto} cargando={procesando}>
+                            Eliminar definitivamente
+                        </Button>
+                    </>
+                }
+            >
+                {aEliminar && (
+                    <>
+                        <p className="m-0">
+                            Vas a eliminar “{aEliminar.titulo}” junto con sus perfiles, logros y postulaciones. Esta acción no se puede deshacer.
+                        </p>
+                        <p className="m-0 text-[13px] text-muted">
+                            Si alguien ya colaboró en el proyecto no se puede eliminar, porque es parte de su historial: en ese caso cerralo.
+                        </p>
+                    </>
                 )}
             </Modal>
         </section>

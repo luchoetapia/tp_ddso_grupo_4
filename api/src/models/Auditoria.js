@@ -11,6 +11,7 @@ const AccionAuditada = {
     PROYECTO_CREADO: 'proyecto_creado',
     PROYECTO_ACTUALIZADO: 'proyecto_actualizado',
     PROYECTO_FINALIZADO: 'proyecto_finalizado',
+    PROYECTO_ELIMINADO: 'proyecto_eliminado',
     PERFIL_CREADO: 'perfil_creado',
     PERFIL_ACTUALIZADO: 'perfil_actualizado',
     PERFIL_ELIMINADO: 'perfil_eliminado',

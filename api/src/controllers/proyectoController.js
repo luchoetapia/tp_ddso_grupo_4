@@ -42,6 +42,13 @@ class ProyectoController {
         res.status(200).json({ message: 'Proyecto actualizado exitosamente', data: ProyectoDetalle.desde(proyecto) })
     }
 
+    eliminarProyecto = async (req, res) => {
+        const { proyecto, colectivo } = await this.proyectoService.eliminar(req.params.id, req.usuario.id)
+        res.locals.idColectivo = colectivo.id
+        res.locals.tituloProyecto = proyecto.titulo
+        res.status(200).json({ message: 'Proyecto eliminado exitosamente' })
+    }
+
     obtenerProyectoPorId = async (req, res) => {
         const proyecto = await this.proyectoService.obtenerPorId(req.params.id)
         const colectivo = await this.proyectoService.obtenerColectivoDelProyecto(proyecto.id)

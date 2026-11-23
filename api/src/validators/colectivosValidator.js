@@ -1,12 +1,18 @@
 const { z } = require('zod');
 const { objectId, alMenosUnCampo, paginacion, ordenamiento } = require('./comunes.js');
-const { TipoColectivo } = require('../models/colectivo.js');
+const { TipoColectivo, normalizarUbicacion } = require('../models/colectivo.js');
 const { validarRegistro } = require('../auth/authValidator.js');
+
+const LARGO_MAXIMO_UBICACION = 100;
 
 const campos = {
     nombre: z.string({ error: "El nombre del colectivo es obligatorio" }).min(1, "El nombre del colectivo no puede estar vacío"),
-    descripcion: z.string({ error: "La descripción debe ser un texto" }),
-    ubicacion: z.string({ error: "La ubicación debe ser un texto" }),
+    descripcion: z.string({ error: "La descripción es obligatoria" }).trim().min(1, "La descripción no puede estar vacía"),
+    ubicacion: z.string({ error: "La ubicación debe ser un texto" })
+        .trim()
+        .max(LARGO_MAXIMO_UBICACION, `La ubicación no puede superar los ${LARGO_MAXIMO_UBICACION} caracteres`)
+        .transform((texto) => (texto === '' ? null : normalizarUbicacion(texto)))
+        .nullable(),
     tipo: z.enum(Object.values(TipoColectivo), { error: `El tipo de colectivo debe ser uno de: ${Object.values(TipoColectivo).join(', ')}` }),
     proyectos: z.array(objectId("Id de proyecto inválido"), { error: "Los proyectos deben ser una lista de ids" }),
 };
@@ -14,7 +20,7 @@ const campos = {
 const validarCreacionColectivo = z.object({
     nombre: campos.nombre,
     tipo: campos.tipo,
-    descripcion: campos.descripcion.optional(),
+    descripcion: campos.descripcion,
     ubicacion: campos.ubicacion.optional(),
     proyectos: campos.proyectos.default([]),
 }).strict();

@@ -87,11 +87,11 @@ describe('Endpoints /colectivos', () => {
         test('crea el colectivo aplicando defaults del validador', async () => {
             colectivoService.crear.mockResolvedValue(colectivo);
 
-            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'Tech For Good', tipo: 'fundacion' });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'Tech For Good', tipo: 'fundacion', descripcion: 'desc' });
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({ message: 'Colectivo creado exitosamente', data: colectivo });
-            expect(colectivoService.crear).toHaveBeenCalledWith({ nombre: 'Tech For Good', tipo: 'fundacion', proyectos: [] }, ID_USUARIO);
+            expect(colectivoService.crear).toHaveBeenCalledWith({ nombre: 'Tech For Good', tipo: 'fundacion', descripcion: 'desc', proyectos: [] }, ID_USUARIO);
             expect(auditoriaService.registrar).toHaveBeenCalledWith(expect.objectContaining({
                 accion: AccionAuditada.COLECTIVO_CREADO,
                 entidad: { tipo: TipoEntidadAuditada.COLECTIVO, id: ID },
@@ -99,15 +99,22 @@ describe('Endpoints /colectivos', () => {
             }));
         });
 
+        test('responde 400 sin descripción', async () => {
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong' });
+
+            expect(res.status).toBe(400);
+            expect(colectivoService.crear).not.toHaveBeenCalled();
+        });
+
         test('responde 400 con un tipo inválido', async () => {
-            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'club' });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'club', descripcion: 'desc' });
 
             expect(res.status).toBe(400);
             expect(colectivoService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 400 con ids de proyectos inválidos', async () => {
-            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong', proyectos: ['123'] });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong', descripcion: 'desc', proyectos: ['123'] });
 
             expect(res.status).toBe(400);
         });
@@ -115,7 +122,7 @@ describe('Endpoints /colectivos', () => {
         test('responde 409 si ya existe', async () => {
             colectivoService.crear.mockRejectedValue(new ConflictError('Ya existe un colectivo con ese nombre'));
 
-            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong' });
+            const res = await request(app).post('/colectivos').set('Cookie', cookieDeSesion('colectivo')).send({ nombre: 'X', tipo: 'ong', descripcion: 'desc' });
 
             expect(res.status).toBe(409);
         });
@@ -125,14 +132,14 @@ describe('Endpoints /colectivos', () => {
 
             const res = await request(app).post('/colectivos')
                 .set('Cookie', cookieDeSesion('colectivo'))
-                .send({ nombre: 'X', tipo: 'ong', usuario: 'otro' });
+                .send({ nombre: 'X', tipo: 'ong', descripcion: 'desc', usuario: 'otro' });
 
             expect(res.status).toBe(400); // el validador es strict: no admite "usuario" en el body
             expect(colectivoService.crear).not.toHaveBeenCalled();
         });
 
         test('responde 401 sin sesión', async () => {
-            const res = await request(app).post('/colectivos').send({ nombre: 'X', tipo: 'ong' });
+            const res = await request(app).post('/colectivos').send({ nombre: 'X', tipo: 'ong', descripcion: 'desc' });
 
             expect(res.status).toBe(401);
             expect(colectivoService.crear).not.toHaveBeenCalled();
@@ -141,7 +148,7 @@ describe('Endpoints /colectivos', () => {
         test('responde 403 si el usuario no tiene rol colectivo', async () => {
             const res = await request(app).post('/colectivos')
                 .set('Cookie', cookieDeSesion('colaborador'))
-                .send({ nombre: 'X', tipo: 'ong' });
+                .send({ nombre: 'X', tipo: 'ong', descripcion: 'desc' });
 
             expect(res.status).toBe(403);
             expect(colectivoService.crear).not.toHaveBeenCalled();

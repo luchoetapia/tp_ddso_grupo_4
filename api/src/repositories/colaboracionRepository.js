@@ -42,6 +42,10 @@ class ColaboracionRepository {
         return await ColaboracionModel.find({ 'proyecto.id': idProyecto });
     }
 
+    async existenDelProyecto(idProyecto) {
+        return Boolean(await ColaboracionModel.exists({ 'proyecto.id': idProyecto }));
+    }
+
     async findByColaboradorID(idColaborador) {
         return await ColaboracionModel.find({ 'colaborador.id': idColaborador });
     }

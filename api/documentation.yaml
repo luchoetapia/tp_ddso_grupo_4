@@ -471,6 +471,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    delete:
+      summary: Elimina un proyecto
+      description: >
+        Requiere sesión con rol `colectivo` (cookie `accessToken`) y que el proyecto sea de su colectivo.
+        La baja es definitiva y se puede hacer aunque el proyecto esté finalizado. Si el proyecto tiene
+        colaboraciones registradas (activas o terminadas) no se elimina, porque forman parte del historial
+        de las colaboradoras: en ese caso hay que finalizarlo. Las postulaciones del proyecto se borran con él.
+      tags: [Proyectos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Proyecto eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Proyecto eliminado exitosamente
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo o el proyecto no es suyo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: El proyecto tiene colaboraciones registradas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /proyectos/{id}/finalizar:
     post:
@@ -1167,8 +1214,12 @@ paths:
                   minLength: 1
                 descripcion:
                   type: string
+                  minLength: 1
                 ubicacion:
                   type: string
+                  nullable: true
+                  maxLength: 100
+                  description: Mismas reglas que en ColectivoInput; vacío o null la borra
                 tipo:
                   type: string
                   enum: [fundacion, asociacion_barrial, ong, asamblea]
@@ -3525,9 +3576,15 @@ components:
           minLength: 1
         descripcion:
           type: string
+          minLength: 1
         ubicacion:
           type: string
-          description: '"Argentina", una provincia, CABA o una ciudad/barrio en texto libre'
+          nullable: true
+          maxLength: 100
+          description: >
+            Opcional. "Argentina", CABA, una de las 23 provincias o una ciudad/barrio en texto libre.
+            Si coincide con una predefinida sin importar tildes ni mayúsculas ("cordoba") se guarda con
+            su nombre oficial ("Córdoba"). Vacío o null equivale a no indicarla.
         tipo:
           type: string
           enum: [fundacion, asociacion_barrial, ong, asamblea]
@@ -3539,6 +3596,7 @@ components:
           default: []
       required:
         - nombre
+        - descripcion
         - tipo
 
     Colectivo:

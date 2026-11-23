@@ -46,6 +46,11 @@ class PostulacionRepository {
         ).populate(REFERENCIAS);
     }
 
+    async eliminarPorProyecto(idProyecto) {
+        const { deletedCount } = await PostulacionModel.deleteMany({ proyecto: idProyecto });
+        return deletedCount;
+    }
+
     async cantidadPendientesDeVariosProyectos(proyectos) {
         return await PostulacionModel.countDocuments({
             proyecto: { $in: proyectos },

@@ -9,6 +9,7 @@ jest.mock('../../../src/services/proyectoService.js', () => ({
 jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerPorCuentaGit: jest.fn(),
     obtenerContactos: jest.fn(),
+    buscarPorUsuario: jest.fn(),
 }));
 jest.mock('../../../src/models/Notificacion.js', () => ({
     ...jest.requireActual('../../../src/models/Notificacion.js'),
@@ -133,4 +134,26 @@ describe('NotificacionService', () => {
         });
     });
 
+    describe('obtenerPropias', () => {
+        const ID_USUARIO = '507f1f77bcf86cd7994390aa';
+
+        test('devuelve las notificaciones de la colaboradora de la sesión', async () => {
+            colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_COLAB });
+            notificacionRepository.findByDestinatario.mockResolvedValue([notificacionGuardada()]);
+
+            const resultado = await notificacionService.obtenerPropias(ID_USUARIO);
+
+            expect(colaboradorService.buscarPorUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith(ID_COLAB);
+            expect(resultado).toHaveLength(1);
+        });
+
+        // Antes faltaba importar NotFoundError y esto terminaba en un ReferenceError (500)
+        test('lanza NotFoundError si el usuario no tiene perfil de colaboradora', async () => {
+            colaboradorService.buscarPorUsuario.mockResolvedValue(null);
+
+            await expect(notificacionService.obtenerPropias(ID_USUARIO)).rejects.toThrow(NotFoundError);
+            expect(notificacionRepository.findByDestinatario).not.toHaveBeenCalled();
+        });
+    });
 });

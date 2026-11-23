@@ -4,6 +4,8 @@ const habilidadService = require('./habilidadService.js');
 const colaboradorService = require('./colaboradorService.js');
 const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
+const colaboracionRepository = require('../repositories/colaboracionRepository.js');
+const postulacionRepository = require('../repositories/postulacionRepository.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
 const { construirOrden } = require('./ordenamiento.js');
 const reporteService = require('./reporteService.js');
@@ -34,6 +36,8 @@ class ProyectoService {
         this.habilidadService = habilidadService;
         this.colaboradorService = colaboradorService;
         this.colectivoRepository = colectivoRepository;
+        this.colaboracionRepository = colaboracionRepository;
+        this.postulacionRepository = postulacionRepository;
         this.notificacionAutomaticaService = notificacionAutomaticaService;
     }
 
@@ -143,14 +147,19 @@ class ProyectoService {
         return proyecto
     }
 
-    obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
-        const proyecto = await this.obtenerPorId(id)
-
+    verificarPertenencia = async (proyecto, idUsuarioColectivo) => {
         const colectivo = await this.colectivoRepository.findByUsuario(idUsuarioColectivo)
         const esDelColectivo = (colectivo?.proyectos ?? []).some(p => (p._id ?? p).toString() === proyecto.id)
         if (!esDelColectivo) {
             throw new ForbiddenError("El proyecto no pertenece a tu colectivo")
         }
+        return colectivo
+    }
+
+    obtenerEditablePorColectivo = async (id, idUsuarioColectivo) => {
+        const proyecto = await this.obtenerPorId(id)
+
+        await this.verificarPertenencia(proyecto, idUsuarioColectivo)
 
         if (proyecto.finalizado) {
             throw new ConflictError("No se puede editar un proyecto finalizado")
@@ -206,6 +215,21 @@ class ProyectoService {
             throw new NotFoundError("Proyecto no encontrado")
         }
         return actualizado;
+    }
+
+    eliminar = async (id, idUsuarioColectivo) => {
+        const proyecto = await this.obtenerPorId(id)
+        const colectivo = await this.verificarPertenencia(proyecto, idUsuarioColectivo)
+
+        if (await this.colaboracionRepository.existenDelProyecto(id)) {
+            throw new ConflictError("El proyecto tiene colaboraciones registradas: finalizalo en lugar de eliminarlo")
+        }
+
+        await this.postulacionRepository.eliminarPorProyecto(id)
+        await this.colectivoRepository.update(colectivo.id, { $pull: { proyectos: id } })
+        await this.proyectoRepository.delete(id)
+
+        return { proyecto, colectivo }
     }
 
     proyectosActivos = async () => {

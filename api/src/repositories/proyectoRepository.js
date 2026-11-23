@@ -70,6 +70,10 @@ class ProyectoRepository {
         return await ProyectoModel.updateMany({ _id: { $in: ids } }, cambios);
     }
 
+    async delete(id) {
+        return await ProyectoModel.findByIdAndDelete(id);
+    }
+
     async logrosDelProyecto(idProyecto) {
         const proyecto = await ProyectoModel.findById(idProyecto);
         return proyecto ? proyecto.logros : null;
