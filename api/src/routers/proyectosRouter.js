@@ -43,7 +43,7 @@ router.route('/')
     );
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => proyectoController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => proyectoController.llenarDatosPrueba(req, res));
 
 router.route('/:id')
     .get(
@@ -60,6 +60,7 @@ router.route('/:id')
 
 router.route('/:id/finalizar')
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsProyecto, 'params'),
         validar(validarFinalizacionProyecto, 'body'),
         auditar(AccionAuditada.PROYECTO_FINALIZADO, proyectoDeLaRuta()),
@@ -72,6 +73,7 @@ router.route('/:id/perfiles')
         (req, res) => proyectoController.obtenerPerfilesDeUnProyecto(req, res)
     )
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsProyecto, 'params'),
         validar(validarCreacionPerfil, 'body'),
         auditar(AccionAuditada.PERFIL_CREADO, proyectoDeLaRuta((req, body) => `Perfil: ${body.data.titulo} (${body.data.id})`)),
@@ -84,12 +86,14 @@ router.route('/:id/perfiles/:idPerfil')
         (req, res) => proyectoController.obtenerPerfilPorId(req, res)
     )
     .put(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         validar(validarActualizacionPerfil, 'body'),
         auditar(AccionAuditada.PERFIL_ACTUALIZADO, proyectoDeLaRuta((req, body) => `Perfil: ${body.data.titulo} (${req.params.idPerfil}). ${camposModificados(req)}`)),
         (req, res) => proyectoController.actualizarPerfil(req, res)
     )
     .delete(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         auditar(AccionAuditada.PERFIL_ELIMINADO, proyectoDeLaRuta((req) => `Perfil: ${req.params.idPerfil}`)),
         (req, res) => proyectoController.eliminarPerfil(req, res)
@@ -104,6 +108,7 @@ router.route('/:id/perfiles/:idPerfil/buscarPotencialesColaboradores')
 
 router.route('/:id/perfiles/:idPerfil/contactarColaborador')
     .post(
+        autenticar(roles.COLECTIVO),
         validar(validarIdsPerfilDeProyecto, 'params'),
         validar(validarContactoColaborador, 'body'),
         (req, res) => proyectoController.contactarColaborador(req, res)

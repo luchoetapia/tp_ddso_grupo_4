@@ -86,8 +86,9 @@ const validarFiltrosProyecto = z.object({
     ...ordenamiento,
 });
 
+// El colectivo sale de la sesión: idColectivo se acepta por compatibilidad pero se ignora
 const validarFinalizacionProyecto = z.object({
-    idColectivo: objectId("Id de colectivo inválido"),
+    idColectivo: objectId("Id de colectivo inválido").optional(),
 }).strict();
 
 const validarContactoColaborador = z.object({

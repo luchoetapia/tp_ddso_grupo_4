@@ -8,6 +8,8 @@ const {
     validarCambioEstado
 } = require('../validators/postulacionesValidator.js');
 
+const autenticar = require('../middlewares/autenticar.js');
+const { roles } = require('../auth/models/usuario.js');
 const auditar = require('../middlewares/auditar.js');
 const { AccionAuditada, TipoEntidadAuditada } = require('../models/Auditoria.js');
 const EstadoPostulacion = require('../models/Proyecto/Postulaciones/EstadoPostulacion.js');
@@ -35,6 +37,7 @@ router.route('/')
         (req, res) => postulacionController.obtenerTodas(req, res)
     )
     .post(
+        autenticar(roles.COLABORADOR),
         validar(validarCreacionPostulacion, 'body'),
         auditar(AccionAuditada.POSTULACION_CREADA, postulacionDeLaRespuesta((p) => `Colaborador: ${colaboradorDe(p)}. Perfil: ${p.idPerfil}`)),
         (req, res) => postulacionController.crear(req, res)
@@ -48,6 +51,7 @@ router.route('/:id')
 
 router.route('/:id/estado')
     .patch(
+        autenticar(roles.COLECTIVO),
         validar(validarIdPostulacion, 'params'),
         validar(validarCambioEstado, 'body'),
         auditar((req) => ACCION_POR_ESTADO[req.body.estado], postulacionDeLaRespuesta((p) => `Colaborador: ${colaboradorDe(p)}. Perfil: ${p.idPerfil}`)),

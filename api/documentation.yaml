@@ -39,6 +39,8 @@ tags:
     description: Cuentas que administran un colectivo (titular + adicionales)
   - name: Auditoría
     description: Trazabilidad de acciones sobre colectivos, proyectos y colaboraciones
+  - name: Postulaciones
+    description: Postulaciones de colaboradoras a perfiles de proyectos
   - name: Auth
     description: Sesión e ingreso con LinkedIn
 
@@ -250,7 +252,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}:
     get:
       summary: Obtiene un proyecto por id
@@ -358,22 +371,22 @@ paths:
     post:
       summary: Finaliza un proyecto
       description: >
-        Un colectivo marca el proyecto como finalizado. Un proyecto finalizado
-        no admite nuevas personas colaboradoras ni contactos.
+        Requiere sesión con rol `colectivo`, del colectivo dueño del proyecto (titular o
+        administrador adicional). Un proyecto finalizado no admite nuevas personas colaboradoras ni contactos.
       tags: [Proyectos]
       parameters:
         - $ref: "#/components/parameters/IdPath"
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
                 idColectivo:
-                  $ref: "#/components/schemas/ObjectId"
-              required:
-                - idColectivo
+                  allOf:
+                    - $ref: "#/components/schemas/ObjectId"
+                  description: Opcional y se ignora (el colectivo sale de la sesión)
       responses:
         "200":
           description: Proyecto finalizado exitosamente
@@ -399,7 +412,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}/perfiles/{idPerfil}/buscarPotencialesColaboradores:
     get:
       summary: Busca potenciales colaboradoras/es para un perfil del proyecto
@@ -488,7 +512,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}/logros:
     parameters:
       - $ref: "#/components/parameters/IdPath"
@@ -731,7 +766,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /proyectos/{id}/perfiles/{idPerfil}:
     parameters:
       - $ref: "#/components/parameters/IdPath"
@@ -800,6 +846,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       summary: Elimina un perfil de un proyecto
       tags: [Perfiles]
@@ -826,7 +884,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colectivos:
     get:
       summary: Obtiene los colectivos (paginado)
@@ -938,7 +1007,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colectivos/me:
     get:
       summary: Obtiene el colectivo de la sesión
@@ -1319,6 +1399,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    delete:
+      summary: Da de baja un colectivo (y finaliza sus proyectos)
+      description: >
+        Requiere sesión: la cuenta titular del colectivo o un `admin` de la plataforma.
+        Queda registrado en la auditoría.
+      tags: [Colectivos]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Colectivo dado de baja
+        "400":
+          description: Id inválido o el colectivo ya estaba dado de baja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es la cuenta titular del colectivo ni un admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colectivo inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 
   /habilidades:
     get:
@@ -1387,7 +1503,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /habilidades/llenarDatosPrueba:
     post:
       summary: Carga habilidades iniciales
@@ -1419,7 +1546,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /habilidades/{id}:
     get:
       summary: Obtiene una habilidad por id
@@ -1567,7 +1705,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colaboradores/{cuentaGit}:
     get:
       summary: Obtiene una colaboradora/colaborador por cuenta de Git
@@ -1669,7 +1818,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /colaboradores/{cuentaGit}/buscarPotencialesProyectos:
     get:
       summary: Busca potenciales proyectos para una colaboradora/colaborador
@@ -1803,7 +1963,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario no es admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /palabrasBaneadas:
     get:
       summary: Obtiene las palabras baneadas (paginado)
@@ -2240,6 +2411,109 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  /postulaciones:
+    post:
+      summary: La colaboradora de la sesión se postula a un perfil de un proyecto
+      description: >
+        Requiere sesión con rol `colaborador`. La postulación siempre queda a nombre de la
+        colaboradora de la sesión: si se envía `idColaborador` o `cuentaGit` de otra persona, falla con 403.
+        Solo se puede si la búsqueda del perfil está abierta y la colaboradora cumple las habilidades requeridas.
+      tags: [Postulaciones]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idProyecto, idPerfil]
+              properties:
+                idProyecto:
+                  $ref: "#/components/schemas/ObjectId"
+                idPerfil:
+                  $ref: "#/components/schemas/ObjectId"
+                mensaje:
+                  type: string
+                  example: Me interesa sumarme al proyecto
+      responses:
+        "201":
+          description: Postulación creada
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de una colaboradora o intenta postular a otra persona
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Proyecto, perfil o colaboradora inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Búsqueda cerrada, proyecto finalizado, faltan habilidades o ya hay una postulación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /postulaciones/{id}/estado:
+    patch:
+      summary: Acepta o rechaza una postulación
+      description: >
+        Requiere sesión con rol `colectivo`, del colectivo dueño del proyecto (titular o administrador adicional).
+      tags: [Postulaciones]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado:
+                  type: string
+                  enum: [Aceptada, Rechazada]
+      responses:
+        "200":
+          description: Postulación actualizada
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es del colectivo dueño del proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Postulación inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La postulación ya fue resuelta, el proyecto está finalizado o se alcanzó el límite del perfil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 
 components:
   parameters:

@@ -36,7 +36,7 @@ class ColectivoController {
 
     desactivarColectivo = async (req, res) => {
         const { id } = req.params;
-        const resultado = await this.colectivoService.desactivarColectivo(id);
+        const resultado = await this.colectivoService.desactivarColectivo(id, req.usuario);
         
         res.status(200).json(resultado);
     }

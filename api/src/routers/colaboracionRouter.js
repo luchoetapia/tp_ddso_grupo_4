@@ -28,7 +28,9 @@ router.route('/')
         validar(validarListado, 'query'),
         (req, res) => colaboracionController.obtenerColaboraciones(req, res)
     )
+    // Alta directa (sin postulación): solo admins
     .post(
+        autenticar(roles.ADMIN),
         validar(validarCreacionColaboracion, 'body'),
         auditar(AccionAuditada.COLABORACION_CREADA, colaboracionDeLaRespuesta()),
         (req, res) => colaboracionController.crearColaboracion(req, res)

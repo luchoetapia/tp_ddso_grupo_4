@@ -115,8 +115,14 @@ class ColectivoService {
         return await this.proyectoService.finalizar(idProyecto)
     }
 
-    desactivarColectivo = async (id) => {
+    // usuario: sesión que pide la baja. Solo la cuenta titular del colectivo o un admin de la plataforma.
+    // Sin usuario es una llamada interna y no se restringe.
+    desactivarColectivo = async (id, usuario = null) => {
         const colectivo = await this.obtenerPorId(id);
+
+        if (usuario && usuario.rol !== roles.ADMIN && !colectivo.esTitular(usuario.id)) {
+            throw new ForbiddenError("Solo la cuenta titular del colectivo puede darlo de baja");
+        }
 
         if (!colectivo.active) 
             throw new BadRequestError("El colectivo ya se encuentra desactivado");

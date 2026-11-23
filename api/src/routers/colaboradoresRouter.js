@@ -50,7 +50,9 @@ router.route('/:cuentaGit/contactos')
     )
 
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
+    // Anotación directa (sin postulación): solo admins
     .post(
+        autenticar(roles.ADMIN),
         validar(validarAnotacionAProyecto, 'params'),
         auditar(AccionAuditada.COLABORACION_CREADA, (req, body) => ({
             entidad: { tipo: TipoEntidadAuditada.COLABORACION, id: body.data.id },
@@ -61,7 +63,7 @@ router.route('/:cuentaGit/anotarProyecto/:idProyecto')
     )
 
 router.route('/llenarDatosPrueba')
-    .post((req, res) => colaboradorController.llenarDatosPrueba(req, res));
+    .post(autenticar(roles.ADMIN), (req, res) => colaboradorController.llenarDatosPrueba(req, res));
 
 router.route('/:cuentaGit/buscarPotencialesProyectos')
     .get(

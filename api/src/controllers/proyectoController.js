@@ -49,9 +49,9 @@ class ProyectoController {
 
     finalizarProyecto = async (req, res) => {
         const { id } = req.params;
-        const { idColectivo } = req.body;
 
-        const proyecto = await this.colectivoService.finalizarProyecto(idColectivo, id);
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
+        const proyecto = await this.proyectoService.finalizar(id);
 
         res.status(200).json({
             message: 'Proyecto finalizado exitosamente por el colectivo',
@@ -119,6 +119,7 @@ class ProyectoController {
     crearPerfil = async (req, res) => {
         const { id } = req.params;
 
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         const perfilCreado = await this.proyectoService.agregarPerfil(id, req.body);
         res.status(201).json({ message: 'Perfil creado exitosamente', data: PerfilPublic.desde(perfilCreado) });
     }
@@ -126,6 +127,7 @@ class ProyectoController {
     actualizarPerfil = async (req, res) => {
         const { id, idPerfil } = req.params;
 
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         const perfilActualizado = await this.proyectoService.modificarPerfil(id, idPerfil, req.body);
         res.status(200).json({ message: 'Perfil actualizado exitosamente', data: PerfilPublic.desde(perfilActualizado) });
     }
@@ -133,6 +135,7 @@ class ProyectoController {
     eliminarPerfil = async (req, res) => {
         const { id, idPerfil } = req.params;
 
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         await this.proyectoService.eliminarPerfil(id, idPerfil);
         res.status(200).json({ message: 'Perfil eliminado exitosamente' });
     }
@@ -149,6 +152,7 @@ class ProyectoController {
     contactarColaborador = async (req, res) => {
         const { id, idPerfil } = req.params;
         const { cuentaGit, mensaje } = req.body;
+        await this.proyectoService.obtenerEditablePorColectivo(id, req.usuario.id);
         const notificacion = await this.notificacionService.contactarColaborador(id, idPerfil, cuentaGit, mensaje);
         res.status(201).json({ message: 'Colaborador contactado exitosamente', data: NotificacionPublic.desde(notificacion) });
     }
