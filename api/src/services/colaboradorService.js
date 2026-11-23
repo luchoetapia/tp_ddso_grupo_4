@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
+const AuthRepository = require('../auth/authRepository.js');
 const colaboradorRepository = require('../repositories/colaboradorRepository.js');
+const colaboracionRepository = require('../repositories/colaboracionRepository.js');
 const colectivoRepository = require('../repositories/colectivoRepository.js');
 const postulacionRepository = require('../repositories/postulacionRepository.js');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../errors/AppError.js');
@@ -31,6 +33,8 @@ class ColaboradorService {
         this.colectivoRepository = colectivoRepository;
         this.postulacionRepository = postulacionRepository;
         this.notificacionAutomaticaService = notificacionAutomaticaService;
+        this.colaboracionRepository = colaboracionRepository;
+        this.authRepository = new AuthRepository();
     }
 
     obtenerTodos = async ({ pagina, limite, orden, direccion } = {}) => {
@@ -150,6 +154,21 @@ class ColaboradorService {
 
     buscarPorUsuario = async (idUsuario) => {
         return await this.colaboradorRepository.findByUsuario(idUsuario);
+    }
+
+    eliminarCuenta = async (idUsuario) => {
+        const colaborador = await this.colaboradorRepository.findByUsuario(idUsuario);
+        if (!colaborador) {
+            throw new NotFoundError('El usuario no tiene un perfil de colaborador');
+        }
+
+        // Se anonimizan las copias públicas antes de desactivar la cuenta
+        // Las habilidades, postulaciones, proyectos y colaboraciones históricas se conservan
+        await this.colaboradorRepository.anonymize(colaborador.id);
+        await this.colaboracionRepository.cerrarYAnonimizarPorColaborador(colaborador.id, new Date());
+        await this.authRepository.desactivarUsuario(idUsuario);
+
+        return true;
     }
 }
 

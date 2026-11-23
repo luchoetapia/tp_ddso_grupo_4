@@ -14,6 +14,20 @@ class ColaboradorPublic {
     }
 
     static desde(colaborador) {
+        if (colaborador.usuario?.activo === false) {
+            return new ColaboradorPublic(
+                colaborador.id,
+                null,
+                null,
+                'UsuarioEliminado',
+                'UsuarioEliminado',
+                colaborador.habilidades,
+                null,
+                null,
+                false
+            );
+        }
+
         return new ColaboradorPublic(
             colaborador.id,
             colaborador.nombre,

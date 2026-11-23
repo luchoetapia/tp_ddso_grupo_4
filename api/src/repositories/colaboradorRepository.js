@@ -7,7 +7,8 @@ class ColaboradorRepository {
         const [colaboradores, total] = await Promise.all([
             ColaboradorModel.find(filtros, datosNecesarios)
                 .paginar({ pagina, limite, orden })
-                .populate('habilidades'),
+                .populate('habilidades')
+                .populate('usuario', 'activo'),
             ColaboradorModel.countDocuments(filtros)
         ]);
 
@@ -15,29 +16,47 @@ class ColaboradorRepository {
     }
 
     async findAll() {
-        return await ColaboradorModel.find().populate('habilidades');
+        return await ColaboradorModel.find().populate('habilidades').populate('usuario', 'activo');
     }
 
     async findById(id) {
-        return await ColaboradorModel.findById(id).populate('habilidades');
+        return await ColaboradorModel.findById(id).populate('habilidades').populate('usuario', 'activo');
     }
 
     async findByCuentaGit(cuentaGit) {
-        return await ColaboradorModel.findOne({ cuentaGit }).populate('habilidades');
+        return await ColaboradorModel.findOne({ cuentaGit }).populate('habilidades').populate('usuario', 'activo');
     }
 
     async findByUsuario(usuario) {
-        return await ColaboradorModel.findOne({ usuario }).populate('habilidades');
+        return await ColaboradorModel.findOne({ usuario }).populate('habilidades').populate('usuario', 'activo');
     }
 
     async findByCondition(condition) {
-        return await ColaboradorModel.find(condition).populate('habilidades');
+        return await ColaboradorModel.find(condition).populate('habilidades').populate('usuario', 'activo');
     }
 
     async save(datos) {
         const colaborador = new ColaboradorModel(datos);
         await colaborador.save();
-        return await colaborador.populate('habilidades');
+        return await colaborador.populate(['habilidades', { path: 'usuario', select: 'activo' }]);
+    }
+
+    async anonymize(id) {
+        return ColaboradorModel.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    nombre: null,
+                    apellido: null,
+                    nombreFantasia: 'UsuarioEliminado',
+                    pronombres: null,
+                    presentacion: null,
+                    deseaSerContactado: false,
+                    contactos: [],
+                },
+            },
+            { new: true }
+        );
     }
 }
 

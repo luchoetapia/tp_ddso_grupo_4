@@ -118,6 +118,11 @@ class ColaboradorController {
     const colaborador = await this.colaboradorService.buscarPorUsuario(req.usuario.id)
     res.status(200).json(ColaboradorPublic.desde(colaborador))
     }
+
+    eliminarMiCuenta = async (req, res) => {
+        await this.colaboradorService.eliminarCuenta(req.usuario.id);
+        res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
+    }
 }
 
 module.exports = { ColaboradorController };
