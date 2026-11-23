@@ -166,6 +166,7 @@ class ColaboradorService {
         // Las habilidades, postulaciones, proyectos y colaboraciones históricas se conservan
         await this.colaboradorRepository.anonymize(colaborador.id);
         await this.colaboracionRepository.cerrarYAnonimizarPorColaborador(colaborador.id, new Date());
+        await this.postulacionRepository.rechazarPendientesDeColaborador(colaborador.id);
         await this.authRepository.desactivarUsuario(idUsuario);
 
         return true;
