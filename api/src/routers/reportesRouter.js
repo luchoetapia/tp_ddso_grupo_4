@@ -18,7 +18,7 @@ const { TipoEntidadReportada } = require('../models/Reporte.js')
 
 const reporteController = new ReporteController()
 
-// Datos para la auditoría: el reporte revisado y, si lo hay, el colectivo afectado
+// Datos para la auditoría
 const revisionDeReporte = (req, body) => ({
     entidad: { tipo: TipoEntidadAuditada.REPORTE, id: req.params.id },
     idColectivo: body.entidad.tipo === TipoEntidadReportada.COLECTIVO ? body.entidad.id : null,
@@ -28,7 +28,6 @@ const revisionDeReporte = (req, body) => ({
 })
 const router = express.Router()
 
-// Todos los endpoints son solo para admins
 router.use(autenticar(roles.ADMIN))
 
 router.route('/')

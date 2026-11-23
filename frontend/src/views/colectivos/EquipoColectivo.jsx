@@ -8,7 +8,6 @@ import alertas from "@/services/alertas";
 
 const NUEVO_VACIO = { username: "", email: "", password: "" };
 
-// Mismas reglas que el registro (el back las vuelve a validar)
 const validarNuevo = ({ username, email, password }) => {
     const errores = {};
     if (username.trim().length < 3) errores.username = "El nombre de usuario debe tener al menos 3 caracteres.";
@@ -69,7 +68,6 @@ export default function EquipoColectivo() {
             setNuevo(NUEVO_VACIO);
             alertas.exito(`Se creó la cuenta de ${data.username}. Ya puede ingresar y administrar la organización.`);
         } catch {
-            // apiQuery ya mostró la alerta con el motivo (p. ej. email en uso)
         } finally {
             setAgregando(false);
         }
@@ -85,7 +83,6 @@ export default function EquipoColectivo() {
             alertas.exito(`${aQuitar.username} ya no administra la organización.`);
             setAQuitar(null);
         } catch {
-            // apiQuery ya mostró la alerta
         } finally {
             setQuitando(false);
         }

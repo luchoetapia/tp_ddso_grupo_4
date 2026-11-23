@@ -48,7 +48,6 @@ const validarFiltrosPotencialesColaboradores = z.object({
     ...ordenamiento,
 });
 
-// Alta de un administrador adicional: se le crea una cuenta con las mismas reglas que el registro
 const validarCreacionAdministrador = validarRegistro.pick({ username: true, email: true, password: true }).strict();
 
 const validarIdAdministrador = z.object({

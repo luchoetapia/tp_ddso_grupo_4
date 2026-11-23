@@ -25,7 +25,7 @@ const { AccionAuditada, TipoEntidadAuditada } = require('../models/Auditoria.js'
 const proyectoController = new ProyectoController()
 const router = express.Router()
 
-// Datos para la auditoría: la entidad es siempre el proyecto (los perfiles y logros son parte de él)
+// Datos para la auditoría
 const proyecto = (id, detalle = null) => ({ entidad: { tipo: TipoEntidadAuditada.PROYECTO, id }, idProyecto: id, detalle })
 const proyectoDeLaRuta = (detalle = () => null) => (req, body) => proyecto(req.params.id, detalle(req, body))
 const camposModificados = (req) => `Campos modificados: ${Object.keys(req.body).join(', ')}`

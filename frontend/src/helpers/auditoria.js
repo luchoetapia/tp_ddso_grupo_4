@@ -36,5 +36,4 @@ const TEXTO_ROL = { colectivo: "Organización", colaborador: "Colaborador/a", ad
 
 export const textoAccion = (accion) => TEXTO_ACCION[accion] ?? accion;
 
-// "ana (Organización)"; sin autor, la acción la hizo el sistema o fue sin sesión
 export const textoAutor = (autor) => (autor ? `${autor.username} (${TEXTO_ROL[autor.rol] ?? autor.rol})` : "Sistema");

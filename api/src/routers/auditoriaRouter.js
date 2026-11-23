@@ -10,7 +10,6 @@ const { roles } = require('../auth/models/usuario.js')
 const auditoriaController = new AuditoriaController()
 const router = express.Router()
 
-// Historial completo: solo admins de la plataforma
 router.route('/')
     .get(
         autenticar(roles.ADMIN),

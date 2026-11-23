@@ -20,14 +20,10 @@ const paramsDe = (filtros, pagina) => ({
     ...Object.fromEntries(Object.entries(filtros).filter(([, valor]) => valor)),
 });
 
-// Historial de auditoría paginado y filtrable.
-// url: endpoint (/colectivos/me/auditoria o /auditoria).
-// global: además filtra por acción y por organización, y muestra la organización de cada registro.
 export default function HistorialAuditoria({ url, global = false }) {
     const [filtros, setFiltros] = useState(FILTROS_VACIOS);
     const [aplicados, setAplicados] = useState(FILTROS_VACIOS);
     const [pagina, setPagina] = useState(1);
-    // Última respuesta y la consulta a la que corresponde: si no coincide con la actual, está cargando
     const [respuesta, setRespuesta] = useState({ consulta: null, resultado: null, error: null });
     const [colectivos, setColectivos] = useState([]);
 
@@ -51,7 +47,6 @@ export default function HistorialAuditoria({ url, global = false }) {
         return () => controlador.abort();
     }, [url, consulta]);
 
-    // Organizaciones para el filtro y para mostrar el nombre en cada registro
     useEffect(() => {
         if (!global) return;
         const controlador = new AbortController();
@@ -62,9 +57,7 @@ export default function HistorialAuditoria({ url, global = false }) {
                 alertarError: false,
             })
             .then(({ data }) => setColectivos(data))
-            .catch(() => {
-                // Sin la lista se puede seguir usando el historial (solo falta ese filtro)
-            });
+            .catch(() => {});
         return () => controlador.abort();
     }, [global]);
 

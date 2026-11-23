@@ -26,7 +26,6 @@ class ColectivoRepository {
         return await ColectivoModel.findOne({ nombre });
     }
 
-    // Colectivo que administra el usuario, sea su titular o un administrador adicional
     async findByUsuario(usuario) {
         return await ColectivoModel.findOne(filtroAdministradoPor(usuario));
     }
@@ -35,7 +34,6 @@ class ColectivoRepository {
         return await ColectivoModel.findOne(filtroAdministradoPor(usuario)).populate('proyectos');
     }
 
-    // Titular + administradores adicionales con sus datos de cuenta
     async obtenerAdministradores(id) {
         return await ColectivoModel.findById(id, { usuario: 1, administradores: 1 })
             .populate('usuario', DATOS_ADMINISTRADOR)

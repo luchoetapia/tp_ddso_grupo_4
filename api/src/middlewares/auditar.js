@@ -21,11 +21,6 @@ const autorDe = (req) => {
 const loguearError = (accion, error) =>
     console.error(`\x1b[31m${new Date().toISOString()} | Auditoría de '${accion}' | ${error.name}: ${error.message}\n${error.stack}\x1b[0m`);
 
-// Registra en la auditoría la acción de la ruta, solo si la respuesta salió bien (status < 400).
-// accion: AccionAuditada, o (req, body) => AccionAuditada si depende del pedido.
-// describir: (req, body, res) => { entidad: { tipo, id }, idColectivo?, idProyecto?, detalle? }
-//   body es la respuesta JSON del controller; res.locals sirve para pasar datos que no van en la respuesta.
-// Se registra antes de enviar la respuesta; si falla, se loguea y la respuesta sale igual (la acción ya se hizo).
 const auditar = (accion, describir) => (req, res, next) => {
     const enviarJson = res.json.bind(res);
 

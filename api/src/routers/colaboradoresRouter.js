@@ -50,7 +50,6 @@ router.route('/:cuentaGit/contactos')
     )
 
 router.route('/:cuentaGit/anotarProyecto/:idProyecto')
-    // Anotación directa (sin postulación): solo admins
     .post(
         autenticar(roles.ADMIN),
         validar(validarAnotacionAProyecto, 'params'),

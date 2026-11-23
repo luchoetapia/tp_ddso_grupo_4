@@ -1,4 +1,3 @@
-// Cuenta que administra un colectivo (titular o adicional). No incluye datos sensibles de la cuenta.
 class AdministradorPublic {
     constructor(id, username, email, esTitular) {
         this.id = id

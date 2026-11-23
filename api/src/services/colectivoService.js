@@ -37,7 +37,6 @@ class ColectivoService {
         this.colaboradorService = colaboradorService;
     }
 
-    // Se crean recién al usarse (solo para gestionar administradores)
     get authService() { return this._authService ??= new AuthService() }
     set authService(servicio) { this._authService = servicio }
 

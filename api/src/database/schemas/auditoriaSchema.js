@@ -10,14 +10,12 @@ const entidadAuditadaSchema = new Schema({
     id: { type: Schema.Types.ObjectId, required: true }
 }, { _id: false });
 
-// El autor se guarda desnormalizado: el registro tiene que seguir mostrando quién fue aunque la cuenta se desactive
 const autorSchema = new Schema({
     id: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
     username: { type: String, required: true },
     rol: { type: String, enum: Object.values(roles), required: true }
 }, { _id: false });
 
-// Los registros de auditoría no se modifican ni se borran: solo se agregan
 const auditoriaSchema = new Schema({
     accion: { type: String, enum: Object.values(AccionAuditada), required: true },
     entidad: { type: entidadAuditadaSchema, required: true },
@@ -27,10 +25,9 @@ const auditoriaSchema = new Schema({
     fecha: { type: Date, default: Date.now, required: true }
 }, { versionKey: false });
 
-// Historial completo (admin) y de un colectivo, más recientes primero
 auditoriaSchema.index({ fecha: -1 });
 auditoriaSchema.index({ colectivo: 1, fecha: -1 });
-// Historial de una entidad puntual o de un autor
+
 auditoriaSchema.index({ 'entidad.id': 1, fecha: -1 });
 auditoriaSchema.index({ 'autor.id': 1, fecha: -1 });
 

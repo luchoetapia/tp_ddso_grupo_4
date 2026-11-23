@@ -17,7 +17,6 @@ router.route('/')
         validar(validarListado, 'query'),
         (req, res) => habilidadController.obtenerHabilidades(req, res)
     )
-    // Las habilidades las precarga el equipo administrativo
     .post(
         autenticar(roles.ADMIN),
         validar(validarCreacionHabilidad, 'body'),

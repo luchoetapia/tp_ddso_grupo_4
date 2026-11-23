@@ -29,7 +29,6 @@ const validarFiltrosAuditoriaColectivo = z.object({
     { message: "'desde' no puede ser posterior a 'hasta'", path: ['desde'] }
 );
 
-// Filtros del historial completo (admin): además se puede filtrar por colectivo
 const validarFiltrosAuditoria = validarFiltrosAuditoriaColectivo.safeExtend({
     idColectivo: objectId("Id de colectivo inválido").optional(),
 });

@@ -10,8 +10,6 @@ class AuditoriaService {
         this.colectivoRepository = colectivoRepository;
     }
 
-    // accion: AccionAuditada; entidad: { tipo, id }; autor: usuario de la sesión ({ id, username, rol }) o null.
-    // El colectivo afectado se toma de idColectivo o, si no viene, del colectivo dueño de idProyecto.
     registrar = async ({ accion, entidad, autor = null, idColectivo = null, idProyecto = null, detalle = null }) => {
         const colectivo = idColectivo ?? await this.colectivoDelProyecto(idProyecto);
 
@@ -31,12 +29,10 @@ class AuditoriaService {
         return colectivo?._id ?? colectivo?.id ?? null;
     }
 
-    // Historial completo de la plataforma (admin)
     listar = async ({ pagina = 1, limite = 10, ...filtros } = {}) => {
         return await this.auditoriaRepository.buscarConPaginacion(pagina, limite, construirFiltros(filtros));
     }
 
-    // Historial del colectivo que administra el usuario de la sesión
     listarDelColectivo = async (idUsuario, { pagina = 1, limite = 10, ...filtros } = {}) => {
         const colectivo = await this.colectivoRepository.findByUsuario(idUsuario);
         if (!colectivo) throw new NotFoundError("El usuario no tiene un colectivo asociado");
