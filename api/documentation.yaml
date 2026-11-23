@@ -3453,9 +3453,33 @@ components:
         id:
           $ref: "#/components/schemas/ObjectId"
         colaborador:
-          $ref: "#/components/schemas/ObjectId"
+          type: object
+          nullable: true
+          description: Quién colabora (null si la colaboración es anónima)
+          properties:
+            nombre:
+              type: string
+              nullable: true
+            apellido:
+              type: string
+              nullable: true
+            nombreFantasia:
+              type: string
+              nullable: true
+            cuentaGit:
+              type: string
+              nullable: true
         proyecto:
-          $ref: "#/components/schemas/ObjectId"
+          type: object
+          properties:
+            id:
+              $ref: "#/components/schemas/ObjectId"
+            titulo:
+              type: string
+        idPerfil:
+          allOf:
+            - $ref: "#/components/schemas/ObjectId"
+          description: Perfil del proyecto que ocupa la colaboración
         inicio:
           type: string
           format: date-time
@@ -3463,6 +3487,9 @@ components:
           type: string
           format: date-time
           nullable: true
+        activa:
+          type: boolean
+          description: true mientras no tenga fecha de fin (no se dio de baja)
         esAnonima:
           type: boolean
           default: false

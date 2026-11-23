@@ -66,6 +66,8 @@ class ColaboracionService {
             id: colaborador.id,
             nombre: colaborador.nombre,
             apellido: colaborador.apellido,
+            nombreFantasia: colaborador.nombreFantasia,
+            cuentaGit: colaborador.cuentaGit,
             usuario: colaborador.usuario
         };
 

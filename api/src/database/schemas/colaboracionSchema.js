@@ -9,6 +9,8 @@ const colaboracionSchema = new Schema({
         id: { type: Schema.Types.ObjectId, required: true},
         nombre: { type: String },
         apellido: { type: String },
+        nombreFantasia: { type: String },
+        cuentaGit: { type: String },
         usuario: { type: Schema.Types.ObjectId, ref: 'Usuario' },
     },
     proyecto: { 
