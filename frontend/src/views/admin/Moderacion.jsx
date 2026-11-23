@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button, Card, Modal, Paginacion, Select, Skeleton, Tag, Textarea } from "@/components/common";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
-import { formatearFechaHora } from "@/helpers/formatos";
+import { formatearFecha, formatearFechaHora } from "@/helpers/formatos";
 import { ESTADO, ESTADOS_REPORTE, EVENTO_MODERACION_ACTUALIZADA, TEXTO_REGLA, TIPO, TIPOS_REPORTADOS } from "@/helpers/moderacion";
 
 const LIMITE = 10;
@@ -16,10 +16,10 @@ const ACCIONES = {
     notificar: {
         titulo: "¿Pedir que corrijan el contenido?",
         explicacion:
-            "El reporte queda pendiente y marcado como notificado. Si el dueño edita el contenido y ya no incumple las reglas, el reporte se da por solucionado solo.",
-        boton: "Pedir corrección",
+            "Al dueño le llega un email y ve un aviso al entrar a la plataforma con lo que tiene que corregir. El reporte queda pendiente: si edita el contenido y ya no incumple las reglas, se da por solucionado solo.",
+        boton: "Avisar al dueño",
         variante: "primary",
-        exito: "Se marcó el reporte como notificado al dueño.",
+        exito: "Se le avisó al dueño para que corrija el contenido.",
         conComentario: false,
     },
     validar: {
@@ -93,7 +93,12 @@ function TarjetaReporte({ reporte, onAccion }) {
                     {reporte.reglas.map((regla) => (
                         <Tag key={regla} variant="error">{TEXTO_REGLA[regla] ?? regla}</Tag>
                     ))}
-                    {pendiente && reporte.notificado && <Tag variant="accent">Corrección pedida</Tag>}
+                    {pendiente && reporte.notificado && (
+                        <Tag variant="accent">Corrección pedida el {formatearFecha(reporte.fechaNotificacion)}</Tag>
+                    )}
+                    {pendiente && reporte.fechaUltimoCambio && (
+                        <Tag variant="highlight">Editado por el dueño el {formatearFechaHora(reporte.fechaUltimoCambio)}, sigue incumpliendo</Tag>
+                    )}
                 </div>
                 <Tag variant={ESTADO[reporte.estado]?.variante ?? "neutral"}>{reporte.estado}</Tag>
             </div>
@@ -109,6 +114,12 @@ function TarjetaReporte({ reporte, onAccion }) {
                     </Link>
                 )}
             </div>
+
+            {reporte.estado === "Solucionado" && (
+                <p className="m-0 text-sm text-muted">
+                    El dueño lo corrigió el {formatearFechaHora(reporte.fechaSolucion)} y ya cumple las reglas: se cerró solo.
+                </p>
+            )}
 
             {!pendiente && reporte.revisadoPor && (
                 <p className="m-0 text-sm text-muted">
@@ -130,7 +141,9 @@ function TarjetaReporte({ reporte, onAccion }) {
             {pendiente && (
                 <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
                     <Button onClick={() => onAccion(reporte, "rechazar")}>Desestimar</Button>
-                    {!reporte.notificado && <Button onClick={() => onAccion(reporte, "notificar")}>Pedir corrección</Button>}
+                    <Button onClick={() => onAccion(reporte, "notificar")}>
+                        {reporte.notificado ? "Reenviar aviso" : "Pedir corrección"}
+                    </Button>
                     <Button variant="danger" onClick={() => onAccion(reporte, "validar")}>
                         Dar de baja
                     </Button>

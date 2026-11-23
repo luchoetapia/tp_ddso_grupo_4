@@ -77,6 +77,12 @@ router.route('/:cuentaGit/buscarPotencialesProyectos')
         (req, res) => colaboradorController.buscarPotencialesProyectos(req, res)
     )
 
+router.route('/me/avisosModeracion')
+    .get(
+        autenticar(roles.COLABORADOR),
+        (req, res) => colaboradorController.obtenerMisAvisosModeracion(req, res)
+    )
+
 router.route('/me/notificaciones')
     .get(
         autenticar(roles.COLABORADOR),

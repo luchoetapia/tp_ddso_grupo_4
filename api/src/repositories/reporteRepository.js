@@ -49,12 +49,22 @@ class ReporteRepository {
         return Boolean(await ReporteModel.exists({ 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE }));
     }
 
-    async marcarNotificado(id) {
+    // duenio: se guarda si el reporte no lo tenía (reportes viejos de colaboradoras o postulaciones)
+    async marcarNotificado(id, duenio = undefined) {
+        const cambios = { notificado: true, fechaNotificacion: new Date() };
+        if (duenio) cambios.duenio = duenio;
+
         return await ReporteModel.findOneAndUpdate(
             { _id: id, estado: EstadoReporte.PENDIENTE },
-            { notificado: true, fechaNotificacion: new Date() },
+            cambios,
             { new: true }
         ).populate(REFERENCIAS);
+    }
+
+    // Avisos de moderación de un usuario: reportes de su contenido en los que se le pidió una corrección
+    async buscarNotificadosPendientesDe(duenio) {
+        return await ReporteModel.find({ duenio, estado: EstadoReporte.PENDIENTE, notificado: true })
+            .sort({ fechaNotificacion: -1 });
     }
 
     // Solo pasan a solucionado los pendientes que ya fueron notificados
@@ -64,6 +74,29 @@ class ReporteRepository {
             { estado: EstadoReporte.SOLUCIONADO, fechaSolucion: new Date() }
         );
         return modifiedCount;
+    }
+
+    // El dueño editó la entidad y ya cumple las reglas: se cierran todos sus reportes pendientes
+    // (se le haya pedido la corrección o no). Devuelve los reportes que se cerraron.
+    async solucionarPendientes(idEntidad) {
+        const pendientes = await ReporteModel.find({ 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE }, { _id: 1 });
+        if (pendientes.length === 0) return [];
+
+        const ids = pendientes.map(({ _id }) => _id);
+        await ReporteModel.updateMany(
+            { _id: { $in: ids }, estado: EstadoReporte.PENDIENTE },
+            { estado: EstadoReporte.SOLUCIONADO, fechaSolucion: new Date() }
+        );
+        return await ReporteModel.find({ _id: { $in: ids }, estado: EstadoReporte.SOLUCIONADO }).populate(REFERENCIAS);
+    }
+
+    // El dueño editó la entidad pero sigue incumpliendo: se actualiza el motivo del reporte pendiente
+    async actualizarPendiente(idEntidad, motivo, reglas) {
+        return await ReporteModel.findOneAndUpdate(
+            { 'entidad.id': idEntidad, estado: EstadoReporte.PENDIENTE },
+            { motivo, reglas, fechaUltimoCambio: new Date() },
+            { new: true }
+        ).populate(REFERENCIAS);
     }
 
     // No limpia las referencias a la entidad en otros documentos (decisión aceptada)

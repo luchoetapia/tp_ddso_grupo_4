@@ -24,6 +24,7 @@ class Reporte {
         this.notificado = false;
         this.fechaNotificacion = null;
         this.fechaSolucion = null;
+        this.fechaUltimoCambio = null;
         this.revisadoPor = null;
         this.fechaRevision = null;
         this.comentarioRevision = null;

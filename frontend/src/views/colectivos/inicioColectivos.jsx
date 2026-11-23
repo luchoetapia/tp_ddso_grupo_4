@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
 import { Button, Card, ProgressBar, Skeleton, Tag } from '@/components/common'
+import AvisosModeracion from '@/components/moderacion/AvisosModeracion'
 
 const TIPOS = {
     fundacion: 'Fundación',
@@ -145,6 +146,8 @@ export default function InicioColectivos() {
 
     return (
         <>
+            <AvisosModeracion url="/colectivos/me/avisosModeracion" />
+
             {/* Card de inicio: datos de la organización + estadísticas */}
             <Card as="section" aria-labelledby="colectivo-titulo" className="gap-3.5 p-6">
                 <div className="flex flex-wrap items-center gap-2">

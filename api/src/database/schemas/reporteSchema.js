@@ -22,6 +22,8 @@ const reporteSchema = new Schema({
     notificado: { type: Boolean, default: false },
     fechaNotificacion: { type: Date, default: null },
     fechaSolucion: { type: Date, default: null },
+    // Última vez que el dueño editó la entidad mientras el reporte seguía pendiente
+    fechaUltimoCambio: { type: Date, default: null },
     revisadoPor: { type: Schema.Types.ObjectId, ref: 'Usuario', default: null },
     fechaRevision: { type: Date, default: null },
     comentarioRevision: { type: String, default: null }

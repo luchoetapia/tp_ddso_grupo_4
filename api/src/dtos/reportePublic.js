@@ -16,6 +16,7 @@ class ReportePublic {
         this.notificado = reporte.notificado
         this.fechaNotificacion = reporte.fechaNotificacion
         this.fechaSolucion = reporte.fechaSolucion
+        this.fechaUltimoCambio = reporte.fechaUltimoCambio ?? null
         this.revisadoPor = usuarioResumen(reporte.revisadoPor)
         this.fechaRevision = reporte.fechaRevision
         this.comentarioRevision = reporte.comentarioRevision
@@ -32,4 +33,20 @@ class ReportePublic {
     }
 }
 
-module.exports = { ReportePublic }
+// Lo que ve el dueño del contenido cuando moderación le pide corregirlo (sin datos internos de la revisión)
+class AvisoModeracion {
+    constructor({ reporte, nombreEntidad }) {
+        this.id = reporte.id
+        this.entidad = { tipo: reporte.entidad.tipo, id: reporte.entidad.id?.toString() }
+        this.nombreEntidad = nombreEntidad
+        this.motivo = reporte.motivo
+        this.reglas = reporte.reglas ?? []
+        this.fechaNotificacion = reporte.fechaNotificacion
+    }
+
+    static desde(aviso) {
+        return new AvisoModeracion(aviso)
+    }
+}
+
+module.exports = { ReportePublic, AvisoModeracion }

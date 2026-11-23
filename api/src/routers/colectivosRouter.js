@@ -88,6 +88,12 @@ router.route('/me/auditoria')
         (req, res) => auditoriaController.obtenerAuditoriaDeMiColectivo(req, res)
     );
 
+router.route('/me/avisosModeracion')
+    .get(
+        autenticar(roles.COLECTIVO),
+        (req, res) => colectivoController.obtenerMisAvisosModeracion(req, res)
+    );
+
 router.route('/me/estadisticas')
     .get(
         autenticar(roles.COLECTIVO),

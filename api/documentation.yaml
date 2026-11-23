@@ -1290,6 +1290,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colectivos/me/avisosModeracion:
+    get:
+      summary: Avisos de moderación de la organización de la sesión
+      description: >
+        Requiere sesión con rol `colectivo`. Reportes pendientes sobre su contenido en los que un admin
+        pidió una corrección ("Pedir corrección"). Al editar el contenido y cumplir las reglas, el aviso desaparece.
+      tags: [Colectivos]
+      responses:
+        "200":
+          description: Avisos (más recientes primero)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvisoModeracion"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos/me/potencialesColaboradores:
     get:
       summary: Busca potenciales colaboradoras para los proyectos del colectivo de la sesión (paginado)
@@ -1788,6 +1817,35 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           description: Sin perfil de colaboradora o alguna habilidad no existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /colaboradores/me/avisosModeracion:
+    get:
+      summary: Avisos de moderación de la colaboradora de la sesión
+      description: >
+        Requiere sesión con rol `colaborador`. Reportes pendientes sobre su contenido en los que un admin
+        pidió una corrección ("Pedir corrección"). Al editar el contenido y cumplir las reglas, el aviso desaparece.
+      tags: [Colaboradores]
+      responses:
+        "200":
+          description: Avisos (más recientes primero)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvisoModeracion"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de una colaboradora
           content:
             application/json:
               schema:
@@ -2352,10 +2410,12 @@ paths:
 
   /reportes/{id}/notificar:
     patch:
-      summary: Notifica al usuario para que edite el contenido
+      summary: Pide al dueño que corrija el contenido reportado
       description: >
-        Requiere sesión con rol `admin` (cookie `accessToken`). El reporte sigue pendiente y queda marcado como notificado. Si el usuario
-        edita la entidad y el contenido queda limpio, el reporte pasa a Solucionado.
+        Requiere sesión con rol `admin`. El reporte sigue pendiente y queda marcado como notificado.
+        Al dueño le llega un email y lo ve como aviso en la app (GET /colectivos/me/avisosModeracion o
+        /colaboradores/me/avisosModeracion). Si edita el contenido y ya no incumple las reglas, el reporte
+        pasa a Solucionado solo. Volver a notificar actualiza la fecha y reenvía el aviso.
       tags: [Reportes]
       parameters:
         - $ref: "#/components/parameters/IdPath"
@@ -2800,6 +2860,31 @@ components:
       type: string
       enum: [Pendiente, Rechazado, Validado, Solucionado]
 
+    AvisoModeracion:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        entidad:
+          type: object
+          properties:
+            tipo:
+              $ref: "#/components/schemas/TipoEntidadReportada"
+            id:
+              $ref: "#/components/schemas/ObjectId"
+        nombreEntidad:
+          type: string
+          nullable: true
+          example: Huerta comunitaria
+        motivo:
+          type: string
+        reglas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReglaModeracion"
+        fechaNotificacion:
+          type: string
+          format: date-time
     ReglaModeracion:
       type: string
       enum: [palabras_prohibidas, fin_de_lucro, codigo_cerrado]
@@ -2864,6 +2949,11 @@ components:
           type: string
           format: date-time
           nullable: true
+        fechaUltimoCambio:
+          type: string
+          format: date-time
+          nullable: true
+          description: Última vez que el dueño editó la entidad mientras el reporte seguía pendiente
         revisadoPor:
           type: object
           nullable: true
