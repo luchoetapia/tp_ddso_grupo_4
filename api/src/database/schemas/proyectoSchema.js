@@ -44,7 +44,10 @@ const proyectoSchema = new Schema({
     enlaceSistema: { type: String, default: null },
     enlaceCodigoFuente: { type: String, default: null },
     logros: {type: [logroSchema], default: []},
-    estrategiaAceptacion: { type: String, default: 'RevisionManual' }
+    estrategiaAceptacion: { type: String, default: 'RevisionManual' },
+    requiereRevisionManual: { type: Boolean, default: false },
+    revisionManualMotivo: { type: String, default: null },
+    revisionManualFecha: { type: Date, default: null },
 }, {timestamps: true, versionKey: false});
 
 
