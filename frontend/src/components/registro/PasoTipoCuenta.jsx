@@ -16,6 +16,8 @@ const tipos = [
     },
 ];
 
+const EMAIL_VALIDO = /^\S+@\S+\.\S+$/;
+
 // Checkbox de términos y condiciones (también lo usa el registro con LinkedIn, que saltea este paso)
 export const CheckboxTerminos = ({ acepta, onChange }) => (
     <Checkbox
@@ -28,6 +30,8 @@ export const CheckboxTerminos = ({ acepta, onChange }) => (
 );
 
 const PasoTipoCuenta = ({ usuario, onChange }) => {
+    const email = usuario.email ?? '';
+    const emailInvalido = email.length > 0 && !EMAIL_VALIDO.test(email);
     return (
         <div className="flex flex-col gap-[18px]">
             <h2 className="m-0 text-[24px]">¿Cómo querés participar?</h2>
@@ -76,9 +80,10 @@ const PasoTipoCuenta = ({ usuario, onChange }) => {
                     label="Email"
                     type="email"
                     name="email"
-                    value={usuario.email ?? ''}
+                    value={email}
                     onChange={(e) => onChange('email', e.target.value)}
                     autoComplete="email"
+                    error={emailInvalido ? 'Ingresá un email válido, por ejemplo nombre@dominio.com.' : undefined}
                     required
                 />
             </div>
