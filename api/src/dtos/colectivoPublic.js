@@ -13,7 +13,8 @@ class ColectivoPublic {
                 descripcion: proyecto.descripcion,
                 finalizado: proyecto.finalizado,
                 porcentajeFinalizado: proyecto.porcentajeFinalizado,
-                perfilesAbiertos: (proyecto.perfiles ?? []).filter(perfil => perfil.busquedaAbierta).length
+                perfilesAbiertos: (proyecto.perfiles ?? []).filter(perfil => perfil.busquedaAbierta).length,
+                requiereRevisionManual: proyecto.requiereRevisionManual ?? false
             }
         });
     }

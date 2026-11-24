@@ -10,4 +10,8 @@ const validarPublicacionLinkedin = z.object({
         .max(MAX_CARACTERES_POST, `El texto puede tener hasta ${MAX_CARACTERES_POST} caracteres`),
 }).strict();
 
-module.exports = { validarPublicacionLinkedin };
+const validarPublicacionLogroLinkedin = validarPublicacionLinkedin.extend({
+    logroId: objectId('Id de logro inválido'),
+});
+
+module.exports = { validarPublicacionLinkedin, validarPublicacionLogroLinkedin };

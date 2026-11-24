@@ -32,4 +32,6 @@ jobs:
         env:
           MONGO_URI: mongodb://localhost:27017
           MONGO_DB_NAME: test
+          # Los tests de integración usan este Mongo real (sin esta variable levantan uno en memoria)
+          MONGO_URI_TEST: mongodb://localhost:27017
         run: npm test

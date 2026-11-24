@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import apiQuery from '@/services/api/apiQuery'
 import alertas from '@/services/alertas'
 import { Button, Card, Modal, Skeleton, Tag } from '@/components/common'
+import PildoraSinActualizaciones from '@/components/proyectos/PildoraSinActualizaciones'
 
 const estiloLink = 'inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-card px-[18px] py-2 font-semibold text-text';
 const estiloLinkPrimario = 'inline-flex min-h-10 items-center justify-center rounded-full border border-accent bg-accent px-[18px] py-2 font-semibold text-on-accent';
@@ -127,9 +128,12 @@ export default function MisProyectos() {
                         <Card as="li" key={proyecto.id}>
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h2 className="m-0 font-sans text-[18px]">{proyecto.titulo}</h2>
-                                {proyecto.finalizado
-                                    ? <Tag variant="neutral">Cerrada</Tag>
-                                    : <Tag>Abierta</Tag>}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <PildoraSinActualizaciones proyecto={proyecto} />
+                                    {proyecto.finalizado
+                                        ? <Tag variant="neutral">Cerrada</Tag>
+                                        : <Tag>Abierta</Tag>}
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <Link href={`/colectivo/misProyectos/postulaciones?id=${proyecto.id}`} className={estiloLink}>

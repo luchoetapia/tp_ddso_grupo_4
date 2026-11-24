@@ -6,6 +6,7 @@ const colaboradorService = require('../services/colaboradorService');
 const { validarCallbackLinkedin, validarVincularLinkedin } = require('./authValidator');
 const { UsuarioPublic } = require('../dtos/usuarioPublic');
 const { AppError, UnauthorizedError, BadGatewayError } = require('../errors/AppError');
+const { roles } = require('./models/usuario');
 
 // httpOnly: el JS del front no puede leerlas (protege contra XSS)
 const opcionesBaseCookie = () => ({
@@ -44,6 +45,7 @@ const RUTA_INICIO_COLABORADOR = '/colaboradoras/inicio';
 const RUTA_COMPLETAR_PERFIL = '/registro';
 const RUTA_INGRESAR = '/ingresar';
 const RUTA_DATOS_PERSONALES = '/colaboradoras/datos-personales';
+const RUTA_INICIO_COLECTIVO = '/colectivo/inicio';
 
 // Los params se agregan a los que ya tenga la ruta (ej: /proyectos/ver?id=...).
 // La ruta siempre es relativa al front (validada con rutaInterna): no se puede redirigir a otro sitio.
@@ -204,6 +206,9 @@ class AuthController {
             const usuario = await this.service.ingresarConLinkedin(datos, token);
 
             this.enviarSesion(res, usuario);
+
+            // Solo entra un colectivo que ya había vinculado su LinkedIn (ver authService._ingresarConLinkedin)
+            if (usuario.rol === roles.COLECTIVO) return res.redirect(urlDelFront(RUTA_INICIO_COLECTIVO));
 
             const perfil = await colaboradorService.buscarPorUsuario(usuario.id);
             res.redirect(perfil

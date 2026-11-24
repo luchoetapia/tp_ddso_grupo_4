@@ -44,8 +44,15 @@ tags:
     description: Trazabilidad de acciones sobre colectivos, proyectos y colaboraciones
   - name: Postulaciones
     description: Postulaciones de colaboradoras a perfiles de proyectos
+  - name: Home
+    description: Datos públicos de la pantalla de inicio (estadísticas con Aggregation Framework y destacados)
+  - name: Notificaciones
+    description: Mensajes internos del usuario de la sesión
   - name: Auth
-    description: Sesión e ingreso con LinkedIn
+    description: >
+      Registro, login y sesión. El login y el registro dejan las cookies httpOnly `accessToken` (15 min)
+      y `refreshToken` (7 días). Para probar desde Swagger: ejecutar `/auth/login` (el navegador guarda
+      las cookies) o pegar el access token en Authorize (`bearerAuth`).
   - name: LinkedIn
     description: Publicaciones en LinkedIn de colaboradores
 
@@ -68,6 +75,262 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
+
+  /home/contadores:
+    get:
+      summary: Estadísticas globales de la plataforma
+      description: Calculadas con el Aggregation Framework de MongoDB sobre proyectos, colectivos y colaboraciones.
+      tags: [Home]
+      responses:
+        "200":
+          description: Contadores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContadoresHome"
+
+  /home/rankingHabilidades:
+    get:
+      summary: Top 5 de habilidades más pedidas en proyectos activos
+      description: Cuenta en cuántos proyectos activos aparece cada habilidad (requerida u opcional, en cualquier perfil).
+      tags: [Home]
+      responses:
+        "200":
+          description: Ranking, de la más pedida a la menos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/ObjectId"
+                    titulo:
+                      type: string
+                      example: React
+                    proyectos:
+                      type: integer
+                      example: 4
+
+  /home/destacados:
+    get:
+      summary: Proyectos destacados del inicio
+      description: >
+        Entre los proyectos activos creados en los últimos días: el más reciente, el de mayor progreso y el
+        que tiene más perfiles. Un proyecto que gana más de una categoría aparece una sola vez. Al pasar
+        la ventana de días el proyecto deja de estar destacado (rotación automática).
+      tags: [Home]
+      responses:
+        "200":
+          description: Hasta 3 proyectos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proyecto"
+
+  /auth/registro:
+    post:
+      summary: Registra un usuario colaborador o colectivo e inicia la sesión
+      description: >
+        Crea solo la cuenta de acceso; después hay que crear el perfil con `POST /colaboradores` o
+        `POST /colectivos`. Por esta ruta no se pueden crear admins. Deja las cookies de sesión.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [username, password, email, rol]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  example: ana-dev
+                password:
+                  type: string
+                  minLength: 8
+                  example: clave-segura-123
+                email:
+                  type: string
+                  format: email
+                  example: ana@mail.com
+                rol:
+                  type: string
+                  enum: [colaborador, colectivo]
+      responses:
+        "201":
+          description: Usuario creado. Setea las cookies `accessToken` y `refreshToken`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaUsuario"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "409":
+          description: El username o el email ya están en uso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/login:
+    post:
+      summary: Inicia sesión con username o email
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [accessKey, password]
+              properties:
+                accessKey:
+                  type: string
+                  description: Username o email
+                  example: ana-dev
+                password:
+                  type: string
+                  example: clave-segura-123
+      responses:
+        "200":
+          description: Sesión iniciada. Setea las cookies `accessToken` y `refreshToken`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaUsuario"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario está desactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/validar:
+    get:
+      summary: Verifica si un username y un email están disponibles
+      description: Lo usa el formulario de registro antes de enviar los datos.
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+            minLength: 3
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        "200":
+          description: Ambos disponibles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disponible:
+                    type: boolean
+                    example: true
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "409":
+          description: El username o el email ya están en uso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/refresh:
+    post:
+      summary: Renueva la sesión usando la cookie refreshToken
+      description: >
+        Vuelve a leer el usuario de la base, así se respetan desactivaciones y cambios de rol.
+        Si no se puede renovar, borra las cookies.
+      tags: [Auth]
+      security:
+        - refreshCookie: []
+      responses:
+        "200":
+          description: Cookies renovadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaUsuario"
+        "401":
+          description: Falta el refresh token, es inválido o venció
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario está desactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/logout:
+    post:
+      summary: Cierra la sesión (borra las cookies)
+      description: Idempotente, funciona aunque no haya sesión.
+      tags: [Auth]
+      responses:
+        "200":
+          description: Sesión cerrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Sesión cerrada
+
+  /auth/me:
+    get:
+      summary: Usuario de la sesión actual
+      description: El front no puede leer las cookies httpOnly, así que consulta acá quién está logueado.
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuario de la sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaUsuario"
+        "401":
+          description: No hay sesión o el token venció
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: El usuario está desactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /auth/linkedin:
     get:
@@ -202,6 +465,72 @@ paths:
           description: No hay sesión
         "403":
           description: No colabora en el proyecto, o no tiene LinkedIn conectado (`LINKEDIN_NO_VINCULADO`)
+        "502":
+          description: LinkedIn no respondió o rechazó la publicación
+
+  /linkedin/publicaciones/logros:
+    post:
+      summary: El colectivo publica en su LinkedIn un logro de uno de sus proyectos
+      description: >
+        Requiere sesión con rol `colectivo` (titular o administrador). El proyecto tiene que ser del colectivo
+        y el logro de ese proyecto. Igual que la publicación de colaboradores: si no tiene LinkedIn conectado
+        responde 403 con `details: [{ codigo: LINKEDIN_NO_VINCULADO }]`.
+      tags: [LinkedIn]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [proyectoId, logroId, texto]
+              properties:
+                proyectoId:
+                  $ref: "#/components/schemas/ObjectId"
+                logroId:
+                  $ref: "#/components/schemas/ObjectId"
+                texto:
+                  type: string
+                  maxLength: 3000
+                  example: ¡Lanzamos la primera versión del sistema de turnos!
+      responses:
+        "201":
+          description: Publicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      idPublicacion:
+                        type: string
+                        example: "urn:li:share:7000000000000000000"
+                      url:
+                        type: string
+                        nullable: true
+                      proyectoId:
+                        type: string
+                      logroId:
+                        type: string
+                      logroTitulo:
+                        type: string
+                      colectivoId:
+                        type: string
+        "400":
+          description: Datos inválidos o el texto tiene palabras baneadas
+        "401":
+          description: No hay sesión
+        "403":
+          description: El proyecto no es del colectivo, o no tiene LinkedIn conectado (`LINKEDIN_NO_VINCULADO`)
+        "404":
+          description: Proyecto o logro inexistente
         "502":
           description: LinkedIn no respondió o rechazó la publicación
 
@@ -1472,6 +1801,51 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /colectivos/me/estadisticas:
+    get:
+      summary: Estadísticas del colectivo de la sesión
+      description: Requiere sesión con rol `colectivo` (cookie `accessToken`).
+      tags: [Colectivos]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Contadores del colectivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proyectosActivos:
+                    type: integer
+                  proyectosTotales:
+                    type: integer
+                  colaboracionesActivas:
+                    type: integer
+                  colaboracionesTotales:
+                    type: integer
+                  postulacionesPendientes:
+                    type: integer
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de un colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no tiene un colectivo asociado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colectivos/me/potencialesColaboradores:
     get:
       summary: Busca potenciales colaboradoras para los proyectos del colectivo de la sesión (paginado)
@@ -1978,6 +2352,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+    delete:
+      summary: Elimina la cuenta de la colaboradora de la sesión
+      description: >
+        Requiere sesión con rol `colaborador`. Anonimiza sus datos públicos (también en las colaboraciones
+        históricas, que se cierran), rechaza sus postulaciones pendientes y desactiva el usuario. Se
+        conservan proyectos, colaboraciones y postulaciones para el histórico.
+      tags: [Colaboradores]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cuenta eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Cuenta eliminada exitosamente
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La sesión no es de una colaboradora
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: El usuario no tiene perfil de colaboradora
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /colaboradores/me/avisosModeracion:
     get:
       summary: Avisos de moderación de la colaboradora de la sesión
@@ -2198,13 +2612,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /colaboradores/{cuentaGit}/notificaciones:
+  /notificaciones/me:
     get:
-      summary: Lista los mensajes internos recibidos por una colaboradora
-      description: Devuelve las notificaciones de la colaboradora, de la más reciente a la más antigua.
-      tags: [Colaboradores]
-      parameters:
-        - $ref: "#/components/parameters/CuentaGitPath"
+      summary: Mensajes internos del usuario de la sesión
+      description: >
+        Para cualquier rol. Si la sesión es de un administrador adicional de un colectivo, también
+        incluye los mensajes dirigidos a la cuenta titular. De la más reciente a la más antigua.
+      tags: [Notificaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Lista de notificaciones (puede ser vacía)
@@ -2214,8 +2631,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Notificacion"
-        "404":
-          description: Colaboradora no encontrada
+        "401":
+          description: Sin sesión
           content:
             application/json:
               schema:
@@ -2308,6 +2725,89 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /colaboraciones/proyecto/{id}:
+    get:
+      summary: Colaboraciones de un proyecto (activas y finalizadas)
+      tags: [Colaboraciones]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Lista de colaboraciones (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colaboracion"
+
+  /colaboraciones/colaborador/{id}:
+    get:
+      summary: Colaboraciones de una colaboradora (activas y finalizadas)
+      tags: [Colaboraciones]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Lista de colaboraciones (puede ser vacía)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Colaboracion"
+
+  /colaboraciones/{id}/desanotar:
+    post:
+      summary: Da de baja (desanota) una colaboración
+      description: >
+        Requiere sesión con rol `colaborador` (solo la propia colaboración) o `colectivo` (solo colaboraciones
+        de sus proyectos). La baja es permanente: se registra la fecha de fin y queda en la auditoría.
+      tags: [Colaboraciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Colaboración dada de baja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/Colaboracion"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "401":
+          description: Sin sesión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: La colaboración no es de la sesión ni de un proyecto de su colectivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Colaboración inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: La colaboración ya había sido dada de baja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /palabrasBaneadas:
     get:
       summary: Obtiene las palabras baneadas (paginado)
@@ -2748,6 +3248,49 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /postulaciones:
+    get:
+      summary: Lista postulaciones con filtros
+      tags: [Postulaciones]
+      parameters:
+        - in: query
+          name: idProyecto
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+        - in: query
+          name: idPerfil
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+        - in: query
+          name: idColaborador
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+        - in: query
+          name: idColectivo
+          description: Postulaciones a cualquier proyecto del colectivo
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [Pendiente, Aceptada, Rechazada]
+      responses:
+        "200":
+          description: Lista de postulaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Postulacion"
+        "400":
+          $ref: "#/components/responses/DatosInvalidos"
+        "404":
+          description: Colectivo inexistente (filtro idColectivo)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
       summary: La colaboradora de la sesión se postula a un perfil de un proyecto
       description: >
@@ -2755,6 +3298,9 @@ paths:
         colaboradora de la sesión: si se envía `idColaborador` o `cuentaGit` de otra persona, falla con 403.
         Solo se puede si la búsqueda del perfil está abierta y la colaboradora cumple las habilidades requeridas.
       tags: [Postulaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -2772,7 +3318,14 @@ paths:
                   example: Me interesa sumarme al proyecto
       responses:
         "201":
-          description: Postulación creada
+          description: >
+            Postulación creada. Según la estrategia de aceptación del proyecto puede quedar `Pendiente`
+            (RevisionManual), aceptarse automáticamente (TodoSuma, o HastaLlenarVacantes al completar el cupo)
+            o rechazarse (HastaLlenarVacantes si ya no hay cupo).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaPostulacion"
         "400":
           $ref: "#/components/responses/DatosInvalidos"
         "401":
@@ -2800,12 +3353,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /postulaciones/{id}:
+    get:
+      summary: Obtiene una postulación por id
+      tags: [Postulaciones]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Postulación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Postulacion"
+        "400":
+          $ref: "#/components/responses/IdInvalido"
+        "404":
+          description: Postulación inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /postulaciones/{id}/estado:
     patch:
       summary: Acepta o rechaza una postulación
       description: >
         Requiere sesión con rol `colectivo`, del colectivo dueño del proyecto (titular o administrador adicional).
+        Al aceptar se crea la colaboración; si con ella se completa el límite del perfil, se cierra la búsqueda.
       tags: [Postulaciones]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPath"
       requestBody:
@@ -2822,6 +3401,10 @@ paths:
       responses:
         "200":
           description: Postulación actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaPostulacion"
         "400":
           $ref: "#/components/responses/DatosInvalidos"
         "401":
@@ -2851,6 +3434,22 @@ paths:
 
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+      description: Access token (JWT) que dejan `/auth/login` y `/auth/registro` en una cookie httpOnly
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Alternativa para Postman/Swagger, el mismo access token en el header Authorization
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+
   parameters:
     IdPath:
       in: path
@@ -3535,6 +4134,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LogroAnidado"
+        requiereRevisionManual:
+          type: boolean
+          default: false
+          description: >
+            Lo marca el cron diario (00:00, hora de Argentina) si el proyecto está en curso, tiene colaboraciones
+            activas y no cargó logros en los últimos `DIAS_SIN_ACTUALIZACION` días (30 por defecto).
+            Se desmarca al cargar un logro. Viene también en los listados.
+        revisionManualMotivo:
+          type: string
+          nullable: true
+          example: Sin actualizaciones recientes
+          description: Solo en la ficha del proyecto (GET /proyectos/{id})
+        revisionManualFecha:
+          type: string
+          format: date-time
+          nullable: true
+          description: Cuándo se marcó. Solo en la ficha del proyecto (GET /proyectos/{id})
 
     ProyectoAnidado:
       description: Proyecto tal como aparece dentro de un colectivo (los perfiles vienen como ids)
@@ -3788,7 +4404,70 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/ObjectId"
-        destinatario:
+        mensaje:
+          type: string
+          example: 'Encontramos un proyecto para vos: "Sistema de turnos", perfil "Backend".'
+        fecha:
+          type: string
+          format: date-time
+        automatica:
+          type: boolean
+          description: true si la generó la plataforma (ej. proyecto compatible, moderación), false si la envió un colectivo
+
+    # ---------- Usuarios / sesión ----------
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        username:
+          type: string
+        email:
+          type: string
+        rol:
+          type: string
+          enum: [admin, colaborador, colectivo]
+        linkedin:
+          type: object
+          nullable: true
+          description: Solo si la cuenta tiene LinkedIn vinculado
+          properties:
+            nombre:
+              type: string
+              nullable: true
+            apellido:
+              type: string
+              nullable: true
+            foto:
+              type: string
+              nullable: true
+            puedePublicar:
+              type: boolean
+              description: Si el token de LinkedIn sigue vigente y tiene permiso para publicar
+
+    RespuestaUsuario:
+      type: object
+      properties:
+        usuario:
+          $ref: "#/components/schemas/Usuario"
+
+    # ---------- Postulaciones ----------
+
+    Postulacion:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/ObjectId"
+        estado:
+          type: string
+          enum: [Pendiente, Aceptada, Rechazada]
+        mensaje:
+          type: string
+        fecha:
+          type: string
+          format: date-time
+        idPerfil:
           $ref: "#/components/schemas/ObjectId"
         proyecto:
           type: object
@@ -3797,15 +4476,60 @@ components:
               $ref: "#/components/schemas/ObjectId"
             titulo:
               type: string
-        perfil:
+        colaborador:
           type: object
           properties:
             id:
               $ref: "#/components/schemas/ObjectId"
-            descripcion:
+            cuentaGit:
               type: string
-        mensaje:
+            nombreFantasia:
+              type: string
+              nullable: true
+            nombre:
+              type: string
+              nullable: true
+            apellido:
+              type: string
+              nullable: true
+
+    RespuestaPostulacion:
+      type: object
+      properties:
+        message:
           type: string
-        fecha:
-          type: string
-          format: date-time
+        data:
+          $ref: "#/components/schemas/Postulacion"
+
+    # ---------- Home ----------
+
+    ContadoresHome:
+      type: object
+      properties:
+        totalColectivos:
+          type: integer
+          description: Colectivos activos (clave que usa el front)
+        proyectosActivos:
+          type: integer
+        colaboradores:
+          type: integer
+          description: Personas distintas con al menos una colaboración
+        habilidadesBuscadas:
+          type: integer
+          description: Habilidades distintas pedidas en perfiles de proyectos activos
+        proyectosTotales:
+          type: integer
+        proyectosFinalizados:
+          type: integer
+        colectivosTotales:
+          type: integer
+        colectivosActivos:
+          type: integer
+        colectivosDesactivados:
+          type: integer
+        colaboracionesTotales:
+          type: integer
+        colaboracionesActivas:
+          type: integer
+        colaboracionesFinalizadas:
+          type: integer

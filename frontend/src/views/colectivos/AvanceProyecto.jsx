@@ -7,6 +7,8 @@ import apiQuery from '@/services/api/apiQuery'
 import alertas from '@/services/alertas'
 import { Button, Card, Input, Modal, ProgressBar, Skeleton, Textarea } from '@/components/common'
 import { formatearFecha } from '@/helpers/formatos'
+import CompartirEnLinkedin from '@/components/linkedin/CompartirEnLinkedin'
+import useRetornoLinkedin from '@/hooks/useRetornoLinkedin'
 
 const estiloLink = 'inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-card px-[18px] py-2 font-semibold text-text';
 
@@ -109,6 +111,9 @@ export default function AvanceProyecto() {
     const [guardado, setGuardado] = useState(null);
     const [estado, setEstado] = useState(null);
     const [logros, setLogros] = useState([]);
+    const [organizacion, setOrganizacion] = useState(null);
+    // Al volver de conectar LinkedIn se reabre el modal del logro que se estaba compartiendo
+    const { proyectoAPublicar: logroAPublicar, limpiar: limpiarLogroAPublicar } = useRetornoLinkedin();
     const [error, setError] = useState(null);
     const [intento, setIntento] = useState(0);
     const [mostrarErrores, setMostrarErrores] = useState(false);
@@ -130,6 +135,7 @@ export default function AvanceProyecto() {
                     return;
                 }
                 setProyecto({ id: datos.id, titulo: datos.titulo, finalizado: datos.finalizado });
+                setOrganizacion(colectivo.nombre ?? null);
                 setGuardado(estadoDesdeApi(datos));
                 setEstado(estadoDesdeApi(datos));
                 setLogros(ordenarPorFecha(datos.logros ?? []));
@@ -340,6 +346,17 @@ export default function AvanceProyecto() {
                                             )}
                                         </div>
                                         <p className="m-0 whitespace-pre-line text-muted">{logro.descripcion}</p>
+                                        <div>
+                                            <CompartirEnLinkedin
+                                                proyecto={proyecto}
+                                                logro={logro}
+                                                organizacion={organizacion}
+                                                abrirAlCargar={logroAPublicar === logro.id}
+                                                onAbierto={limpiarLogroAPublicar}
+                                            >
+                                                Compartir en LinkedIn<span className="sr-only"> el logro {logro.titulo}</span>
+                                            </CompartirEnLinkedin>
+                                        </div>
                                     </>
                                 )}
                             </Card>

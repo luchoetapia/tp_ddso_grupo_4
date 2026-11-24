@@ -219,7 +219,7 @@ describe('Endpoints /colaboradores', () => {
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({
-                data: [{ id: ID_PROY, perfiles: [] }],
+                data: [{ id: ID_PROY, perfiles: [], requiereRevisionManual: false }],
                 paginacion: { pagina: 2, limite: 5, total: 6, totalPaginas: 2 }
             });
             expect(colaboradorService.obtenerPorCuentaGit).toHaveBeenCalledWith('juanp');

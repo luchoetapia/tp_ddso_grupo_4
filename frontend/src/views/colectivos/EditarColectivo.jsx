@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Modal, Skeleton } from "@/components/common";
 import PasoDatosColectivo from "@/components/registro/PasoDatosColectivo";
+import CardLinkedin from "@/components/linkedin/CardLinkedin";
+import useRetornoLinkedin from "@/hooks/useRetornoLinkedin";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
 import sesion from "@/services/sesion";
@@ -22,11 +24,21 @@ export default function EditarColectivo() {
     const [error, setError] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const router = useRouter();
+    // LinkedIn de la cuenta logueada (cada administrador conecta el suyo). undefined: cargando · null: sin LinkedIn
+    const [linkedin, setLinkedin] = useState(undefined);
     const [idColectivo, setIdColectivo] = useState(null);
     const [esTitular, setEsTitular] = useState(false);
     const [confirmarBaja, setConfirmarBaja] = useState(false);
     const [dandoDeBaja, setDandoDeBaja] = useState(false);
 
+    // Avisa el resultado al volver de conectar LinkedIn
+    useRetornoLinkedin();
+
+    useEffect(() => {
+        sesion.obtenerUsuario().then((usuario) => setLinkedin(usuario?.linkedin ?? null));
+    }, []);
+
+    // Solo la cuenta titular puede dar de baja la organización
     useEffect(() => {
         const controlador = new AbortController();
         apiQuery
@@ -146,6 +158,10 @@ export default function EditarColectivo() {
                     </Button>
                 </div>
             </Card>
+
+            {linkedin !== undefined && (
+                <CardLinkedin linkedin={linkedin} para="los logros de los proyectos de tu organización desde tu perfil personal" />
+            )}
 
             {esTitular && (
                 <Card className="items-start">

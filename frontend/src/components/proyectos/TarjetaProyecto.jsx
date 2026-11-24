@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Card, ProgressBar, Tag } from '@/components/common'
+import PildoraSinActualizaciones from './PildoraSinActualizaciones'
 
 const MAX_HABILIDADES = 4;
 
@@ -21,6 +22,7 @@ const TarjetaProyecto = ({ proyecto, destacado = false }) => {
             <h3 className="m-0 text-[17px]">{proyecto.titulo}</h3>
             <div className="flex flex-wrap gap-1.5">
                 {destacado && <Tag variant="highlight">Destacado</Tag>}
+                <PildoraSinActualizaciones proyecto={proyecto} />
                 {busquedaAbierta
                     ? <Tag>Búsqueda abierta</Tag>
                     : <Tag variant="neutral">Búsqueda cerrada</Tag>}

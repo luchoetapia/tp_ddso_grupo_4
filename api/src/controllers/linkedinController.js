@@ -20,6 +20,22 @@ class LinkedinController {
             },
         });
     }
+
+    publicarLogro = async (req, res) => {
+        const { idPublicacion, proyecto, logro, colectivo } = await this.publicacionService.publicarLogro(req.usuario.id, req.body);
+
+        res.status(201).json({
+            message: 'Publicación creada en LinkedIn',
+            data: {
+                idPublicacion,
+                url: urlDelPost(idPublicacion),
+                proyectoId: String(proyecto._id ?? proyecto.id),
+                logroId: String(logro._id ?? logro.id),
+                logroTitulo: logro.titulo,
+                colectivoId: String(colectivo._id ?? colectivo.id),
+            },
+        });
+    }
 }
 
 module.exports = { LinkedinController };

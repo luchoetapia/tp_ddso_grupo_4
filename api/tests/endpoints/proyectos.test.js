@@ -49,10 +49,11 @@ const ID_LOGRO = '507f1f77bcf86cd799439071';
 const proyecto = {
     id: ID, titulo: 'Aula Virtual', descripcion: 'desc', perfiles: [], finalizado: false,
     porcentajeFinalizado: 0, enlaceSistema: null, enlaceCodigoFuente: null, logros: [],
+    requiereRevisionManual: false, revisionManualMotivo: null, revisionManualFecha: null,
 };
 const proyectoPublico = {
     id: ID, titulo: 'Aula Virtual', descripcion: 'desc', finalizado: false, porcentajeFinalizado: 0,
-    perfiles: [],
+    perfiles: [], requiereRevisionManual: false,
 };
 const logro = { id: ID_LOGRO, titulo: 'MVP', descripcion: 'Primera versión' };
 const ID_HAB = '507f1f77bcf86cd799439021';

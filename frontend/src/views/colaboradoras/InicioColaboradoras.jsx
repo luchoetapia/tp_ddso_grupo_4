@@ -49,7 +49,7 @@ export default function InicioColaboradora() {
 
     useEffect(() => {
         axios
-            .get("/api/colaboradores/me/notificaciones")
+            .get("/api/notificaciones/me")
             .then(({ data }) => setCantidadMensajes(data.length))
             .catch((e) => setErrorMensajes(mensajeDeError(e, "No se pudieron cargar tus mensajes.")));
     }, []);

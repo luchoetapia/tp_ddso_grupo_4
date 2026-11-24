@@ -507,6 +507,33 @@ describe('PostulacionService', () => {
                 ID_POSTULACION,
                 EstadoPostulacion.RECHAZADA
             );
+            // Las que ya estaban aceptadas no se reprocesan (no se duplican colaboraciones)
+            expect(colaboracionRepository.save).not.toHaveBeenCalled();
+        });
+
+        // Con la BD real, findAll también devuelve la postulación recién guardada, pero como otra instancia
+        test('con HastaLlenarVacantes, si findAll incluye la postulación nueva igual queda Aceptada al completar el cupo', async () => {
+            const copiaDeLaNueva = {
+                id: ID_POSTULACION,
+                _id: ID_POSTULACION,
+                colaborador: ID_COLAB,
+                proyecto: ID_PROY,
+                perfil: ID_PERFIL,
+                estado: EstadoPostulacion.PENDIENTE
+            };
+
+            prepararEscenarioEstrategia({
+                estrategia: 'HastaLlenarVacantes',
+                limiteColaboraciones: 1,
+                postulacionesPrevias: [copiaDeLaNueva]
+            });
+
+            const resultado = await postulacionService.crear(datos);
+
+            expect(resultado.estado).toBe(EstadoPostulacion.ACEPTADA);
+            expect(colaboracionRepository.save).toHaveBeenCalledTimes(1);
+            expect(postulacionRepository.updateEstado).toHaveBeenCalledWith(ID_POSTULACION, EstadoPostulacion.ACEPTADA);
+            expect(proyectoService.modificarPerfil).toHaveBeenCalledWith(ID_PROY, ID_PERFIL, { busquedaAbierta: false });
         });
     });
 });

@@ -87,10 +87,4 @@ router.route('/me/avisosModeracion')
         (req, res) => colaboradorController.obtenerMisAvisosModeracion(req, res)
     )
 
-router.route('/me/notificaciones')
-    .get(
-        autenticar(roles.COLABORADOR),
-        (req, res) => colaboradorController.obtenerMisNotificaciones(req, res)
-    )
-
 module.exports = router
