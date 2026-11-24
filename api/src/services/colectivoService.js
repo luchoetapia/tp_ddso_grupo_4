@@ -98,15 +98,9 @@ class ColectivoService {
         return colectivo
     }
 
-    finalizarTodosLosProyectos = async (colectivo) => {
-        const proyectos = colectivo.proyectos || [];
-
-        if (proyectos.length === 0) return 0;
-
-        const paraFinalizar = proyectos.map(proyecto => proyecto.id);
-
-        const finalizados = await this.proyectoService.finalizarVariosProyectos(paraFinalizar);
-        return finalizados;
+    finalizarTodosLosProyectos = async (idsProyectos) => {
+        if (idsProyectos.length === 0) return 0;
+        return await this.proyectoService.finalizarVariosProyectos(idsProyectos);
     }
 
     finalizarProyecto = async (idColectivo, idProyecto) => {
@@ -114,8 +108,6 @@ class ColectivoService {
         return await this.proyectoService.finalizar(idProyecto)
     }
 
-    // usuario: sesión que pide la baja. Solo la cuenta titular del colectivo o un admin de la plataforma.
-    // Sin usuario es una llamada interna y no se restringe.
     desactivarColectivo = async (id, usuario = null) => {
         const colectivo = await this.obtenerPorId(id);
 
@@ -126,13 +118,31 @@ class ColectivoService {
         if (!colectivo.active) 
             throw new BadRequestError("El colectivo ya se encuentra desactivado");
 
-        // Si se desactiva el colectivo, se finalizan todos los proyectos asociados
-        const finalizados = await this.finalizarTodosLosProyectos(colectivo);
+        const idsProyectos = (colectivo.proyectos ?? []).map(proyecto => proyecto.id);
+
+        const finalizados = await this.finalizarTodosLosProyectos(idsProyectos);
+        let rechazadas = 0;
+        if (idsProyectos.length > 0) {
+            rechazadas = await this.postulacionRepository.rechazarPendientesDeProyectos(idsProyectos);
+            await this.colaboracionRepository.cerrarActivasDeProyectos(idsProyectos, new Date());
+        }
 
         const desactivado = await this.colectivoRepository.update(id, { active: false });
-        return { 
-            mensaje: `Colectivo ${desactivado.nombre} desactivado correctamente, ${finalizados} proyectos finalizados.` 
+        await this.desactivarCuentas(colectivo);
+
+        return {
+            mensaje: `Colectivo ${desactivado.nombre} desactivado correctamente, ${finalizados} proyectos finalizados, ${rechazadas} postulaciones pendientes rechazadas.`
         };
+    }
+
+    desactivarCuentas = async (colectivo) => {
+        const cuentas = [colectivo.usuario, ...(colectivo.administradores ?? [])]
+            .filter(Boolean)
+            .map(cuenta => (cuenta._id ?? cuenta).toString());
+
+        for (const idCuenta of new Set(cuentas)) {
+            await this.authRepository.desactivarUsuario(idCuenta);
+        }
     }
 
     buscarPorUsuario = async (idUsuario) => {

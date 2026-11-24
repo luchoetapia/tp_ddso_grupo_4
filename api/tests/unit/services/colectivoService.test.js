@@ -27,7 +27,7 @@ const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colectivoService = require('../../../src/services/colectivoService.js');
 const reporteService = require('../../../src/services/reporteService.js');
-const { BadRequestError, ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../../../src/errors/AppError.js');
 
 const ID_COLECTIVO = '507f1f77bcf86cd799439051';
 const ID_PROY = '507f1f77bcf86cd799439041';
@@ -170,27 +170,63 @@ describe('ColectivoService', () => {
 
     describe('desactivarColectivo', () => {
         const ID_PROY_2 = '507f1f77bcf86cd799439042';
+        const ID_ADMIN = '507f1f77bcf86cd7994390bb';
+        const repositoriosOriginales = {};
 
-        test('finaliza los proyectos y desactiva el colectivo', async () => {
-            colectivoRepository.findById.mockResolvedValue(colectivoDoc({ proyectos: [{ id: ID_PROY }, { id: ID_PROY_2 }] }));
+        beforeEach(() => {
+            for (const nombre of ['postulacionRepository', 'colaboracionRepository', 'authRepository']) {
+                repositoriosOriginales[nombre] = colectivoService[nombre];
+            }
+            colectivoService.postulacionRepository = { rechazarPendientesDeProyectos: jest.fn().mockResolvedValue(3) };
+            colectivoService.colaboracionRepository = { cerrarActivasDeProyectos: jest.fn().mockResolvedValue(1) };
+            colectivoService.authRepository = { desactivarUsuario: jest.fn().mockResolvedValue({}) };
+        });
+
+        afterEach(() => Object.assign(colectivoService, repositoriosOriginales));
+
+        test('finaliza los proyectos, cierra lo que estaba en curso y desactiva el colectivo y sus cuentas', async () => {
+            colectivoRepository.findById.mockResolvedValue(colectivoDoc({
+                usuario: ID_USUARIO,
+                administradores: [ID_ADMIN],
+                proyectos: [{ id: ID_PROY }, { id: ID_PROY_2 }],
+            }));
             proyectoService.finalizarVariosProyectos.mockResolvedValue(2);
             colectivoRepository.update.mockResolvedValue(colectivoDoc({ active: false }));
 
             const resultado = await colectivoService.desactivarColectivo(ID_COLECTIVO);
 
             expect(proyectoService.finalizarVariosProyectos).toHaveBeenCalledWith([ID_PROY, ID_PROY_2]);
+            expect(colectivoService.postulacionRepository.rechazarPendientesDeProyectos).toHaveBeenCalledWith([ID_PROY, ID_PROY_2]);
+            expect(colectivoService.colaboracionRepository.cerrarActivasDeProyectos).toHaveBeenCalledWith([ID_PROY, ID_PROY_2], expect.any(Date));
             expect(colectivoRepository.update).toHaveBeenCalledWith(ID_COLECTIVO, { active: false });
-            expect(resultado).toEqual({ mensaje: 'Colectivo Tech For Good desactivado correctamente, 2 proyectos finalizados.' });
+            expect(colectivoService.authRepository.desactivarUsuario).toHaveBeenCalledTimes(2);
+            expect(colectivoService.authRepository.desactivarUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(colectivoService.authRepository.desactivarUsuario).toHaveBeenCalledWith(ID_ADMIN);
+            expect(resultado).toEqual({
+                mensaje: 'Colectivo Tech For Good desactivado correctamente, 2 proyectos finalizados, 3 postulaciones pendientes rechazadas.'
+            });
         });
 
-        test('no finaliza proyectos si el colectivo no tiene', async () => {
-            colectivoRepository.findById.mockResolvedValue(colectivoDoc());
+        test('no toca proyectos, postulaciones ni colaboraciones si el colectivo no tiene proyectos', async () => {
+            colectivoRepository.findById.mockResolvedValue(colectivoDoc({ usuario: ID_USUARIO }));
             colectivoRepository.update.mockResolvedValue(colectivoDoc({ active: false }));
 
             const resultado = await colectivoService.desactivarColectivo(ID_COLECTIVO);
 
             expect(proyectoService.finalizarVariosProyectos).not.toHaveBeenCalled();
+            expect(colectivoService.postulacionRepository.rechazarPendientesDeProyectos).not.toHaveBeenCalled();
+            expect(colectivoService.colaboracionRepository.cerrarActivasDeProyectos).not.toHaveBeenCalled();
+            expect(colectivoService.authRepository.desactivarUsuario).toHaveBeenCalledWith(ID_USUARIO);
             expect(resultado.mensaje).toContain('0 proyectos finalizados');
+        });
+
+        test('lanza ForbiddenError si quien la pide no es la titular ni admin', async () => {
+            colectivoRepository.findById.mockResolvedValue(colectivoDoc({ esTitular: () => false }));
+
+            await expect(colectivoService.desactivarColectivo(ID_COLECTIVO, { id: ID_ADMIN, rol: 'colectivo' }))
+                .rejects.toThrow(ForbiddenError);
+            expect(colectivoRepository.update).not.toHaveBeenCalled();
+            expect(colectivoService.authRepository.desactivarUsuario).not.toHaveBeenCalled();
         });
 
         test('lanza BadRequestError si ya está desactivado', async () => {
@@ -199,6 +235,7 @@ describe('ColectivoService', () => {
             await expect(colectivoService.desactivarColectivo(ID_COLECTIVO)).rejects.toThrow(BadRequestError);
             expect(proyectoService.finalizarVariosProyectos).not.toHaveBeenCalled();
             expect(colectivoRepository.update).not.toHaveBeenCalled();
+            expect(colectivoService.authRepository.desactivarUsuario).not.toHaveBeenCalled();
         });
 
         test('lanza NotFoundError si no existe', async () => {

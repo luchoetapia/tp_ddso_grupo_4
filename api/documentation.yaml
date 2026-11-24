@@ -1585,9 +1585,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
     delete:
-      summary: Da de baja un colectivo (y finaliza sus proyectos)
+      summary: Da de baja un colectivo
       description: >
         Requiere sesión: la cuenta titular del colectivo o un `admin` de la plataforma.
+        Finaliza los proyectos del colectivo, rechaza sus postulaciones pendientes y cierra sus
+        colaboraciones activas. Desactiva la cuenta titular y las de los administradores
+        (se borran username, email y contraseña). El historial se conserva.
         Queda registrado en la auditoría.
       tags: [Colectivos]
       parameters:

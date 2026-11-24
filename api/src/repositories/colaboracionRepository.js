@@ -113,6 +113,14 @@ class ColaboracionRepository {
         };
     }
 
+    async cerrarActivasDeProyectos(idsProyectos, fin) {
+        const { modifiedCount } = await ColaboracionModel.updateMany(
+            { 'proyecto.id': { $in: idsProyectos }, fin: null },
+            { $set: { fin } }
+        );
+        return modifiedCount;
+    }
+
     async cerrarYAnonimizarPorColaborador(idColaborador, fin) {
         await ColaboracionModel.updateMany(
             { 'colaborador.id': idColaborador, fin: null },
