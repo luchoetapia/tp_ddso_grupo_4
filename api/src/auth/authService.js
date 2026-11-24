@@ -117,15 +117,15 @@ class AuthService {
         return this.repositorio.crearUsuario({ username, email, rol: roles.COLABORADOR, linkedin });
     }
 
-    // Vincular LinkedIn a un colaborador que ya inició sesión (para poder publicar).
+    // Vincular LinkedIn a un colaborador o colectivo que ya inició sesión (para poder publicar).
     // También sirve para reconectar: si ya estaba vinculado a esa misma cuenta, solo se renueva el token.
     // No exige email verificado: la identidad del usuario ya está probada por su sesión.
     async vincularLinkedin(usuarioId, datosLinkedin, tokenLinkedin) {
         const { sub, nombre, apellido, foto } = datosLinkedin;
 
         let usuario = await this.obtenerUsuarioActivo(usuarioId);
-        if (usuario.rol !== roles.COLABORADOR)
-            throw new ForbiddenError('Solo los colaboradores pueden vincular LinkedIn');
+        if (![roles.COLABORADOR, roles.COLECTIVO].includes(usuario.rol))
+            throw new ForbiddenError('Solo los colaboradores y los colectivos pueden vincular LinkedIn');
 
         const vinculado = await this.repositorio.obtenerUsuarioPorLinkedinSub(sub);
         if (vinculado && String(vinculado.id) !== String(usuario.id))

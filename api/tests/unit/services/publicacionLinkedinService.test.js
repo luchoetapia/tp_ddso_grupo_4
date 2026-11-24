@@ -2,11 +2,15 @@ jest.mock('../../../src/auth/authRepository.js');
 jest.mock('../../../src/services/colaboradorService.js', () => ({ buscarPorUsuario: jest.fn() }));
 jest.mock('../../../src/repositories/colaboracionRepository.js', () => ({ findActiva: jest.fn() }));
 jest.mock('../../../src/services/palabraBaneadaSevice.js', () => ({ detectar: jest.fn() }));
+jest.mock('../../../src/repositories/colectivoRepository.js', () => ({ findByUsuario: jest.fn() }));
+jest.mock('../../../src/repositories/proyectoRepository.js', () => ({ findById: jest.fn() }));
 
 const servicio = require('../../../src/services/publicacionLinkedinService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const colaboracionRepository = require('../../../src/repositories/colaboracionRepository.js');
 const palabraBaneadaService = require('../../../src/services/palabraBaneadaSevice.js');
+const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
+const proyectoRepository = require('../../../src/repositories/proyectoRepository.js');
 const linkedinService = require('../../../src/linkedin/linkedinService.js');
 const { LinkedinNoVinculadoError } = linkedinService;
 const { cifrar } = require('../../../src/linkedin/cifrado.js');
@@ -98,5 +102,76 @@ describe('publicacionLinkedinService.publicar', () => {
 
         await expect(servicio.publicar(ID_USUARIO, pedido)).rejects.toBeInstanceOf(BadGatewayError);
         expect(repo.borrarTokenLinkedin).not.toHaveBeenCalled();
+    });
+});
+
+describe('publicacionLinkedinService.publicarLogro', () => {
+    const claveOriginal = process.env.LINKEDIN_TOKEN_KEY;
+    const ID_LOGRO = '507f1f77bcf86cd799439051';
+    const logro = { _id: ID_LOGRO, titulo: 'Primera versión', descripcion: 'Ya está en uso' };
+    const proyecto = { _id: ID_PROYECTO, titulo: 'Inventario', logros: [logro] };
+    const colectivo = { _id: 'col1', proyectos: [ID_PROYECTO] };
+    const pedidoLogro = { proyectoId: ID_PROYECTO, logroId: ID_LOGRO, texto: 'Logramos la primera versión' };
+
+    beforeAll(() => { process.env.LINKEDIN_TOKEN_KEY = 'clave-test'; });
+    afterAll(() => { process.env.LINKEDIN_TOKEN_KEY = claveOriginal; });
+    beforeEach(() => {
+        jest.clearAllMocks();
+        colectivoRepository.findByUsuario.mockResolvedValue(colectivo);
+        proyectoRepository.findById.mockResolvedValue(proyecto);
+        palabraBaneadaService.detectar.mockResolvedValue([]);
+        servicio.authRepository.obtenerUsuarioConTokenLinkedin.mockResolvedValue(
+            new Usuario(ID_USUARIO, 'fundacion', null, 'f@mail.com', 'colectivo', true, new Date(), {
+                sub: 'sub1', tokenCifrado: cifrar('tok'), tokenExpiraEn: enUnaHora(), scopes: ['w_member_social'],
+            })
+        );
+        jest.spyOn(linkedinService, 'publicar').mockResolvedValue('urn:li:share:2');
+    });
+
+    test('publica el logro con el LinkedIn de la cuenta del colectivo', async () => {
+        const resultado = await servicio.publicarLogro(ID_USUARIO, pedidoLogro);
+
+        expect(colectivoRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
+        expect(linkedinService.publicar).toHaveBeenCalledWith('tok', 'sub1', 'Logramos la primera versión');
+        expect(resultado).toEqual({ idPublicacion: 'urn:li:share:2', proyecto, logro, colectivo });
+    });
+
+    test('sin colectivo responde 404', async () => {
+        colectivoRepository.findByUsuario.mockResolvedValue(null);
+
+        await expect(servicio.publicarLogro(ID_USUARIO, pedidoLogro)).rejects.toBeInstanceOf(NotFoundError);
+    });
+
+    test('un proyecto de otra organización responde 403 y no publica', async () => {
+        colectivoRepository.findByUsuario.mockResolvedValue({ _id: 'col1', proyectos: ['507f1f77bcf86cd799439099'] });
+
+        const error = await servicio.publicarLogro(ID_USUARIO, pedidoLogro).catch((e) => e);
+
+        expect(error).toBeInstanceOf(ForbiddenError);
+        expect(error).not.toBeInstanceOf(LinkedinNoVinculadoError);
+        expect(proyectoRepository.findById).not.toHaveBeenCalled();
+        expect(linkedinService.publicar).not.toHaveBeenCalled();
+    });
+
+    test('un logro que no es del proyecto responde 404', async () => {
+        const error = await servicio.publicarLogro(ID_USUARIO, { ...pedidoLogro, logroId: '507f1f77bcf86cd799439098' }).catch((e) => e);
+
+        expect(error).toBeInstanceOf(NotFoundError);
+        expect(linkedinService.publicar).not.toHaveBeenCalled();
+    });
+
+    test('con palabras baneadas responde 400', async () => {
+        palabraBaneadaService.detectar.mockResolvedValue(['fea']);
+
+        await expect(servicio.publicarLogro(ID_USUARIO, pedidoLogro)).rejects.toBeInstanceOf(BadRequestError);
+        expect(linkedinService.publicar).not.toHaveBeenCalled();
+    });
+
+    test('sin LinkedIn vinculado pide conectarlo', async () => {
+        servicio.authRepository.obtenerUsuarioConTokenLinkedin.mockResolvedValue(
+            new Usuario(ID_USUARIO, 'fundacion', null, 'f@mail.com', 'colectivo', true, new Date(), null)
+        );
+
+        await expect(servicio.publicarLogro(ID_USUARIO, pedidoLogro)).rejects.toBeInstanceOf(LinkedinNoVinculadoError);
     });
 });

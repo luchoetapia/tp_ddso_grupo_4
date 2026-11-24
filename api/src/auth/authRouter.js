@@ -37,9 +37,9 @@ router.get('/linkedin',
     (req, res) => authController.linkedin(req, res)
 )
 
-// Vincular LinkedIn a la cuenta de un colaborador logueado (para publicar). También es una navegación
+// Vincular LinkedIn a la cuenta logueada (colaborador o colectivo) para publicar. También es una navegación
 router.get('/linkedin/vincular',
-    autenticar(roles.COLABORADOR),
+    autenticar([roles.COLABORADOR, roles.COLECTIVO]),
     (req, res) => authController.vincular(req, res)
 )
 

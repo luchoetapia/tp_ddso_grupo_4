@@ -4,19 +4,38 @@ import { useEffect, useState } from "react";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
 import sesion from "@/services/sesion";
-import { MAX_CARACTERES_POST, borrador, conectarLinkedin, esNoVinculado, textoSugerido, urlSiEsDuplicado } from "@/services/linkedin";
+import { MAX_CARACTERES_POST, borrador, conectarLinkedin, esNoVinculado, textoSugerido, textoSugeridoLogro, urlSiEsDuplicado } from "@/services/linkedin";
 
 const estiloLinkPost = "font-semibold text-accent underline";
 import { BotonLinkedin, Button, Modal, Skeleton, Textarea } from "@/components/common";
 
+// Qué se publica: un proyecto (colaboradores) o un logro de un proyecto (colectivos).
+// clave: identifica el borrador y el modal a reabrir al volver de LinkedIn (publicar=<clave>).
+const datosPublicacion = ({ proyecto, perfil, logro, organizacion }) => (logro
+    ? {
+        clave: logro.id,
+        titulo: `Compartir el logro "${logro.titulo}" en LinkedIn`,
+        sugerido: () => textoSugeridoLogro({ proyecto, logro, organizacion }),
+        ruta: "/linkedin/publicaciones/logros",
+        cuerpo: { proyectoId: proyecto.id, logroId: logro.id },
+    }
+    : {
+        clave: proyecto.id,
+        titulo: `Compartir "${proyecto.titulo}" en LinkedIn`,
+        sugerido: () => textoSugerido({ titulo: proyecto.titulo, perfil, idProyecto: proyecto.id }),
+        ruta: "/linkedin/publicaciones",
+        cuerpo: { proyectoId: proyecto.id },
+    });
+
 // Botón "Compartir en LinkedIn" + modal para escribir y publicar el post.
 // proyecto: { id, titulo }. perfil: título del rol del colaborador en el proyecto (opcional).
+// logro: { id, titulo, descripcion } para que un colectivo comparta un logro del proyecto; organizacion: su nombre (opcional).
 // abrirAlCargar: abre el modal solo (al volver de conectar LinkedIn, ver useRetornoLinkedin).
 // Si el usuario no tiene LinkedIn conectado con permiso para publicar, el modal ofrece conectarlo:
 // el texto queda guardado como borrador y el modal se reabre al volver.
-export default function CompartirEnLinkedin({ proyecto, perfil, abrirAlCargar = false, onAbierto, className }) {
-    const textoInicial = () =>
-        borrador.leer(proyecto.id) ?? textoSugerido({ titulo: proyecto.titulo, perfil, idProyecto: proyecto.id });
+export default function CompartirEnLinkedin({ proyecto, perfil, logro, organizacion, abrirAlCargar = false, onAbierto, className, children = "Compartir en LinkedIn" }) {
+    const publicacion = datosPublicacion({ proyecto, perfil, logro, organizacion });
+    const textoInicial = () => borrador.leer(publicacion.clave) ?? publicacion.sugerido();
 
     const [abierto, setAbierto] = useState(abrirAlCargar);
     // undefined: cargando · null: sin LinkedIn · { nombre, apellido, puedePublicar }
@@ -61,8 +80,8 @@ export default function CompartirEnLinkedin({ proyecto, perfil, abrirAlCargar = 
 
     const conectar = async () => {
         setConectando(true);
-        borrador.guardar(proyecto.id, texto);
-        await conectarLinkedin({ publicar: proyecto.id });
+        borrador.guardar(publicacion.clave, texto);
+        await conectarLinkedin({ publicar: publicacion.clave });
         // La página navega a LinkedIn; no se resetea el estado para que el botón siga mostrando el spinner
     };
 
@@ -72,12 +91,12 @@ export default function CompartirEnLinkedin({ proyecto, perfil, abrirAlCargar = 
         setUrlDuplicado(null);
         try {
             const { data } = await apiQuery.post(
-                "/linkedin/publicaciones",
-                { proyectoId: proyecto.id, texto },
+                publicacion.ruta,
+                { ...publicacion.cuerpo, texto },
                 { alertarError: false }
             );
 
-            borrador.borrar(proyecto.id);
+            borrador.borrar(publicacion.clave);
             alertas.exito("¡Listo! Se publicó en tu LinkedIn");
             // El modal queda abierto con el link al post
             setPublicado({ url: data?.url ?? null });
@@ -109,13 +128,13 @@ export default function CompartirEnLinkedin({ proyecto, perfil, abrirAlCargar = 
     return (
         <>
             <BotonLinkedin onClick={abrir} compacto className={className}>
-                Compartir en LinkedIn
+                {children}
             </BotonLinkedin>
 
             <Modal
                 open={abierto}
                 onClose={cerrar}
-                title={`Compartir "${proyecto.titulo}" en LinkedIn`}
+                title={publicacion.titulo}
                 ancho="max-w-[560px]"
                 footer={
                     publicado ? (
@@ -166,7 +185,7 @@ export default function CompartirEnLinkedin({ proyecto, perfil, abrirAlCargar = 
                             <p className="m-0 text-sm text-muted" role="status">
                                 {linkedin
                                     ? "Tu conexión con LinkedIn venció o no tiene permiso para publicar. "
-                                    : "Para compartir tus proyectos tenés que conectar tu cuenta de LinkedIn. "}
+                                    : "Para publicar tenés que conectar tu cuenta de LinkedIn. "}
                                 Te llevamos a LinkedIn para que lo autorices y volvés acá con tu texto guardado.
                             </p>
                         )}

@@ -35,7 +35,7 @@ const rutaInterna = z.string().max(300).regex(/^\/(?![\/\\])[^\\]*$/);
 // Query de GET /auth/linkedin/vincular
 const validarVincularLinkedin = z.object({
     volverA: rutaInterna.optional(),
-    // id del proyecto sobre el que se quería publicar (el front reabre el modal al volver)
+    // id del proyecto o logro sobre el que se quería publicar (el front reabre el modal al volver)
     publicar: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
 });
 

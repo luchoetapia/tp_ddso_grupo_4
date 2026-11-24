@@ -62,8 +62,18 @@ describe('AuthService con LinkedIn', () => {
             await expect(service.vincularLinkedin('u1', datos, token)).rejects.toBeInstanceOf(ConflictError);
         });
 
-        test('solo colaboradores', async () => {
+        test('un colectivo también puede vincular', async () => {
             repo.obtenerUsuarioPorId.mockResolvedValue({ id: 'u1', rol: 'colectivo', activo: true });
+            repo.obtenerUsuarioPorLinkedinSub.mockResolvedValue(null);
+
+            await service.vincularLinkedin('u1', datos, token);
+
+            expect(repo.vincularLinkedin).toHaveBeenCalledWith('u1', { sub: 'sub1', nombre: 'Ana', apellido: 'Paz', foto: null });
+            expect(repo.guardarTokenLinkedin).toHaveBeenCalled();
+        });
+
+        test('un admin no puede vincular', async () => {
+            repo.obtenerUsuarioPorId.mockResolvedValue({ id: 'u1', rol: 'admin', activo: true });
 
             await expect(service.vincularLinkedin('u1', datos, token)).rejects.toBeInstanceOf(ForbiddenError);
         });

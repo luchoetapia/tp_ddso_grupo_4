@@ -5,46 +5,9 @@ import { useRouter } from "next/navigation";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
 import sesion from "@/services/sesion";
-import { conectarLinkedin } from "@/services/linkedin";
 import useRetornoLinkedin from "@/hooks/useRetornoLinkedin";
-import { BotonLinkedin, Button, Card, Modal, Skeleton, Tag } from "@/components/common";
-
-// Estado de la conexión con LinkedIn: para publicar hace falta tenerla conectada con permiso vigente
-function CardLinkedin({ linkedin }) {
-    const [conectando, setConectando] = useState(false);
-    const nombre = [linkedin?.nombre, linkedin?.apellido].filter(Boolean).join(" ");
-
-    const conectar = async () => {
-        setConectando(true);
-        await conectarLinkedin();
-    };
-
-    let descripcion;
-    if (linkedin?.puedePublicar) {
-        descripcion = `Conectado${nombre ? ` como ${nombre}` : ""}. Podés compartir en LinkedIn los proyectos en los que colaborás.`;
-    } else if (linkedin) {
-        descripcion = "Tu conexión con LinkedIn venció o no tiene permiso para publicar. Reconectala para compartir tus proyectos.";
-    } else {
-        descripcion = "Conectá tu cuenta de LinkedIn para compartir los proyectos en los que colaborás.";
-    }
-
-    return (
-        <Card className="items-start">
-            <div className="flex flex-wrap items-center gap-2">
-                <h2 className="m-0 font-sans text-base">LinkedIn</h2>
-                <Tag variant={linkedin?.puedePublicar ? "accent" : "neutral"}>
-                    {linkedin?.puedePublicar ? "Conectado" : "Sin conectar"}
-                </Tag>
-            </div>
-            <p className="m-0 text-muted">{descripcion}</p>
-            {!linkedin?.puedePublicar && (
-                <BotonLinkedin onClick={conectar} deshabilitado={conectando}>
-                    {linkedin ? "Reconectar LinkedIn" : "Conectar LinkedIn"}
-                </BotonLinkedin>
-            )}
-        </Card>
-    );
-}
+import CardLinkedin from "@/components/linkedin/CardLinkedin";
+import { Button, Card, Modal, Skeleton, Tag } from "@/components/common";
 
 export default function DatosPersonales() {
     const router = useRouter();
@@ -113,7 +76,7 @@ export default function DatosPersonales() {
                 </div>
             </Card>
 
-            {linkedin !== undefined && <CardLinkedin linkedin={linkedin} />}
+            {linkedin !== undefined && <CardLinkedin linkedin={linkedin} para="los proyectos en los que colaborás" />}
 
             <Card className="items-start">
                 <h2 className="m-0 font-sans text-base">Eliminar cuenta</h2>

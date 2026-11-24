@@ -9,7 +9,8 @@ export const CODIGO_DUPLICADO = 'LINKEDIN_DUPLICADO';
 export const MAX_CARACTERES_POST = 3000;
 
 const URL_VINCULAR = '/api/auth/linkedin/vincular';
-const CLAVE_BORRADOR = (idProyecto) => `borradorLinkedin:${idProyecto}`;
+// clave: id del proyecto o del logro que se está compartiendo
+const CLAVE_BORRADOR = (clave) => `borradorLinkedin:${clave}`;
 
 // El error (normalizado por apiQuery) indica que el usuario tiene que conectar LinkedIn
 export const esNoVinculado = (error) =>
@@ -28,26 +29,38 @@ export const textoSugerido = ({ titulo, perfil, idProyecto }) => {
         + `Si te interesa el proyecto o querés sumarte, lo podés ver acá:\n${url}`;
 };
 
+// Texto inicial para que un colectivo comparta un logro de su proyecto
+export const textoSugeridoLogro = ({ proyecto, logro, organizacion }) => {
+    const origen = typeof window === 'undefined' ? '' : window.location.origin;
+    const url = `${origen}/proyectos/ver?id=${proyecto.id}`;
+    const quien = organizacion ? `En ${organizacion} alcanzamos` : 'Alcanzamos';
+
+    return `🎉 ${quien} un nuevo logro en "${proyecto.titulo}": ${logro.titulo}\n\n`
+        + `${logro.descripcion}\n\n`
+        + `El proyecto avanza gracias a personas voluntarias que se suman a través de Código a Voluntad. `
+        + `Si querés conocerlo o sumarte, miralo acá:\n${url}`;
+};
+
 // Borrador en sessionStorage: sobrevive al ir y volver de LinkedIn para conectar la cuenta.
 // sessionStorage puede no estar disponible (modo privado, etc.): en ese caso simplemente no se guarda.
 export const borrador = {
-    leer: (idProyecto) => {
+    leer: (clave) => {
         try {
-            return sessionStorage.getItem(CLAVE_BORRADOR(idProyecto));
+            return sessionStorage.getItem(CLAVE_BORRADOR(clave));
         } catch {
             return null;
         }
     },
-    guardar: (idProyecto, texto) => {
+    guardar: (clave, texto) => {
         try {
-            sessionStorage.setItem(CLAVE_BORRADOR(idProyecto), texto);
+            sessionStorage.setItem(CLAVE_BORRADOR(clave), texto);
         } catch {
             // sin borrador
         }
     },
-    borrar: (idProyecto) => {
+    borrar: (clave) => {
         try {
-            sessionStorage.removeItem(CLAVE_BORRADOR(idProyecto));
+            sessionStorage.removeItem(CLAVE_BORRADOR(clave));
         } catch {
             // nada que borrar
         }
@@ -56,7 +69,7 @@ export const borrador = {
 
 // Lleva al usuario a LinkedIn para conectar su cuenta. Es una navegación completa (no pasa por apiQuery),
 // así que antes se renueva la sesión por si el access token venció.
-// Al terminar, la API vuelve a esta misma pantalla con ?linkedin=vinculado (y publicar=idProyecto si vino).
+// Al terminar, la API vuelve a esta misma pantalla con ?linkedin=vinculado (y publicar=<id del proyecto o logro> si vino).
 export const conectarLinkedin = async ({ publicar } = {}) => {
     await sesion.obtenerUsuario();
 

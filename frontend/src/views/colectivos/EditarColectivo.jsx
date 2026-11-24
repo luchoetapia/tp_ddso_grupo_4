@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Skeleton } from "@/components/common";
 import PasoDatosColectivo from "@/components/registro/PasoDatosColectivo";
+import CardLinkedin from "@/components/linkedin/CardLinkedin";
+import useRetornoLinkedin from "@/hooks/useRetornoLinkedin";
 import apiQuery from "@/services/api/apiQuery";
 import alertas from "@/services/alertas";
+import sesion from "@/services/sesion";
 
 const CAMPOS = ["nombre", "tipo", "ubicacion", "descripcion"];
 
@@ -19,6 +22,15 @@ export default function EditarColectivo() {
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    // LinkedIn de la cuenta logueada (cada administrador conecta el suyo). undefined: cargando · null: sin LinkedIn
+    const [linkedin, setLinkedin] = useState(undefined);
+
+    // Avisa el resultado al volver de conectar LinkedIn
+    useRetornoLinkedin();
+
+    useEffect(() => {
+        sesion.obtenerUsuario().then((usuario) => setLinkedin(usuario?.linkedin ?? null));
+    }, []);
 
     useEffect(() => {
         const controlador = new AbortController();
@@ -105,6 +117,10 @@ export default function EditarColectivo() {
                     </Button>
                 </div>
             </Card>
+
+            {linkedin !== undefined && (
+                <CardLinkedin linkedin={linkedin} para="los logros de los proyectos de tu organización desde tu perfil personal" />
+            )}
         </section>
     );
 }

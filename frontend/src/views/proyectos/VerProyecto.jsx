@@ -51,6 +51,8 @@ export default function VerProyectoContenido() {
     const [colaboraciones, setColaboraciones] = useState([]);
     // Colaboración activa del usuario logueado en este proyecto (para compartirlo en LinkedIn)
     const [miColaboracion, setMiColaboracion] = useState(null);
+    // El proyecto es de la organización de la cuenta logueada (titular o administradora): puede compartir sus logros
+    const [esDeMiOrganizacion, setEsDeMiOrganizacion] = useState(false);
     const { proyectoAPublicar, limpiar: limpiarProyectoAPublicar } = useRetornoLinkedin();
 
 
@@ -120,8 +122,13 @@ export default function VerProyectoContenido() {
                         (misColaboraciones ?? []).find((c) => String(c.proyecto?.id ?? c.proyecto) === id && c.activa) ?? null
                     );
                 }
+
+                if (user && user.rol === roles.COLECTIVO) {
+                    const miColectivo = await apiQuery.get('/colectivos/me', { alertarError: false });
+                    setEsDeMiOrganizacion((miColectivo.proyectos ?? []).some((p) => String(p.id ?? p) === id));
+                }
             } catch {
-                // Si falla o no está logueado como colaborador, simplemente no se habilitan las acciones de postulación
+                // Si falla o no está logueado, simplemente no se habilitan las acciones (postularse o compartir en LinkedIn)
             }
         };
 
@@ -508,14 +515,31 @@ export default function VerProyectoContenido() {
                 ) : (
                     <ul className="m-0 flex list-none flex-col gap-3 p-0">
                         {logros.map((logro) => (
-                            <Card as="li" key={logro.id} className="gap-1.5">
-                                <div className="flex items-center gap-2">
-                                    <span aria-hidden="true" className="text-lg">🏆</span>
-                                    <h3 className="m-0 text-base font-bold">{logro.titulo}</h3>
+                            <Card as="li" key={logro.id}>
+                                {/* Mobile: título, descripción y el botón abajo a la derecha.
+                                    Desktop: el botón a la derecha del título, en el mismo renglón */}
+                                <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <span aria-hidden="true" className="text-lg">🏆</span>
+                                        <h3 className="m-0 text-base font-bold">{logro.titulo}</h3>
+                                    </div>
+                                    <p className="m-0 text-sm text-muted whitespace-pre-line sm:col-span-2 sm:row-start-2">
+                                        {logro.descripcion}
+                                    </p>
+                                    {esDeMiOrganizacion && (
+                                        <div className="mt-1.5 justify-self-end sm:col-start-2 sm:row-start-1 sm:mt-0">
+                                            <CompartirEnLinkedin
+                                                proyecto={{ id, titulo }}
+                                                logro={logro}
+                                                organizacion={colectivo?.nombre}
+                                                abrirAlCargar={proyectoAPublicar === logro.id}
+                                                onAbierto={limpiarProyectoAPublicar}
+                                            >
+                                                Compartir en LinkedIn<span className="sr-only"> el logro {logro.titulo}</span>
+                                            </CompartirEnLinkedin>
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="m-0 text-sm text-muted whitespace-pre-line">
-                                    {logro.descripcion}
-                                </p>
                             </Card>
                         ))}
                     </ul>

@@ -2,7 +2,7 @@ const express = require('express')
 const { LinkedinController } = require('../controllers/linkedinController.js')
 
 const validar = require('../middlewares/validar.js')
-const { validarPublicacionLinkedin } = require('../validators/linkedinValidator.js')
+const { validarPublicacionLinkedin, validarPublicacionLogroLinkedin } = require('../validators/linkedinValidator.js')
 const autenticar = require('../middlewares/autenticar.js')
 const { roles } = require('../auth/models/usuario.js')
 
@@ -23,6 +23,19 @@ router.post('/publicaciones',
         detalle: 'Publicó el proyecto en LinkedIn',
     })),
     (req, res) => linkedinController.publicar(req, res)
+)
+
+// Un colectivo (titular o administrador) publica en su LinkedIn un logro de uno de sus proyectos.
+// Mismo 403 con LINKEDIN_NO_VINCULADO si tiene que conectar o reconectar LinkedIn
+router.post('/publicaciones/logros',
+    autenticar(roles.COLECTIVO),
+    validar(validarPublicacionLogroLinkedin, 'body'),
+    auditar(AccionAuditada.PUBLICACION_LINKEDIN, (req, body) => ({
+        entidad: { tipo: TipoEntidadAuditada.PROYECTO, id: body.data.proyectoId },
+        idColectivo: body.data.colectivoId,
+        detalle: `Publicó el logro "${body.data.logroTitulo}" en LinkedIn`,
+    })),
+    (req, res) => linkedinController.publicarLogro(req, res)
 )
 
 module.exports = router
