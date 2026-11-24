@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { TEMAS } from "@/services/tema";
 import useDesplegable from "@/hooks/useDesplegable";
 import useTema from "@/hooks/useTema";
 import { Button } from "@/components/common";
 import { IconoFlecha, IconoUsuario } from "./iconos";
 
-export default function MenuUsuario({ nombre, onCerrarSesion }) {
+// enlaces: [{ href, texto, Icono }] — accesos de la cuenta que se muestran arriba del selector de tema
+export default function MenuUsuario({ nombre, onCerrarSesion, enlaces = [] }) {
     const { abierto, setAbierto, ref } = useDesplegable();
     const [tema, elegirTema] = useTema();
     const [cerrando, setCerrando] = useState(false);
@@ -41,6 +43,26 @@ export default function MenuUsuario({ nombre, onCerrarSesion }) {
 
             {abierto && (
                 <div className="absolute right-0 top-full z-20 mt-2 flex w-72 flex-col gap-3 rounded-[14px] border border-border bg-card p-3 shadow-[0_10px_26px_rgba(22,48,43,0.12)]">
+                    {enlaces.length > 0 && (
+                        <ul className="m-0 flex list-none flex-col gap-1 border-b border-border p-0 pb-3">
+                            {enlaces.map(({ href, texto, Icono }) => (
+                                <li key={href}>
+                                    <Link
+                                        href={href}
+                                        onClick={() => setAbierto(false)}
+                                        className="flex items-center gap-2.5 rounded-[10px] px-2 py-2 font-semibold text-text no-underline hover:bg-sf"
+                                    >
+                                        {Icono && (
+                                            <span className="text-muted">
+                                                <Icono />
+                                            </span>
+                                        )}
+                                        {texto}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                     <div className="flex flex-col gap-1.5">
                         <span id="titulo-tema" className="text-[13px] text-muted">Tema</span>
                         <div role="radiogroup" aria-labelledby="titulo-tema" className="grid grid-cols-3 gap-1 rounded-full bg-sf p-1">
