@@ -24,9 +24,10 @@ const ID_PROY = '507f1f77bcf86cd799439041';
 const ID_COLAB = '507f1f77bcf86cd799439011';
 const colaboracionPublica = {
     id: '507f1f77bcf86cd799439061',
-    colaborador: { nombre: 'Juan', apellido: 'Pérez' },
+    colaborador: { nombre: 'Juan', apellido: 'Pérez', nombreFantasia: null, cuentaGit: 'juanp' },
     proyecto: { id: ID_PROY, titulo: 'Aula Virtual' },
-    inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
+    idPerfil: null,
+    inicio: '2024-01-01T00:00:00.000Z', fin: null, activa: true, esAnonima: false,
 };
 // Como lo devuelve el repositorio: referencias populadas con campos de más
 const colaboracion = {

@@ -49,7 +49,9 @@ const reportePublico = {
     revisadoPor: null,
     fechaRevision: null,
     comentarioRevision: null,
-    fechaCreacion: FECHA
+    fechaCreacion: FECHA,
+    fechaUltimoCambio: null,
+    reglas: []
 };
 
 const admin = cookieDeSesion('admin');

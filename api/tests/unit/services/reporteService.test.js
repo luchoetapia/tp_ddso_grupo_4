@@ -5,6 +5,9 @@ jest.mock('../../../src/repositories/reporteRepository.js', () => ({
     resolver: jest.fn(),
     marcarNotificado: jest.fn(),
     solucionarNotificados: jest.fn(),
+    solucionarPendientes: jest.fn(),
+    actualizarPendiente: jest.fn(),
+    buscarNotificadosPendientesDe: jest.fn(),
     eliminarEntidad: jest.fn(),
     existeEntidad: jest.fn(),
     buscarEntidad: jest.fn(),
@@ -20,8 +23,18 @@ jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
     findBy: jest.fn()
 }));
 
+jest.mock('../../../src/repositories/colaboradorRepository.js', () => ({
+    findById: jest.fn()
+}));
+
+jest.mock('../../../src/repositories/postulacionRepository.js', () => ({
+    findById: jest.fn()
+}));
+
 const reporteRepository = require('../../../src/repositories/reporteRepository.js');
 const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
+const colaboradorRepository = require('../../../src/repositories/colaboradorRepository.js');
+const postulacionRepository = require('../../../src/repositories/postulacionRepository.js');
 const palabraBaneadaService = require('../../../src/services/palabraBaneadaSevice.js');
 const reporteService = require('../../../src/services/reporteService.js');
 const { Reporte, EstadoReporte, TipoEntidadReportada } = require('../../../src/models/Reporte.js');
@@ -31,6 +44,7 @@ const ID_ENTIDAD = '507f1f77bcf86cd799439041';
 const ID_REPORTE = '507f1f77bcf86cd799439091';
 const ID_USUARIO = '507f1f77bcf86cd799439011';
 const ID_ADMIN = '507f1f77bcf86cd799439099';
+const ID_COLAB = '507f1f77bcf86cd799439012';
 
 const reporteCon = (estado) => Object.assign(new Reporte({ tipo: 'Proyecto', id: ID_ENTIDAD }, 'motivo'), { estado });
 
@@ -39,6 +53,8 @@ describe('ReporteService', () => {
         jest.resetAllMocks();
         reporteRepository.existeEntidad.mockResolvedValue(true);
         reporteRepository.save.mockImplementation(async (datos) => datos);
+        // Los avisos a administradores se envían en segundo plano: no se toca la base real
+        reporteService.authRepository = { obtenerAdministradoresActivos: jest.fn().mockResolvedValue([]) };
     });
 
     describe('crear', () => {
@@ -48,7 +64,7 @@ describe('ReporteService', () => {
             const reporte = await reporteService.crear({ tipoEntidad: TipoEntidadReportada.PROYECTO, idEntidad: ID_ENTIDAD, motivo: '  Contenido ofensivo ' });
 
             expect(colectivoRepository.findBy).toHaveBeenCalledWith({ proyectos: ID_ENTIDAD });
-            expect(reporte).toEqual({ entidad: { tipo: 'Proyecto', id: ID_ENTIDAD }, motivo: 'Contenido ofensivo', duenio: ID_USUARIO });
+            expect(reporte).toEqual({ entidad: { tipo: 'Proyecto', id: ID_ENTIDAD }, motivo: 'Contenido ofensivo', reglas: [], duenio: ID_USUARIO });
         });
 
         test('el dueño de un colectivo es su usuario', async () => {
@@ -59,12 +75,23 @@ describe('ReporteService', () => {
             expect(reporte.duenio).toBe(ID_USUARIO);
         });
 
-        test.each([TipoEntidadReportada.COLABORADOR, TipoEntidadReportada.POSTULACION])('%s no lleva dueño', async (tipo) => {
-            const reporte = await reporteService.crear({ tipoEntidad: tipo, idEntidad: ID_ENTIDAD, motivo: 'x' });
+        test('el dueño de un colaborador es su usuario', async () => {
+            colaboradorRepository.findById.mockResolvedValue({ usuario: ID_USUARIO });
 
-            expect(reporte.duenio).toBeNull();
-            expect(colectivoRepository.findById).not.toHaveBeenCalled();
-            expect(colectivoRepository.findBy).not.toHaveBeenCalled();
+            const reporte = await reporteService.crear({ tipoEntidad: TipoEntidadReportada.COLABORADOR, idEntidad: ID_ENTIDAD, motivo: 'x' });
+
+            expect(colaboradorRepository.findById).toHaveBeenCalledWith(ID_ENTIDAD);
+            expect(reporte.duenio).toBe(ID_USUARIO);
+        });
+
+        test('el dueño de una postulación es el usuario de la colaboradora que postuló', async () => {
+            postulacionRepository.findById.mockResolvedValue({ colaborador: ID_COLAB });
+            colaboradorRepository.findById.mockResolvedValue({ usuario: ID_USUARIO });
+
+            const reporte = await reporteService.crear({ tipoEntidad: TipoEntidadReportada.POSTULACION, idEntidad: ID_ENTIDAD, motivo: 'x' });
+
+            expect(colaboradorRepository.findById).toHaveBeenCalledWith(ID_COLAB);
+            expect(reporte.duenio).toBe(ID_USUARIO);
         });
 
         test('proyecto sin colectivo queda sin dueño', async () => {
@@ -191,15 +218,27 @@ describe('ReporteService', () => {
     });
 
     describe('notificar', () => {
+        const conDuenio = (estado) => Object.assign(reporteCon(estado), { duenio: ID_USUARIO });
+
         test('marca notificado y el reporte sigue pendiente', async () => {
-            reporteRepository.findById.mockResolvedValue(reporteCon(EstadoReporte.PENDIENTE));
+            reporteRepository.findById.mockResolvedValue(conDuenio(EstadoReporte.PENDIENTE));
             reporteRepository.marcarNotificado.mockResolvedValue({ estado: EstadoReporte.PENDIENTE, notificado: true });
 
             const resultado = await reporteService.notificar(ID_REPORTE);
 
-            expect(reporteRepository.marcarNotificado).toHaveBeenCalledWith(ID_REPORTE);
+            expect(reporteRepository.marcarNotificado).toHaveBeenCalledWith(ID_REPORTE, undefined);
             expect(reporteRepository.resolver).not.toHaveBeenCalled();
             expect(resultado).toMatchObject({ estado: EstadoReporte.PENDIENTE, notificado: true });
+        });
+
+        test('busca el dueño si es un reporte viejo que no lo tenía', async () => {
+            reporteRepository.findById.mockResolvedValue(reporteCon(EstadoReporte.PENDIENTE));
+            colectivoRepository.findBy.mockResolvedValue([{ usuario: ID_USUARIO }]);
+            reporteRepository.marcarNotificado.mockResolvedValue({ estado: EstadoReporte.PENDIENTE, notificado: true });
+
+            await reporteService.notificar(ID_REPORTE);
+
+            expect(reporteRepository.marcarNotificado).toHaveBeenCalledWith(ID_REPORTE, ID_USUARIO);
         });
 
         test('409 si el reporte ya estaba resuelto', async () => {
@@ -210,7 +249,7 @@ describe('ReporteService', () => {
         });
 
         test('409 si lo resolvieron entre la lectura y la actualización', async () => {
-            reporteRepository.findById.mockResolvedValue(reporteCon(EstadoReporte.PENDIENTE));
+            reporteRepository.findById.mockResolvedValue(conDuenio(EstadoReporte.PENDIENTE));
             reporteRepository.marcarNotificado.mockResolvedValue(null);
 
             await expect(reporteService.notificar(ID_REPORTE)).rejects.toBeInstanceOf(ConflictError);
@@ -235,6 +274,10 @@ describe('ReporteService', () => {
             logros: [{ titulo: 'Logro', descripcion: 'logro' }]
         };
 
+        beforeEach(() => {
+            reporteRepository.solucionarPendientes.mockResolvedValue([]);
+        });
+
         test('revisa todos los textos del proyecto, incluidos perfiles y logros', async () => {
             palabraBaneadaService.detectarEnCampos.mockResolvedValue({});
 
@@ -250,12 +293,12 @@ describe('ReporteService', () => {
             });
         });
 
-        test('si está limpio soluciona los reportes notificados y no crea uno', async () => {
+        test('si está limpio soluciona los reportes pendientes y no crea uno', async () => {
             palabraBaneadaService.detectarEnCampos.mockResolvedValue({});
 
             await expect(reporteService.revisarPalabrasBaneadas('Proyecto', proyecto)).resolves.toBeNull();
 
-            expect(reporteRepository.solucionarNotificados).toHaveBeenCalledWith(ID_ENTIDAD);
+            expect(reporteRepository.solucionarPendientes).toHaveBeenCalledWith(ID_ENTIDAD);
             expect(reporteRepository.save).not.toHaveBeenCalled();
         });
 
@@ -269,16 +312,24 @@ describe('ReporteService', () => {
             expect(reporte).toEqual({
                 entidad: { tipo: 'Proyecto', id: ID_ENTIDAD },
                 motivo: 'Palabras prohibidas detectadas en: descripcion (tonto); perfiles[0].titulo (feo, tonto)',
+                reglas: ['palabras_prohibidas'],
                 duenio: ID_USUARIO
             });
-            expect(reporteRepository.solucionarNotificados).not.toHaveBeenCalled();
+            expect(reporteRepository.solucionarPendientes).not.toHaveBeenCalled();
         });
 
-        test('no duplica si ya hay un reporte pendiente de la entidad', async () => {
+        test('no duplica: si ya hay un reporte pendiente de la entidad, lo actualiza', async () => {
             palabraBaneadaService.detectarEnCampos.mockResolvedValue({ titulo: ['tonto'] });
             reporteRepository.existePendiente.mockResolvedValue(true);
+            const actualizado = { id: ID_REPORTE, entidad: { tipo: 'Proyecto', id: ID_ENTIDAD } };
+            reporteRepository.actualizarPendiente.mockResolvedValue(actualizado);
 
-            await expect(reporteService.revisarPalabrasBaneadas('Proyecto', proyecto)).resolves.toBeNull();
+            const resultado = await reporteService.revisarPalabrasBaneadas('Proyecto', proyecto);
+
+            expect(resultado).toEqual(actualizado);
+            expect(reporteRepository.actualizarPendiente).toHaveBeenCalledWith(
+                ID_ENTIDAD, 'Palabras prohibidas detectadas en: titulo (tonto)', ['palabras_prohibidas']
+            );
             expect(reporteRepository.save).not.toHaveBeenCalled();
         });
 
@@ -293,7 +344,7 @@ describe('ReporteService', () => {
             await reporteService.revisarPalabrasBaneadas(tipo, entidad);
 
             expect(palabraBaneadaService.detectarEnCampos).toHaveBeenCalledWith(campos);
-            expect(reporteRepository.solucionarNotificados).toHaveBeenCalledWith(ID_ENTIDAD);
+            expect(reporteRepository.solucionarPendientes).toHaveBeenCalledWith(ID_ENTIDAD);
         });
     });
 
