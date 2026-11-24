@@ -202,7 +202,7 @@ describe('Endpoints /proyectos', () => {
                 .send({ titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org' });
 
             expect(res.status).toBe(201);
-            expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: proyecto });
+            expect(res.body).toEqual({ message: 'Proyecto creado exitosamente', data: { ...proyecto, colectivo: null } });
             expect(proyectoService.crear).toHaveBeenCalledWith({
                 titulo: 'Aula Virtual', descripcion: 'desc', enlaceSistema: 'https://aula.org', perfiles: [],
             }, ID_USUARIO);
