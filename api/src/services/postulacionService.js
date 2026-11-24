@@ -79,29 +79,28 @@ class PostulacionService {
             const { obtenerEstrategia } = require('../models/Proyecto/EsrtategiaAceptacion/index.js');
             const estrategia = obtenerEstrategia(proyecto.estrategiaAceptacion, proyecto);
 
-            if (!proyecto.postulaciones) {
-                const postulacionesPrevias = await this.postulacionRepository.findAll({ proyecto: proyecto.id });
-                proyecto.postulaciones = postulacionesPrevias || [];
-            }
-            if (!proyecto.postulaciones.some(p => (p.id ?? p._id) === (nuevaPostulacion.id ?? nuevaPostulacion._id))) {
-                proyecto.postulaciones.push(nuevaPostulacion);
-            }
+            const idDe = (post) => (post.id ?? post._id)?.toString();
+            const idNueva = idDe(nuevaPostulacion);
+            const postulacionesPrevias = await this.postulacionRepository.findAll({ proyecto: proyecto.id }) || [];
+            proyecto.postulaciones = [...postulacionesPrevias.filter(post => idDe(post) !== idNueva), nuevaPostulacion];
+
+            // Solo se persisten las postulaciones que la estrategia sacó de Pendiente
+            const estadoAnterior = new Map(proyecto.postulaciones.map(post => [idDe(post), post.estado]));
 
             estrategia.evaluarPostulacion(nuevaPostulacion);
 
-            if (nuevaPostulacion.estado === EstadoPostulacion.ACEPTADA) {
-                nuevaPostulacion = await this.procesarAceptacion(nuevaPostulacion);
-            } else if (nuevaPostulacion.estado === EstadoPostulacion.RECHAZADA) {
-                nuevaPostulacion = await this.postulacionRepository.updateEstado(nuevaPostulacion.id, EstadoPostulacion.RECHAZADA);
-            }
+            // Una sola evaluación puede resolver varias postulaciones (ej. HastaLlenarVacantes al completar el cupo)
+            for (const post of proyecto.postulaciones) {
+                if (estadoAnterior.get(idDe(post)) !== EstadoPostulacion.PENDIENTE) continue;
 
-            // Procesar posibles aceptaciones en lote (ej. HastaLlenarVacantes)
-            for (const post of (proyecto.postulaciones || [])) {
-                const pId = (post.id ?? post._id)?.toString();
-                const nuevoId = (nuevaPostulacion.id ?? nuevaPostulacion._id)?.toString();
-                if (pId !== nuevoId && post.estado === EstadoPostulacion.ACEPTADA) {
-                    await this.procesarAceptacion(post);
+                let actualizada = null;
+                if (post.estado === EstadoPostulacion.ACEPTADA) {
+                    actualizada = await this.procesarAceptacion(post);
+                } else if (post.estado === EstadoPostulacion.RECHAZADA) {
+                    actualizada = await this.postulacionRepository.updateEstado(idDe(post), EstadoPostulacion.RECHAZADA);
                 }
+
+                if (actualizada && idDe(post) === idNueva) nuevaPostulacion = actualizada;
             }
 
             if (perfil.busquedaAbierta === false) {
