@@ -64,6 +64,14 @@ class PostulacionRepository {
             { $set: { estado: EstadoPostulacion.RECHAZADA } }
         );
     }
+
+    async rechazarPendientesDeProyectos(idsProyectos) {
+        const { modifiedCount } = await PostulacionModel.updateMany(
+            { proyecto: { $in: idsProyectos }, estado: EstadoPostulacion.PENDIENTE },
+            { $set: { estado: EstadoPostulacion.RECHAZADA } }
+        );
+        return modifiedCount;
+    }
 }
 
 module.exports = new PostulacionRepository();
