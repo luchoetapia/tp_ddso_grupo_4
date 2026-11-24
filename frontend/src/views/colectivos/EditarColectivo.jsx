@@ -24,7 +24,7 @@ export default function EditarColectivo() {
     const [error, setError] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const router = useRouter();
-
+    // LinkedIn de la cuenta logueada (cada administrador conecta el suyo). undefined: cargando · null: sin LinkedIn
     const [linkedin, setLinkedin] = useState(undefined);
     const [idColectivo, setIdColectivo] = useState(null);
     const [esTitular, setEsTitular] = useState(false);
@@ -36,17 +36,16 @@ export default function EditarColectivo() {
 
     useEffect(() => {
         sesion.obtenerUsuario().then((usuario) => setLinkedin(usuario?.linkedin ?? null));
+    }, []);
 
+    // Solo la cuenta titular puede dar de baja la organización
+    useEffect(() => {
         const controlador = new AbortController();
         apiQuery
             .get("/colectivos/me/administradores", { signal: controlador.signal, alertarError: false })
             .then(({ puedeGestionar }) => setEsTitular(puedeGestionar))
             .catch(() => setEsTitular(false));
         return () => controlador.abort();
-    }, []);
-
-    useEffect(() => {
-        
     }, []);
 
     useEffect(() => {
