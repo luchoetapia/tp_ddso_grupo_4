@@ -44,7 +44,11 @@ const RankingHabilidades = ({ cargando, error, datos, reintentar }) => {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className={`font-display text-[28px] leading-none font-bold ${i === 0 ? 'rounded-[10px] bg-highlight py-1.5 text-center text-[#16302b]' : 'text-accent'}`}
+                                    className={`font-display inline-flex min-h-10 items-center justify-center text-center text-[28px] leading-none font-bold ${
+                                        i === 0
+                                            ? 'rounded-[10px] bg-highlight py-1.5 text-[#16302b]'
+                                            : 'text-accent'
+                                    }`}
                                 >
                                     {i + 1}
                                 </span>
