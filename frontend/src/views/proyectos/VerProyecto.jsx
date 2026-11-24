@@ -9,6 +9,7 @@ import sesion, { roles } from '@/services/sesion';
 import { Button, Card, Modal, ProgressBar, Skeleton, Tag, Textarea } from '@/components/common';
 import { formatearFecha, formatearMoneda } from '@/helpers/formatos';
 import CompartirEnLinkedin from '@/components/linkedin/CompartirEnLinkedin';
+import PildoraSinActualizaciones from '@/components/proyectos/PildoraSinActualizaciones';
 import useRetornoLinkedin from '@/hooks/useRetornoLinkedin';
 
 const varianteEstado = { Pendiente: 'highlight', Aceptada: 'accent', Rechazada: 'neutral' };
@@ -244,6 +245,7 @@ export default function VerProyectoContenido() {
                                 onAbierto={limpiarProyectoAPublicar}
                             />
                         )}
+                        <PildoraSinActualizaciones proyecto={proyecto} />
                         {finalizado ? (
                             <Tag variant="neutral">Proyecto finalizado</Tag>
                         ) : (
