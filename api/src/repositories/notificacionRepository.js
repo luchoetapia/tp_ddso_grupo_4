@@ -1,8 +1,8 @@
 const NotificacionModel = require('../database/schemas/notificacionSchema.js');
 
 class NotificacionRepository {
-    async findByDestinatario(idColaborador) {
-        return await NotificacionModel.find({ destinatario: idColaborador })
+    async findByDestinatario(idUsuario) {
+        return await NotificacionModel.find({ destinatario: idUsuario })
             .sort({ fecha: -1 });
     }
 
