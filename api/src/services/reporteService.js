@@ -5,6 +5,7 @@ const colaboradorRepository = require('../repositories/colaboradorRepository.js'
 const postulacionRepository = require('../repositories/postulacionRepository.js');
 const palabraBaneadaService = require('./palabraBaneadaSevice.js');
 const { EstadoReporte, TipoEntidadReportada } = require('../models/Reporte.js');
+const notificacionAutomaticaService = require('../services/notificacionAutomaticaService.js');
 const { BadRequestError, ConflictError, NotFoundError } = require('../errors/AppError.js');
 
 const { crearReglas, textosDe } = require('../models/moderacion/ReglasModeracion.js');
@@ -142,7 +143,10 @@ class ReporteService {
     }
 
     enviarEmail = (email, texto) => {
-        obtenerNotificador(MedioDeContacto.EMAIL).enviar({ medio: MedioDeContacto.EMAIL, valor: email }, { generarTexto: () => texto });
+        obtenerNotificador(MedioDeContacto.EMAIL).enviar(
+        { medio: MedioDeContacto.EMAIL, valor: email },
+        { mensaje: texto }  // ← propiedad correcta
+    );
     }
 
     buscarDuenio = async (tipoEntidad, idEntidad) => {
@@ -226,6 +230,9 @@ class ReporteService {
         const entidad = NOMBRE_ENTIDAD[reporte.entidad.tipo] ?? reporte.entidad.tipo;
         this.enviarEmail(email, `[Código a Voluntad] El equipo de moderación te pide revisar ${entidad}: ${reporte.motivo}. ` +
             `Editalo para que cumpla las reglas de la plataforma; si no se corrige puede darse de baja.`);
+
+        notificacionAutomaticaService.notificar({ usuario: reporte.duenio }, `El equipo de moderación te pide revisar ${entidad}: ${reporte.motivo}. \n\n Editalo para que cumpla las reglas de la plataforma; si no se corrige puede darse de baja.`)
+
         return true;
     }
 
@@ -246,6 +253,8 @@ class ReporteService {
     validar = async (id, idAdmin, comentario) => {
         const reporte = await this.obtenerPendiente(id);
         await this.reporteRepository.eliminarEntidad(reporte.entidad.tipo, reporte.entidad.id);
+
+        notificacionAutomaticaService.notificar({ usuario: reporte.duenio }, `La entidad ${reporte.entidad.tipo} (${reporte.entidad.id._id}) a sido eliminada: ${reporte.motivo}`)
 
         return await this.cerrar(id, EstadoReporte.VALIDADO, idAdmin, comentario);
     }

@@ -34,7 +34,7 @@ class NotificacionService {
         }
 
         const notificacion = await this.notificacionRepository.save({
-            destinatario: colaborador.id,
+            destinatario: colaborador.usuario,
             proyecto: { id: proyecto.id, titulo: proyecto.titulo },
             perfil: { id: perfil.id, descripcion: perfil.descripcion },
             mensaje
