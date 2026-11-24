@@ -52,28 +52,47 @@ const SelectorHabilidades = ({ seleccionadas, onChange }) => {
                 <p className="m-0 text-[13px] text-muted">No hay habilidades disponibles por el momento.</p>
             )}
 
-            {habilidades && agruparPorTipo(habilidades).map(([tipo, lista]) => (
-                <div key={tipo} className="flex flex-col gap-1.5">
-                    <p className="m-0 text-[12px] font-bold uppercase tracking-wide text-muted">{TITULOS_TIPO[tipo] ?? tipo}</p>
-                    <div className="flex flex-wrap gap-2">
-                        {lista.map((h) => {
-                            const elegida = seleccionadas.includes(h.id);
-                            return (
-                                <button
-                                    key={h.id}
-                                    type="button"
-                                    aria-pressed={elegida}
-                                    title={h.descripcion}
-                                    onClick={() => alternar(h.id)}
-                                    className={`min-h-9 cursor-pointer rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors ${elegida ? 'border-accent bg-accent text-on-accent' : 'border-border bg-card text-text hover:border-muted'}`}
-                                >
-                                    {h.titulo}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            ))}
+            {habilidades && agruparPorTipo(habilidades).map(([tipo, lista]) => {
+                const cantidadSeleccionada = lista.filter((h) => seleccionadas.includes(h.id)).length;
+
+                return (
+                    <details
+                        key={tipo}
+                        className="rounded-[10px] border border-border bg-bg p-2.5"
+                        open={cantidadSeleccionada > 0}
+                    >
+                        <summary className="cursor-pointer rounded-md px-1 py-1 text-[13px] font-bold uppercase tracking-wide text-muted">
+                            <span>{TITULOS_TIPO[tipo] ?? tipo}</span>
+                            <span className="ml-2 normal-case text-accent">
+                                ({cantidadSeleccionada} seleccionadas)
+                            </span>
+                        </summary>
+
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {lista.map((h) => {
+                                const elegida = seleccionadas.includes(h.id);
+
+                                return (
+                                    <button
+                                        key={h.id}
+                                        type="button"
+                                        aria-pressed={elegida}
+                                        title={h.descripcion}
+                                        onClick={() => alternar(h.id)}
+                                        className={`min-h-9 cursor-pointer rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors ${
+                                            elegida
+                                                ? 'border-accent bg-accent text-on-accent'
+                                                : 'border-border bg-card text-text hover:border-muted'
+                                        }`}
+                                    >
+                                        {h.titulo}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </details>
+                );
+            })}
         </fieldset>
     );
 };
