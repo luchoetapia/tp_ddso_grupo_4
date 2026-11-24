@@ -1,9 +1,16 @@
-// Datos de demostración para todos los esquemas: usuarios, colectivos, colaboradores,
-// proyectos (con perfiles, logros y estrategia de aceptación), colaboraciones, postulaciones y notificaciones.
+// Datos de demostración para todos los esquemas: usuarios, colectivos (con administradores adicionales),
+// colaboradores, proyectos (con perfiles, logros y estrategia de aceptación), colaboraciones, postulaciones,
+// notificaciones, reportes de moderación y auditoría.
+// También precarga las habilidades y las palabras prohibidas (seeds/habilidades.js y seeds/palabrasBaneadas.js).
 // Uso: npm run seed:demo
 // Se puede correr varias veces: antes de cargar borra lo que creó la corrida anterior
 // (todo lo asociado a usuarios con email @semilla.local). No toca otros datos.
 // Los usuarios se crean con la password de SEED_PASSWORD (.env); si está vacía no se puede ingresar con ellos.
+//
+// Moderación: algunos datos incumplen las reglas a propósito (marcados con infringe: true) para que haya
+// reportes automáticos que revisar. Los reportes automáticos no se escriben a mano: se calculan con las
+// mismas reglas que usa la API (palabras prohibidas y fin de lucro). La validación previa falla si un dato
+// marcado no incumple ninguna regla, o si uno sin marcar incumple alguna.
 const mongoClient = require('../src/database/mongoose.js');
 const UsuarioModel = require('../src/auth/models/usuarioSchema.js');
 const ColectivoModel = require('../src/database/schemas/colectivoSchema.js');
@@ -12,14 +19,21 @@ const ProyectoModel = require('../src/database/schemas/proyectoSchema.js');
 const ColaboracionModel = require('../src/database/schemas/colaboracionSchema.js');
 const NotificacionModel = require('../src/database/schemas/notificacionSchema.js');
 const PostulacionModel = require('../src/database/schemas/postulacionSchema.js');
-const { crearUsuarioDeSemilla } = require('../src/auth/usuarioSemilla.js');
+const ReporteModel = require('../src/database/schemas/reporteSchema.js');
+const AuditoriaModel = require('../src/database/schemas/auditoriaSchema.js');
+const { crearUsuarioDeSemilla, aUsername } = require('../src/auth/usuarioSemilla.js');
 const { roles } = require('../src/auth/models/usuario.js');
 const { TipoColectivo } = require('../src/models/colectivo.js');
 const { Periodo } = require('../src/models/proyecto.js');
 const { MedioDeContacto } = require('../src/models/Contacto.js');
 const EstadoPostulacion = require('../src/models/Proyecto/Postulaciones/EstadoPostulacion.js');
 const { obtenerEstrategia } = require('../src/models/Proyecto/EsrtategiaAceptacion/index.js');
+const { EstadoReporte, TipoEntidadReportada } = require('../src/models/Reporte.js');
+const { AccionAuditada, TipoEntidadAuditada } = require('../src/models/Auditoria.js');
+const { ReglaPalabrasProhibidas, ReglaFinDeLucro } = require('../src/models/moderacion/ReglasModeracion.js');
+const palabraBaneadaService = require('../src/services/palabraBaneadaSevice.js');
 const { HABILIDADES, cargarHabilidades } = require('./habilidades.js');
+const { PALABRAS_BANEADAS, cargarPalabrasBaneadas } = require('./palabrasBaneadas.js');
 
 const DOMINIO_SEMILLA = /@semilla\.local$/;
 
@@ -40,11 +54,14 @@ const perfil = (titulo, descripcion, requeridas, opcionales, cantHoras, periodo,
 
 // diasAtras define la fecha de creación del proyecto (los destacados del home usan los últimos 30 días).
 // estrategia: estrategia de aceptación de postulaciones (sin estrategia = RevisionManual).
+// revisionManual: motivo con el que el proyecto quedó marcado para revisión manual (como lo marca la tarea de proyectos sin actualizaciones).
+// administradores: cuentas adicionales que administran el colectivo (además de la titular).
 // Los perfiles con el cupo completo (colaboraciones activas = límite) van con abierta: false, como los deja la API al aceptar.
 const COLECTIVOS = [
     {
         nombre: 'Fundación Manos Solidarias', tipo: TipoColectivo.FUNDACION, ubicacion: 'CABA',
         descripcion: 'Coordinamos la entrega de alimentos a comedores comunitarios.',
+        administradores: ['Coordinación Manos Solidarias', 'Voluntariado Manos Solidarias'],
         proyectos: [
             {
                 titulo: 'Web de reparto solidario', diasAtras: 12, porcentaje: 60,
@@ -118,7 +135,7 @@ const COLECTIVOS = [
         ],
     },
     {
-        nombre: 'ONG Red Solidaria', tipo: TipoColectivo.ONG, ubicacion: 'Rosario',
+        nombre: 'ONG Red Solidaria', tipo: TipoColectivo.ONG, ubicacion: 'Santa Fe',
         descripcion: 'Red de voluntariado para emergencias y acompañamiento social.',
         proyectos: [
             {
@@ -166,7 +183,7 @@ const COLECTIVOS = [
                 logros: [],
             },
             {
-                titulo: 'Bolsa de trabajo barrial', diasAtras: 70, porcentaje: 45,
+                titulo: 'Bolsa de trabajo barrial', diasAtras: 70, porcentaje: 45, revisionManual: 'Sin actualizaciones recientes',
                 descripcion: 'Publicación de ofertas de empleo de comercios del barrio.',
                 perfiles: [
                     perfil('Desarrollo full stack', 'Publicación y búsqueda de ofertas', ['PHP', 'MySQL'], ['HTML y CSS'], 6, Periodo.SEMANAL, { limite: 1, abierta: false }),
@@ -229,7 +246,7 @@ const COLECTIVOS = [
         ],
     },
     {
-        nombre: 'Cooperativa Tejiendo Redes', tipo: TipoColectivo.ONG, ubicacion: 'La Plata',
+        nombre: 'Cooperativa Tejiendo Redes', tipo: TipoColectivo.ONG, ubicacion: 'Buenos Aires',
         descripcion: 'Cooperativa textil de mujeres con venta en ferias y online.',
         proyectos: [
             {
@@ -262,7 +279,7 @@ const COLECTIVOS = [
         ],
     },
     {
-        nombre: 'Colectivo Ambiental Río Limpio', tipo: TipoColectivo.ONG, ubicacion: 'Quilmes',
+        nombre: 'Colectivo Ambiental Río Limpio', tipo: TipoColectivo.ONG, ubicacion: 'Buenos Aires',
         descripcion: 'Vecinos y vecinas que trabajan por la limpieza de la ribera y el reciclaje.',
         proyectos: [
             {
@@ -336,6 +353,21 @@ const COLECTIVOS = [
             },
         ],
     },
+    {
+        // Incumple a propósito la regla de fin de lucro (colectivo y proyecto)
+        nombre: 'Desarrollos Andinos S.R.L.', username: 'desarrollos-andinos', tipo: TipoColectivo.ONG, ubicacion: 'Mendoza', infringe: true,
+        descripcion: 'Empresa privada de software que arma sistemas para clientes corporativos.',
+        proyectos: [
+            {
+                titulo: 'Portal de autogestión para clientes', diasAtras: 3, porcentaje: 10, infringe: true,
+                descripcion: 'Portal con fines comerciales para que nuestros clientes paguen y descarguen sus facturas.',
+                perfiles: [
+                    perfil('Desarrollo full stack', 'Portal de clientes y facturación', ['React', 'Node.js'], ['MongoDB'], 10, Periodo.SEMANAL, { limite: 2 }),
+                ],
+                logros: [],
+            },
+        ],
+    },
 ];
 
 const COLABORADORES = [
@@ -358,6 +390,8 @@ const COLABORADORES = [
     { nombre: 'Gonzalo', apellido: 'Benítez', cuentaGit: 'gbenitez', pronombres: 'él', habilidades: ['Kubernetes', 'Docker', 'Google Cloud', 'Linux', 'CI/CD', 'AWS'], presentacion: 'SRE, ayudo a que los sistemas no se caigan.', deseaSerContactado: false, contactos: [] },
     { nombre: 'Paula', apellido: 'Navarro', cuentaGit: 'paunavarro', pronombres: 'ella', habilidades: ['Cypress', 'Jest', 'Testing automatizado', 'JavaScript', 'React', 'TypeScript'], presentacion: 'QA automation, también hago front con React.', deseaSerContactado: true, contactos: [{ medio: MedioDeContacto.SMS, valor: '+5491155550004' }] },
     { nombre: 'Ezequiel', apellido: 'Suárez', cuentaGit: 'ezesuarez', habilidades: ['Ruby on Rails', 'PostgreSQL', 'Redis', 'HTML y CSS', 'JavaScript', 'Docker'], presentacion: 'Rails developer hace 6 años.', deseaSerContactado: false, contactos: [] },
+    // Incumple a propósito la regla de palabras prohibidas (spam en la presentación y un insulto en su postulación)
+    { nombre: 'Kevin', apellido: 'Ibarra', cuentaGit: 'kevin-ibarra', nombreFantasia: 'KevoDev', habilidades: ['WordPress', 'HTML y CSS', 'JavaScript', 'PHP', 'MySQL'], presentacion: 'Hago páginas web en dos días. También te enseño a ganar dinero fácil con apuestas online.', deseaSerContactado: false, contactos: [], infringe: true },
     { nombre: 'Carla', apellido: 'Giménez', cuentaGit: 'carlagimenez', pronombres: 'ella', habilidades: ['Diseño gráfico', 'Figma', 'Prototipado', 'Investigación de usuarios', 'Diseño UX/UI'], presentacion: 'Diseñadora gráfica y UX.', deseaSerContactado: true, contactos: [{ medio: MedioDeContacto.EMAIL, valor: 'carla.gimenez@example.com' }] },
 ];
 
@@ -425,6 +459,7 @@ const POSTULACIONES = [
     { cuentaGit: 'juliromero', proyecto: 'App de la colonia de vacaciones', perfil: 'Coordinación', diasAtras: 0, estado: PENDIENTE, mensaje: 'Puedo coordinar el equipo con Scrum.' },
     { cuentaGit: 'paunavarro', proyecto: 'Aula virtual para tutores', perfil: 'Desarrollo frontend', diasAtras: 2, estado: PENDIENTE, mensaje: 'React con TypeScript y tests con Jest.' },
     { cuentaGit: 'tlopez', proyecto: 'Huerta comunitaria conectada', perfil: 'Tablero de mediciones', diasAtras: 6, estado: PENDIENTE, mensaje: 'Me copa el proyecto, puedo hacer los gráficos.' },
+    { cuentaGit: 'kevin-ibarra', proyecto: 'Gestión de socios del club', perfil: 'Desarrollo frontend', diasAtras: 2, estado: PENDIENTE, mensaje: 'Che boludo, sumame que esto lo hago en una tarde.', infringe: true },
 
     // Aceptadas (cada una tiene su colaboración)
     { cuentaGit: 'camidiaz', proyecto: 'App de alertas de emergencias', perfil: 'Desarrollo mobile', diasAtras: 2, estado: ACEPTADA, mensaje: 'Hago apps con React Native, me sumo.' },
@@ -439,43 +474,115 @@ const POSTULACIONES = [
     { cuentaGit: 'valesosa', proyecto: 'Bolsa de trabajo barrial', perfil: 'Accesibilidad', diasAtras: 50, estado: RECHAZADA, mensaje: 'Hago auditorías de accesibilidad con WCAG.' },
 ];
 
-// Avisos de colectivos que contactan a un colaborador para un perfil
+// Notificaciones a colaboradores (el esquema solo guarda destinatario, mensaje, automatica y fecha).
+// Manuales: un colectivo contacta a un colaborador por un perfil (mensaje = lo que escribió el colectivo).
+// Automáticas: la plataforma avisa que las habilidades cubren un perfil abierto (mismo texto que notificacionAutomaticaService).
+// Los avisos de moderación al dueño de un reporte notificado se generan desde REPORTES.
 const NOTIFICACIONES = [
+    // Manuales
     { destinatario: 'mgomez-dev', proyecto: 'Tienda online de la cooperativa', perfil: 'Desarrollo backend', diasAtras: 3, mensaje: 'Hola Martín, vimos tu perfil y nos encantaría que te sumes al backend de la tienda.' },
     { destinatario: 'valesosa', proyecto: 'App de alertas de emergencias', perfil: 'Diseño de interfaces', diasAtras: 1, mensaje: 'Hola Valentina, buscamos a alguien con experiencia en accesibilidad para el diseño de la app.' },
     { destinatario: 'luciafer', proyecto: 'Seguimiento de apoyo escolar', perfil: 'Desarrollo frontend', diasAtras: 6, mensaje: 'Hola Lucía, ¿te interesaría colaborar con el panel de tutores?' },
     { destinatario: 'dacosta', proyecto: 'Registro de socias de la cooperativa', perfil: 'Desarrollo frontend', diasAtras: 20, mensaje: 'Hola Diego, necesitamos ayuda con las pantallas en Angular.' },
     { destinatario: 'brunomedina', proyecto: 'App de la colonia de vacaciones', perfil: 'App iOS', diasAtras: 1, mensaje: 'Hola Bruno, vimos que sabés Swift, ¿te sumás a la app de la colonia?' },
     { destinatario: 'paunavarro', proyecto: 'Agenda de talleres barriales', perfil: 'Testing', diasAtras: 6, mensaje: 'Hola Paula, buscamos a alguien que arme las pruebas de punta a punta.' },
+
+    // Automáticas
+    { destinatario: 'tlopez', proyecto: 'Tienda online de la cooperativa', perfil: 'Desarrollo frontend', diasAtras: 14, automatica: true },
+    { destinatario: 'rortiz', proyecto: 'Turnos para el comedor comunitario', perfil: 'Desarrollo backend', diasAtras: 5, automatica: true },
+    { destinatario: 'juliromero', proyecto: 'App de la colonia de vacaciones', perfil: 'Coordinación', diasAtras: 1, automatica: true },
+    { destinatario: 'flor-vega', proyecto: 'Huerta comunitaria conectada', perfil: 'Sensores y riego', diasAtras: 33, automatica: true },
+    { destinatario: 'camidiaz', proyecto: 'App de alertas de emergencias', perfil: 'Desarrollo mobile', diasAtras: 2, automatica: true },
 ];
 
-const idsDe = (docs) => docs.map((d) => d._id);
+const textoNotificacion = (n) => n.automatica
+    ? `Encontramos un proyecto para vos: "${n.proyecto}", perfil "${n.perfil}."`
+    : `El proyecto "${n.proyecto}" te contactó por el perfil "${n.perfil}": ${n.mensaje}`;
 
-// Borra lo que haya cargado una corrida anterior (todo lo asociado a usuarios @semilla.local)
+// Reportes cargados a mano por usuarios (los automáticos se calculan con las reglas de moderación).
+// entidad: { colectivo: nombre } | { proyecto: título } | { colaborador: cuentaGit } | { postulacion: { cuentaGit, proyecto, perfil } }.
+// Fechas en días atrás: diasAtras (alta), notificado (se le avisó al dueño), solucionado (el dueño lo editó), revisado (lo resolvió un admin).
+const REPORTES = [
+    {
+        entidad: { proyecto: 'Tienda online de la cooperativa' }, diasAtras: 1, estado: EstadoReporte.PENDIENTE,
+        motivo: 'El perfil de backend ofrece un pago, ¿no es un trabajo encubierto?',
+    },
+    {
+        entidad: { proyecto: 'Bolsa de trabajo barrial' }, diasAtras: 6, notificado: 4, estado: EstadoReporte.PENDIENTE,
+        motivo: 'Algunas ofertas publicadas piden trabajar a prueba sin cobrar',
+    },
+    {
+        entidad: { proyecto: 'Newsletter del barrio' }, diasAtras: 7, notificado: 6, solucionado: 5, estado: EstadoReporte.SOLUCIONADO,
+        motivo: 'La descripción tenía el teléfono personal de una vecina',
+    },
+    {
+        entidad: { colaborador: 'fedecastro' }, diasAtras: 15, revisado: 14, estado: EstadoReporte.RECHAZADO,
+        motivo: 'Me parece una cuenta falsa, la cuenta de Git no tiene actividad',
+        comentario: 'Revisamos la cuenta de Git y tiene proyectos propios: es real.',
+    },
+    {
+        entidad: { postulacion: { cuentaGit: 'mgomez-dev', proyecto: 'App de alertas de emergencias', perfil: 'Desarrollo backend' } }, diasAtras: 1, revisado: 0, estado: EstadoReporte.RECHAZADO,
+        motivo: 'Mensaje copiado y pegado en varias postulaciones',
+        comentario: 'El mensaje es breve pero no incumple ninguna regla.',
+    },
+];
+
+// Mismo nombre con el que reporteService se refiere a la entidad al avisarle al dueño
+const NOMBRE_ENTIDAD = {
+    [TipoEntidadReportada.PROYECTO]: 'tu proyecto',
+    [TipoEntidadReportada.COLECTIVO]: 'los datos de tu organización',
+    [TipoEntidadReportada.COLABORADOR]: 'tu perfil',
+    [TipoEntidadReportada.POSTULACION]: 'tu postulación',
+};
+
+const idsDe = (docs) => docs.map((d) => d._id);
+const idDe = (ref) => (ref?._id ?? ref)?.toString();
+
 // Borra lo que haya cargado una corrida anterior (todo lo asociado a usuarios @semilla.local)
 const limpiarDatosSemilla = async () => {
     const idsUsuarios = idsDe(await UsuarioModel.find({ email: DOMINIO_SEMILLA }, '_id'));
     const colectivos = await ColectivoModel.find({ usuario: { $in: idsUsuarios } }, 'proyectos');
+    const idsColectivos = idsDe(colectivos);
     const idsColaboradores = idsDe(await ColaboradorModel.find({ usuario: { $in: idsUsuarios } }, '_id'));
     const idsProyectos = colectivos.flatMap((c) => c.proyectos);
 
-    await ColaboracionModel.deleteMany({
+    const filtroColaboraciones = { $or: [{ 'colaborador.id': { $in: idsColaboradores } }, { 'proyecto.id': { $in: idsProyectos } }] };
+    const filtroPostulaciones = { $or: [{ colaborador: { $in: idsColaboradores } }, { proyecto: { $in: idsProyectos } }] };
+    const idsColaboraciones = idsDe(await ColaboracionModel.find(filtroColaboraciones, '_id'));
+    const idsPostulaciones = idsDe(await PostulacionModel.find(filtroPostulaciones, '_id'));
+
+    const filtroReportes = {
         $or: [
-            { 'colaborador.id': { $in: idsColaboradores } },
-            { 'proyecto.id': { $in: idsProyectos } },
+            { 'entidad.id': { $in: [...idsColectivos, ...idsProyectos, ...idsColaboradores, ...idsPostulaciones] } },
+            { duenio: { $in: idsUsuarios } },
+            { revisadoPor: { $in: idsUsuarios } },
+        ],
+    };
+    const idsReportes = idsDe(await ReporteModel.find(filtroReportes, '_id'));
+
+    await AuditoriaModel.deleteMany({
+        $or: [
+            { 'autor.id': { $in: idsUsuarios } },
+            { colectivo: { $in: idsColectivos } },
+            { 'entidad.id': { $in: [...idsColectivos, ...idsProyectos, ...idsPostulaciones, ...idsColaboraciones, ...idsReportes] } },
         ],
     });
-    await PostulacionModel.deleteMany({ $or: [{ colaborador: { $in: idsColaboradores } }, { proyecto: { $in: idsProyectos } }] });
-    await NotificacionModel.deleteMany({ $or: [{ destinatario: { $in: idsColaboradores } }, { 'proyecto.id': { $in: idsProyectos } }] });
+    await ReporteModel.deleteMany({ _id: { $in: idsReportes } });
+    await ColaboracionModel.deleteMany({ _id: { $in: idsColaboraciones } });
+    await PostulacionModel.deleteMany({ _id: { $in: idsPostulaciones } });
+    await NotificacionModel.deleteMany({ destinatario: { $in: idsUsuarios } });
     await ProyectoModel.deleteMany({ _id: { $in: idsProyectos } });
-    await ColectivoModel.deleteMany({ _id: { $in: idsDe(colectivos) } });
+    await ColectivoModel.deleteMany({ _id: { $in: idsColectivos } });
     await ColaboradorModel.deleteMany({ _id: { $in: idsColaboradores } });
     await UsuarioModel.deleteMany({ _id: { $in: idsUsuarios } });
 };
 
-// Los timestamps de Mongoose ponen createdAt = ahora; se pisa para simular proyectos de distintas fechas
+// Los timestamps de Mongoose ponen createdAt = ahora; se pisa para simular datos de distintas fechas
 const fijarFechaCreacion = (Model, id, fecha) =>
     Model.collection.updateOne({ _id: id }, { $set: { createdAt: fecha, updatedAt: fecha } });
+
+const fijarFechasCreacion = (Model, docs, fechas) =>
+    Promise.all(docs.map((doc, i) => fijarFechaCreacion(Model, doc._id, fechas[i])));
 
 const idHabilidad = (habilidades, titulo) => {
     const id = habilidades.get(titulo);
@@ -483,11 +590,98 @@ const idHabilidad = (habilidades, titulo) => {
     return id;
 };
 
+// ---------- Fechas derivadas de los datos ----------
+
+const todosLosProyectos = () => COLECTIVOS.flatMap((c) => c.proyectos);
+
+// El colectivo se da de alta unos días antes de su primer proyecto
+const diasAltaColectivo = (colectivo) => Math.max(...colectivo.proyectos.map((p) => p.diasAtras)) + 5;
+
+// El colaborador se da de alta unos días antes de su primera actividad (colaboración, postulación o notificación)
+const diasAltaColaborador = (cuentaGit) => Math.max(
+    1,
+    ...COLABORACIONES.filter((c) => c.cuentaGit === cuentaGit).map((c) => c.inicio),
+    ...POSTULACIONES.filter((p) => p.cuentaGit === cuentaGit).map((p) => p.diasAtras),
+    ...NOTIFICACIONES.filter((n) => n.destinatario === cuentaGit).map((n) => n.diasAtras),
+) + 2;
+
+// Un proyecto finalizado se cierra el día después de que termina su última colaboración
+const diasFinalizacion = (proyecto) => {
+    const fines = COLABORACIONES.filter((c) => c.proyecto === proyecto.titulo && c.fin != null).map((c) => c.fin);
+    return fines.length ? Math.max(Math.min(...fines) - 1, 0) : Math.floor(proyecto.diasAtras / 2);
+};
+
+// Una postulación aceptada se resuelve el día que empieza su colaboración; una rechazada, al día siguiente
+const diasResolucion = (p) => {
+    if (p.estado === ACEPTADA) {
+        return COLABORACIONES.find((c) => c.cuentaGit === p.cuentaGit && c.proyecto === p.proyecto && c.perfil === p.perfil)?.inicio ?? p.diasAtras;
+    }
+    return Math.max(p.diasAtras - 1, 0);
+};
+
+// ---------- Moderación ----------
+
+const clavePostulacion = ({ cuentaGit, proyecto, perfil }) => `${cuentaGit}|${proyecto}|${perfil}`;
+
+// Mismas reglas que corre la API al crear o editar (sin la de código cerrado, que consulta la red).
+// Las palabras salen de seeds/palabrasBaneadas.js, así el resultado no depende de lo que haya en la base.
+const reglasModeracion = [
+    new ReglaPalabrasProhibidas({
+        detectarEnCampos: async (campos) => Object.fromEntries(Object.entries(campos)
+            .filter(([, texto]) => typeof texto === 'string' && texto)
+            .map(([campo, texto]) => [campo, palabraBaneadaService._buscar(texto, PALABRAS_BANEADAS)])
+            .filter(([, encontradas]) => encontradas.length > 0)),
+    }),
+    new ReglaFinDeLucro(),
+];
+
+const evaluarReglas = async (tipo, entidad) => {
+    const reglas = reglasModeracion.filter((regla) => regla.aplicaA(tipo, entidad));
+    const incumplidas = [];
+    for (const regla of reglas) {
+        const motivo = await regla.evaluar(tipo, entidad);
+        if (motivo) incumplidas.push({ regla: regla.nombre, motivo });
+    }
+    return incumplidas;
+};
+
+// Revisa todos los textos de la semilla. Devuelve, por cada dato que incumple alguna regla,
+// lo necesario para cargar su reporte automático: { tipo, ref, infringe, motivo, reglas, diasAtras }.
+// infringe indica si el dato estaba marcado como incumplidor (para la validación).
+const moderarSemilla = async () => {
+    const candidatos = [
+        ...COLECTIVOS.map((c) => ({ tipo: TipoEntidadReportada.COLECTIVO, ref: { colectivo: c.nombre }, datos: c, diasAtras: diasAltaColectivo(c) })),
+        ...todosLosProyectos().map((p) => ({ tipo: TipoEntidadReportada.PROYECTO, ref: { proyecto: p.titulo }, datos: p, diasAtras: p.diasAtras })),
+        ...COLABORADORES.map((c) => ({ tipo: TipoEntidadReportada.COLABORADOR, ref: { colaborador: c.cuentaGit }, datos: c, diasAtras: diasAltaColaborador(c.cuentaGit) })),
+        ...POSTULACIONES.map((p) => ({ tipo: TipoEntidadReportada.POSTULACION, ref: { postulacion: p }, datos: p, diasAtras: p.diasAtras })),
+    ];
+
+    const resultados = [];
+    for (const { tipo, ref, datos, diasAtras } of candidatos) {
+        const incumplidas = await evaluarReglas(tipo, datos);
+        resultados.push({
+            tipo, ref, diasAtras,
+            infringe: datos.infringe ?? false,
+            reglas: incumplidas.map(({ regla }) => regla),
+            motivo: incumplidas.map(({ motivo }) => motivo).join(' | '),
+        });
+    }
+    return resultados;
+};
+
+// ---------- Carga ----------
+
 const cargarColectivosYProyectos = async (habilidades) => {
     const proyectos = new Map();
+    const colectivos = new Map();
+    const colectivoDeProyecto = new Map();
 
-    for (const { proyectos: datosProyectos, ...datosColectivo } of COLECTIVOS) {
-        const usuario = await crearUsuarioDeSemilla(datosColectivo.nombre, roles.COLECTIVO);
+    for (const { proyectos: datosProyectos, administradores = [], infringe, username, ...datosColectivo } of COLECTIVOS) {
+        const usuario = await crearUsuarioDeSemilla(username ?? datosColectivo.nombre, roles.COLECTIVO);
+        const cuentasAdministradoras = [];
+        for (const nombreCuenta of administradores) {
+            cuentasAdministradoras.push(await crearUsuarioDeSemilla(nombreCuenta, roles.COLECTIVO));
+        }
         const idsProyectos = [];
 
         for (const p of datosProyectos) {
@@ -500,6 +694,9 @@ const cargarColectivosYProyectos = async (habilidades) => {
                 enlaceCodigoFuente: p.enlaceCodigoFuente ?? null,
                 logros: p.logros,
                 estrategiaAceptacion: p.estrategia ?? 'RevisionManual',
+                requiereRevisionManual: Boolean(p.revisionManual),
+                revisionManualMotivo: p.revisionManual ?? null,
+                revisionManualFecha: p.revisionManual ? haceDias(1) : null,
                 perfiles: p.perfiles.map(({ requeridas, opcionales, ...resto }) => ({
                     ...resto,
                     habilidadesRequeridas: requeridas.map((t) => idHabilidad(habilidades, t)),
@@ -508,26 +705,36 @@ const cargarColectivosYProyectos = async (habilidades) => {
             });
             await fijarFechaCreacion(ProyectoModel, proyecto._id, haceDias(p.diasAtras));
             proyectos.set(p.titulo, proyecto);
+            colectivoDeProyecto.set(p.titulo, datosColectivo.nombre);
             idsProyectos.push(proyecto._id);
         }
 
-        await ColectivoModel.create({ ...datosColectivo, usuario: usuario.id, proyectos: idsProyectos });
+        const colectivo = await ColectivoModel.create({
+            ...datosColectivo,
+            usuario: usuario.id,
+            administradores: cuentasAdministradoras.map((cuenta) => cuenta.id),
+            proyectos: idsProyectos,
+        });
+        const diasAlta = diasAltaColectivo({ proyectos: datosProyectos });
+        await fijarFechaCreacion(ColectivoModel, colectivo._id, haceDias(diasAlta));
+        colectivos.set(datosColectivo.nombre, { doc: colectivo, titular: usuario, administradores: cuentasAdministradoras, diasAlta });
     }
 
-    return proyectos;
+    return { proyectos, colectivos, colectivoDeProyecto };
 };
 
 const cargarColaboradores = async (habilidades) => {
     const colaboradores = new Map();
 
-    for (const { habilidades: titulos, ...datos } of COLABORADORES) {
+    for (const { habilidades: titulos, infringe, ...datos } of COLABORADORES) {
         const usuario = await crearUsuarioDeSemilla(datos.cuentaGit, roles.COLABORADOR);
         const colaborador = await ColaboradorModel.create({
             ...datos,
             usuario: usuario.id,
             habilidades: titulos.map((t) => idHabilidad(habilidades, t)),
         });
-        colaboradores.set(datos.cuentaGit, colaborador);
+        await fijarFechaCreacion(ColaboradorModel, colaborador._id, haceDias(diasAltaColaborador(datos.cuentaGit)));
+        colaboradores.set(datos.cuentaGit, { doc: colaborador, usuario });
     }
 
     return colaboradores;
@@ -539,9 +746,10 @@ const idPerfil = (proyecto, titulo) => {
     return perfilProyecto._id;
 };
 
-const cargarColaboraciones = (colaboradores, proyectos) =>
-    ColaboracionModel.insertMany(COLABORACIONES.map((c) => {
-        const colab = colaboradores.get(c.cuentaGit);
+// Misma desnormalización que colaboracionService: las anónimas solo guardan el id del colaborador
+const cargarColaboraciones = async ({ colaboradores, proyectos }) => {
+    const colaboraciones = await ColaboracionModel.insertMany(COLABORACIONES.map((c) => {
+        const { doc: colab } = colaboradores.get(c.cuentaGit);
         const proyecto = proyectos.get(c.proyecto);
         const esAnonima = c.esAnonima ?? false;
 
@@ -552,6 +760,8 @@ const cargarColaboraciones = (colaboradores, proyectos) =>
                     id: colab._id,
                     nombre: colab.nombre,
                     apellido: colab.apellido,
+                    nombreFantasia: colab.nombreFantasia,
+                    cuentaGit: colab.cuentaGit,
                     usuario: colab.usuario,
                 },
             proyecto: {
@@ -564,40 +774,183 @@ const cargarColaboraciones = (colaboradores, proyectos) =>
             fin: c.fin != null ? haceDias(c.fin) : null,
             esAnonima,
         };
-    })
-);
+    }));
+    await fijarFechasCreacion(ColaboracionModel, colaboraciones, COLABORACIONES.map((c) => haceDias(c.inicio)));
+    return colaboraciones;
+};
 
-const cargarPostulaciones = async (colaboradores, proyectos) => {
+const cargarPostulaciones = async ({ colaboradores, proyectos }) => {
     const postulaciones = await PostulacionModel.insertMany(POSTULACIONES.map((p) => ({
-        colaborador: colaboradores.get(p.cuentaGit)._id,
+        colaborador: colaboradores.get(p.cuentaGit).doc._id,
         proyecto: proyectos.get(p.proyecto)._id,
         perfil: idPerfil(proyectos.get(p.proyecto), p.perfil),
         mensaje: p.mensaje,
         estado: p.estado,
         fecha: haceDias(p.diasAtras),
     })));
-    await Promise.all(postulaciones.map((p) => fijarFechaCreacion(PostulacionModel, p._id, p.fecha)));
+    await fijarFechasCreacion(PostulacionModel, postulaciones, postulaciones.map((p) => p.fecha));
+    return new Map(postulaciones.map((p, i) => [clavePostulacion(POSTULACIONES[i]), p]));
 };
 
-const cargarNotificaciones = (colaboradores, proyectos) =>
-    NotificacionModel.insertMany(NOTIFICACIONES.map((n) => {
-        const proyecto = proyectos.get(n.proyecto);
-        const perfilProyecto = proyecto.perfiles.find((p) => p.titulo === n.perfil);
-        return {
-            destinatario: colaboradores.get(n.destinatario).usuario,
-            proyecto: { id: proyecto._id, titulo: proyecto.titulo },
-            perfil: { id: perfilProyecto._id, descripcion: perfilProyecto.descripcion },
-            mensaje: n.mensaje,
-            fecha: haceDias(n.diasAtras),
-        };
+const cargarNotificaciones = ({ colaboradores }) =>
+    NotificacionModel.insertMany(NOTIFICACIONES.map((n) => ({
+        destinatario: colaboradores.get(n.destinatario).doc.usuario,
+        mensaje: textoNotificacion(n),
+        automatica: n.automatica ?? false,
+        fecha: haceDias(n.diasAtras),
+    })));
+
+// Resuelve la referencia de un reporte a la entidad cargada: { tipo, id, duenio, idColectivo, idProyecto }
+// (duenio: a quién se avisa, igual que reporteService.buscarDuenio)
+const resolverEntidad = (ref, ctx) => {
+    if (ref.colectivo) {
+        const colectivo = ctx.colectivos.get(ref.colectivo);
+        return { tipo: TipoEntidadReportada.COLECTIVO, id: colectivo.doc._id, duenio: colectivo.titular.id, idColectivo: colectivo.doc._id };
+    }
+    if (ref.proyecto) {
+        const colectivo = ctx.colectivos.get(ctx.colectivoDeProyecto.get(ref.proyecto));
+        const proyecto = ctx.proyectos.get(ref.proyecto);
+        return { tipo: TipoEntidadReportada.PROYECTO, id: proyecto._id, duenio: colectivo.titular.id, idColectivo: colectivo.doc._id, idProyecto: proyecto._id };
+    }
+    if (ref.colaborador) {
+        const { doc } = ctx.colaboradores.get(ref.colaborador);
+        return { tipo: TipoEntidadReportada.COLABORADOR, id: doc._id, duenio: doc.usuario };
+    }
+    const postulacion = ctx.postulaciones.get(clavePostulacion(ref.postulacion));
+    const colectivo = ctx.colectivos.get(ctx.colectivoDeProyecto.get(ref.postulacion.proyecto));
+    return {
+        tipo: TipoEntidadReportada.POSTULACION,
+        id: postulacion._id,
+        duenio: ctx.colaboradores.get(ref.postulacion.cuentaGit).doc.usuario,
+        idColectivo: colectivo.doc._id,
+    };
+};
+
+// Automáticos: uno pendiente por cada dato que incumple reglas, con la fecha del dato (se detectan al crearlo).
+// Manuales: los de REPORTES, con sus avisos al dueño si se notificaron.
+const cargarReportes = async (ctx, moderacion, admin) => {
+    const automaticos = moderacion.filter((m) => m.reglas.length > 0).map((m) => ({
+        ref: m.ref, diasAtras: m.diasAtras, estado: EstadoReporte.PENDIENTE, motivo: m.motivo, reglas: m.reglas,
     }));
+    const datos = [...automaticos, ...REPORTES];
+
+    const fechaSiHay = (dias) => (dias != null ? haceDias(dias) : null);
+    const entidades = datos.map((r) => resolverEntidad(r.entidad ?? r.ref, ctx));
+    const reportes = await ReporteModel.insertMany(datos.map((r, i) => ({
+        entidad: { tipo: entidades[i].tipo, id: entidades[i].id },
+        motivo: r.motivo,
+        reglas: r.reglas ?? [],
+        duenio: entidades[i].duenio,
+        estado: r.estado,
+        notificado: r.notificado != null,
+        fechaNotificacion: fechaSiHay(r.notificado),
+        fechaSolucion: fechaSiHay(r.solucionado),
+        fechaUltimoCambio: fechaSiHay(r.solucionado),
+        revisadoPor: r.revisado != null ? admin.id : null,
+        fechaRevision: fechaSiHay(r.revisado),
+        comentarioRevision: r.comentario ?? null,
+    })));
+    await fijarFechasCreacion(ReporteModel, reportes, datos.map((r) => haceDias(r.diasAtras)));
+
+    // Aviso al dueño del contenido notificado (mismo texto que reporteService.notificar)
+    const notificados = datos.map((r, i) => ({ r, entidad: entidades[i] })).filter(({ r }) => r.notificado != null);
+    await NotificacionModel.insertMany(notificados.map(({ r, entidad }) => ({
+        destinatario: entidad.duenio,
+        mensaje: `El equipo de moderación te pide revisar ${NOMBRE_ENTIDAD[entidad.tipo]}: ${r.motivo}. \n\n Editalo para que cumpla las reglas de la plataforma; si no se corrige puede darse de baja.`,
+        automatica: true,
+        fecha: haceDias(r.notificado),
+    })));
+
+    return {
+        reportes: reportes.map((doc, i) => ({ doc, datos: datos[i], entidad: entidades[i] })),
+        automaticos: automaticos.length,
+        avisos: notificados.length,
+    };
+};
+
+// Historial de auditoría equivalente al que habría dejado la API al cargar estos datos a mano
+// (mismas acciones y mismo formato de detalle que los routers).
+const cargarAuditoria = async (ctx, colaboraciones, reportes, admin) => {
+    const autor = (usuario) => ({ id: usuario.id, username: usuario.username, rol: usuario.rol });
+    const registros = [];
+    const registrar = (accion, tipo, id, usuario, idColectivo, detalle, dias) => registros.push({
+        accion,
+        entidad: { tipo, id },
+        autor: usuario ? autor(usuario) : null,
+        colectivo: idColectivo ?? null,
+        detalle: detalle ?? null,
+        fecha: haceDias(dias),
+    });
+    const colectivoDe = (tituloProyecto) => ctx.colectivos.get(ctx.colectivoDeProyecto.get(tituloProyecto));
+
+    for (const { doc, titular, administradores, diasAlta } of ctx.colectivos.values()) {
+        registrar(AccionAuditada.COLECTIVO_CREADO, TipoEntidadAuditada.COLECTIVO, doc._id, titular, doc._id, `Nombre: ${doc.nombre}`, diasAlta);
+        for (const cuenta of administradores) {
+            registrar(AccionAuditada.ADMINISTRADOR_AGREGADO, TipoEntidadAuditada.COLECTIVO, doc._id, titular, doc._id, `Cuenta: ${cuenta.username}`, diasAlta - 1);
+        }
+    }
+
+    for (const p of todosLosProyectos()) {
+        const proyecto = ctx.proyectos.get(p.titulo);
+        const { doc: colectivo, titular } = colectivoDe(p.titulo);
+        registrar(AccionAuditada.PROYECTO_CREADO, TipoEntidadAuditada.PROYECTO, proyecto._id, titular, colectivo._id, `Título: ${p.titulo}`, p.diasAtras);
+        if (p.finalizado) {
+            registrar(AccionAuditada.PROYECTO_FINALIZADO, TipoEntidadAuditada.PROYECTO, proyecto._id, titular, colectivo._id, null, diasFinalizacion(p));
+        }
+    }
+
+    for (const p of POSTULACIONES) {
+        const postulacion = ctx.postulaciones.get(clavePostulacion(p));
+        const { doc: colectivo, titular } = colectivoDe(p.proyecto);
+        const detalle = `Colaborador: ${p.cuentaGit}. Perfil: ${postulacion.perfil}`;
+        registrar(AccionAuditada.POSTULACION_CREADA, TipoEntidadAuditada.POSTULACION, postulacion._id, ctx.colaboradores.get(p.cuentaGit).usuario, colectivo._id, detalle, p.diasAtras);
+        if (p.estado === ACEPTADA || p.estado === RECHAZADA) {
+            const accion = p.estado === ACEPTADA ? AccionAuditada.POSTULACION_ACEPTADA : AccionAuditada.POSTULACION_RECHAZADA;
+            registrar(accion, TipoEntidadAuditada.POSTULACION, postulacion._id, titular, colectivo._id, detalle, diasResolucion(p));
+        }
+    }
+
+    COLABORACIONES.forEach((c, i) => {
+        const { doc: colectivo, titular } = colectivoDe(c.proyecto);
+        registrar(AccionAuditada.COLABORACION_CREADA, TipoEntidadAuditada.COLABORACION, colaboraciones[i]._id, titular, colectivo._id, null, c.inicio);
+        if (c.fin != null) {
+            registrar(AccionAuditada.COLABORACION_DADA_DE_BAJA, TipoEntidadAuditada.COLABORACION, colaboraciones[i]._id, titular, colectivo._id, 'Dada de baja por: el colectivo', c.fin);
+        }
+    });
+
+    for (const { doc, datos, entidad } of reportes) {
+        const detalle = (comentario) => [`${entidad.tipo} ${entidad.id}`, comentario && `Comentario: ${comentario}`].filter(Boolean).join('. ');
+        if (datos.notificado != null) {
+            registrar(AccionAuditada.REPORTE_NOTIFICADO, TipoEntidadAuditada.REPORTE, doc._id, admin, entidad.idColectivo, detalle(), datos.notificado);
+        }
+        if (datos.revisado != null) {
+            const accion = datos.estado === EstadoReporte.RECHAZADO ? AccionAuditada.REPORTE_RECHAZADO : AccionAuditada.REPORTE_VALIDADO;
+            registrar(accion, TipoEntidadAuditada.REPORTE, doc._id, admin, entidad.idColectivo, detalle(datos.comentario), datos.revisado);
+        }
+    }
+
+    await AuditoriaModel.insertMany(registros);
+    return registros.length;
+};
+
+// ---------- Validación ----------
+
+const describirRef = (ref) => {
+    if (ref.colectivo) return `colectivo "${ref.colectivo}"`;
+    if (ref.proyecto) return `proyecto "${ref.proyecto}"`;
+    if (ref.colaborador) return `colaborador "${ref.colaborador}"`;
+    return `postulación de ${ref.postulacion.cuentaGit} a "${ref.postulacion.proyecto}" / "${ref.postulacion.perfil}"`;
+};
+
+const claveRef = (ref) => describirRef(ref);
 
 // Revisa que los datos respeten las reglas de la API (las mismas que valida postulacionService),
-// así la demo no arranca con estados imposibles. Corre antes de tocar la base.
-const validarDatos = () => {
+// así la demo no arranca con estados imposibles. Corre antes de tocar la base y devuelve el resultado
+// de la moderación, que después se usa para cargar los reportes automáticos.
+const validarDatos = async () => {
     const errores = [];
     const habilidadesExistentes = new Set(HABILIDADES.map((h) => h.titulo));
-    const proyectos = new Map(COLECTIVOS.flatMap((c) => c.proyectos).map((p) => [p.titulo, p]));
+    const proyectos = new Map(todosLosProyectos().map((p) => [p.titulo, p]));
     const colaboradores = new Map(COLABORADORES.map((c) => [c.cuentaGit, c]));
 
     const buscar = ({ cuentaGit, proyecto, perfil }, origen) => {
@@ -610,7 +963,7 @@ const validarDatos = () => {
         if (colaborador && datosPerfil && !datosPerfil.requeridas.every((h) => colaborador.habilidades.includes(h))) {
             errores.push(`${origen}: ${cuentaGit} no cumple las habilidades requeridas de "${proyecto}" / "${perfil}"`);
         }
-        return { proyecto: datosProyecto, perfil: datosPerfil };
+        return { colaborador, proyecto: datosProyecto, perfil: datosPerfil };
     };
 
     for (const titulo of [
@@ -618,6 +971,13 @@ const validarDatos = () => {
         ...[...proyectos.values()].flatMap((p) => p.perfiles.flatMap((pf) => [...pf.requeridas, ...pf.opcionales])),
     ]) {
         if (!habilidadesExistentes.has(titulo)) errores.push(`La habilidad "${titulo}" no está en seeds/habilidades.js`);
+    }
+
+    if (proyectos.size !== todosLosProyectos().length) errores.push('Hay proyectos con el título repetido');
+    if (colaboradores.size !== COLABORADORES.length) errores.push('Hay colaboradores con la cuenta de Git repetida');
+    const cuentas = COLECTIVOS.flatMap((c) => [c.username ?? c.nombre, ...(c.administradores ?? [])]).map(aUsername);
+    if (new Set([...cuentas, ...COLABORADORES.map((c) => aUsername(c.cuentaGit)), 'admin']).size !== cuentas.length + COLABORADORES.length + 1) {
+        errores.push('Hay usuarios con el username repetido (colectivos, administradores y colaboradores)');
     }
 
     for (const p of proyectos.values()) {
@@ -628,6 +988,9 @@ const validarDatos = () => {
         }
         if (p.finalizado && p.perfiles.some((pf) => pf.busquedaAbierta)) {
             errores.push(`"${p.titulo}" está finalizado pero tiene perfiles con búsqueda abierta`);
+        }
+        if (p.finalizado && p.revisionManual) {
+            errores.push(`"${p.titulo}" está finalizado: no puede estar marcado para revisión manual`);
         }
     }
 
@@ -694,14 +1057,58 @@ const validarDatos = () => {
         }
     }
 
+    // Notificaciones: mismas condiciones que notificacionService y notificacionAutomaticaService
     for (const n of NOTIFICACIONES) {
-        if (!colaboradores.has(n.destinatario)) errores.push(`Notificación: no existe el colaborador "${n.destinatario}"`);
-        if (!proyectos.get(n.proyecto)?.perfiles.some((pf) => pf.titulo === n.perfil)) errores.push(`Notificación: no existe "${n.proyecto}" / "${n.perfil}"`);
+        const origen = `Notificación a ${n.destinatario} por "${n.proyecto}" / "${n.perfil}"`;
+        const { colaborador, proyecto, perfil: datosPerfil } = n.automatica
+            ? buscar({ cuentaGit: n.destinatario, proyecto: n.proyecto, perfil: n.perfil }, origen)
+            : { colaborador: colaboradores.get(n.destinatario), proyecto: proyectos.get(n.proyecto), perfil: proyectos.get(n.proyecto)?.perfiles.find((pf) => pf.titulo === n.perfil) };
+        if (!colaborador || !proyecto || !datosPerfil) {
+            errores.push(`${origen}: no existe el colaborador, el proyecto o el perfil`);
+            continue;
+        }
+        if (!colaborador.deseaSerContactado) errores.push(`${origen}: el colaborador no acepta ser contactado`);
+        if (proyecto.finalizado) errores.push(`${origen}: el proyecto está finalizado`);
+        if (n.automatica && !datosPerfil.busquedaAbierta) errores.push(`${origen}: las automáticas solo avisan de perfiles abiertos`);
+        if (!n.automatica && !n.mensaje) errores.push(`${origen}: las manuales necesitan el mensaje del colectivo`);
+    }
+
+    // Moderación: lo marcado con infringe tiene que incumplir alguna regla, y nada más
+    const moderacion = await moderarSemilla();
+    for (const m of moderacion) {
+        if (m.infringe && m.reglas.length === 0) errores.push(`El ${describirRef(m.ref)} está marcado con infringe pero no incumple ninguna regla`);
+        if (!m.infringe && m.reglas.length > 0) errores.push(`El ${describirRef(m.ref)} incumple reglas sin estar marcado con infringe: ${m.motivo}`);
+    }
+
+    // Reportes manuales
+    const existeRef = (ref) => (ref.colectivo && COLECTIVOS.some((c) => c.nombre === ref.colectivo))
+        || (ref.proyecto && proyectos.has(ref.proyecto))
+        || (ref.colaborador && colaboradores.has(ref.colaborador))
+        || (ref.postulacion && POSTULACIONES.some((p) => clavePostulacion(p) === clavePostulacion(ref.postulacion)));
+    const pendientesPorEntidad = new Set(moderacion.filter((m) => m.reglas.length > 0).map((m) => claveRef(m.ref)));
+    for (const r of REPORTES) {
+        const origen = `Reporte sobre ${describirRef(r.entidad)}`;
+        if (!existeRef(r.entidad)) {
+            errores.push(`${origen}: la entidad no existe`);
+            continue;
+        }
+        if (r.estado === EstadoReporte.PENDIENTE) {
+            // reporteRepository.existePendiente: un solo reporte pendiente por entidad
+            if (pendientesPorEntidad.has(claveRef(r.entidad))) errores.push(`${origen}: la entidad ya tiene otro reporte pendiente`);
+            pendientesPorEntidad.add(claveRef(r.entidad));
+            if (r.revisado != null) errores.push(`${origen}: está pendiente pero tiene fecha de revisión`);
+        }
+        if (r.estado === EstadoReporte.SOLUCIONADO && (r.notificado == null || r.solucionado == null)) errores.push(`${origen}: solucionado sin fecha de notificación o de solución`);
+        if ((r.estado === EstadoReporte.RECHAZADO || r.estado === EstadoReporte.VALIDADO) && (r.revisado == null || !r.comentario)) errores.push(`${origen}: resuelto por un admin sin fecha de revisión o comentario`);
+        if (r.estado === EstadoReporte.VALIDADO) errores.push(`${origen}: un reporte validado elimina la entidad, no tiene sentido en la semilla`);
+        const fechas = [r.diasAtras, r.notificado, r.solucionado, r.revisado].filter((d) => d != null);
+        if (fechas.some((d, i) => i > 0 && d > fechas[i - 1])) errores.push(`${origen}: las fechas no están en orden (alta, notificación, solución, revisión)`);
     }
 
     if (errores.length) {
         throw new Error(`Los datos de la semilla no son consistentes:\n  - ${errores.join('\n  - ')}`);
     }
+    return moderacion;
 };
 
 const cargar = async () => {
@@ -709,28 +1116,37 @@ const cargar = async () => {
         console.warn('SEED_PASSWORD vacía: los usuarios se crean con password aleatoria y no se va a poder ingresar con ellos.');
     }
 
-    validarDatos();
+    const moderacion = await validarDatos();
     const habilidades = await cargarHabilidades();
+    const palabras = await cargarPalabrasBaneadas();
     await limpiarDatosSemilla();
 
-    await crearUsuarioDeSemilla('admin', roles.ADMIN);
-    const proyectos = await cargarColectivosYProyectos(habilidades);
-    const colaboradores = await cargarColaboradores(habilidades);
-    await cargarColaboraciones(colaboradores, proyectos);
-    await cargarPostulaciones(colaboradores, proyectos);
-    await cargarNotificaciones(colaboradores, proyectos);
+    const admin = await crearUsuarioDeSemilla('admin', roles.ADMIN);
+    const ctx = await cargarColectivosYProyectos(habilidades);
+    ctx.colaboradores = await cargarColaboradores(habilidades);
+    const colaboraciones = await cargarColaboraciones(ctx);
+    ctx.postulaciones = await cargarPostulaciones(ctx);
+    await cargarNotificaciones(ctx);
+    const { reportes, automaticos, avisos } = await cargarReportes(ctx, moderacion, admin);
+    const registrosAuditoria = await cargarAuditoria(ctx, colaboraciones, reportes, admin);
 
+    const administradores = COLECTIVOS.reduce((total, c) => total + (c.administradores?.length ?? 0), 0);
     console.log('Datos de demostración cargados:');
     console.log(`  habilidades: ${habilidades.size}`);
-    console.log(`  usuarios: ${COLECTIVOS.length + COLABORADORES.length + 1} (incluye admin@semilla.local)`);
+    console.log(`  palabras prohibidas: ${palabras.total} (${palabras.nuevas} nuevas)`);
+    console.log(`  usuarios: ${COLECTIVOS.length + administradores + COLABORADORES.length + 1} (incluye admin@semilla.local y ${administradores} administradores adicionales de colectivos)`);
     console.log(`  colectivos: ${COLECTIVOS.length}`);
-    const finalizados = [...proyectos.values()].filter((p) => p.finalizado).length;
-    console.log(`  proyectos: ${proyectos.size} (${proyectos.size - finalizados} activos, ${finalizados} finalizados)`);
-    console.log(`  colaboradores: ${colaboradores.size}`);
+    const finalizados = [...ctx.proyectos.values()].filter((p) => p.finalizado).length;
+    const enRevision = todosLosProyectos().filter((p) => p.revisionManual).length;
+    console.log(`  proyectos: ${ctx.proyectos.size} (${ctx.proyectos.size - finalizados} activos, ${finalizados} finalizados, ${enRevision} en revisión manual)`);
+    console.log(`  colaboradores: ${ctx.colaboradores.size}`);
     console.log(`  colaboraciones: ${COLABORACIONES.length}`);
     const pendientes = POSTULACIONES.filter((p) => p.estado === PENDIENTE).length;
     console.log(`  postulaciones: ${POSTULACIONES.length} (${pendientes} pendientes)`);
-    console.log(`  notificaciones: ${NOTIFICACIONES.length}`);
+    const automaticas = NOTIFICACIONES.filter((n) => n.automatica).length;
+    console.log(`  notificaciones: ${NOTIFICACIONES.length + avisos} (${automaticas} automáticas por habilidades, ${avisos} avisos de moderación)`);
+    console.log(`  reportes: ${reportes.length} (${automaticos} automáticos, ${REPORTES.length} manuales)`);
+    console.log(`  registros de auditoría: ${registrosAuditoria}`);
 };
 
 const main = async () => {
@@ -749,4 +1165,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { validarDatos };
+module.exports = { cargar, validarDatos, moderarSemilla };
