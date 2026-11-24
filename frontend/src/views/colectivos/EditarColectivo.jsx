@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, Skeleton } from "@/components/common";
+import { useRouter } from "next/navigation";
+import { Button, Card, Modal, Skeleton } from "@/components/common";
 import PasoDatosColectivo from "@/components/registro/PasoDatosColectivo";
 import CardLinkedin from "@/components/linkedin/CardLinkedin";
 import useRetornoLinkedin from "@/hooks/useRetornoLinkedin";
@@ -22,14 +23,30 @@ export default function EditarColectivo() {
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(null);
     const [guardando, setGuardando] = useState(false);
-    // LinkedIn de la cuenta logueada (cada administrador conecta el suyo). undefined: cargando · null: sin LinkedIn
+    const router = useRouter();
+
     const [linkedin, setLinkedin] = useState(undefined);
+    const [idColectivo, setIdColectivo] = useState(null);
+    const [esTitular, setEsTitular] = useState(false);
+    const [confirmarBaja, setConfirmarBaja] = useState(false);
+    const [dandoDeBaja, setDandoDeBaja] = useState(false);
 
     // Avisa el resultado al volver de conectar LinkedIn
     useRetornoLinkedin();
 
     useEffect(() => {
         sesion.obtenerUsuario().then((usuario) => setLinkedin(usuario?.linkedin ?? null));
+
+        const controlador = new AbortController();
+        apiQuery
+            .get("/colectivos/me/administradores", { signal: controlador.signal, alertarError: false })
+            .then(({ puedeGestionar }) => setEsTitular(puedeGestionar))
+            .catch(() => setEsTitular(false));
+        return () => controlador.abort();
+    }, []);
+
+    useEffect(() => {
+        
     }, []);
 
     useEffect(() => {
@@ -41,6 +58,7 @@ export default function EditarColectivo() {
                 mensajeError: "No se pudieron cargar los datos de tu organización.",
             })
             .then((colectivo) => {
+                setIdColectivo(colectivo.id);
                 const editables = datosEditables(colectivo);
                 setOriginal(editables);
                 setDatos(editables);
@@ -75,6 +93,30 @@ export default function EditarColectivo() {
         } finally {
             setGuardando(false);
         }
+    };
+
+    const darDeBajaOrganizacion = async () => {
+        setDandoDeBaja(true);
+        try {
+            await apiQuery.delete(`/colectivos/${idColectivo}`, {
+                mensajeError: "No se pudo dar de baja la organización.",
+            });
+        } catch {
+            // apiQuery ya muestra la alerta
+            setDandoDeBaja(false);
+            setConfirmarBaja(false);
+            return;
+        }
+
+        // Las cuentas quedaron desactivadas: se cierra la sesión
+        try {
+            await sesion.cerrarSesion();
+        } catch {
+            // La cuenta ya no existe; la cookie vence sola
+        }
+        alertas.exito("Tu organización fue dada de baja.");
+        router.replace("/");
+        router.refresh();
     };
 
     if (error) {
@@ -121,6 +163,38 @@ export default function EditarColectivo() {
             {linkedin !== undefined && (
                 <CardLinkedin linkedin={linkedin} para="los logros de los proyectos de tu organización desde tu perfil personal" />
             )}
+
+            {esTitular && (
+                <Card className="items-start">
+                    <h2 className="m-0 font-sans text-base">Dar de baja la organización</h2>
+                    <p className="m-0 text-muted">
+                        Se finalizan todos tus proyectos, se rechazan sus postulaciones pendientes y se cierran las
+                        colaboraciones activas. Tu cuenta y las de los administradores se eliminan. El historial de
+                        proyectos y colaboraciones se conserva.
+                    </p>
+                    <Button variant="danger" onClick={() => setConfirmarBaja(true)}>
+                        Dar de baja la organización
+                    </Button>
+                </Card>
+            )}
+
+            <Modal
+                open={confirmarBaja}
+                onClose={() => !dandoDeBaja && setConfirmarBaja(false)}
+                title="¿Dar de baja la organización?"
+                footer={
+                    <>
+                        <Button onClick={() => setConfirmarBaja(false)} disabled={dandoDeBaja}>Cancelar</Button>
+                        <Button variant="danger" onClick={darDeBajaOrganizacion} cargando={dandoDeBaja}>
+                            Dar de baja
+                        </Button>
+                    </>
+                }
+            >
+                <p className="m-0">
+                    Se eliminan todas las cuentas de la organización. La acción no se puede deshacer.
+                </p>
+            </Modal>
         </section>
     );
 }
