@@ -2,13 +2,11 @@ const colaboradorService = require('../services/colaboradorService.js');
 const colaboracionService = require('../services/colaboracionService.js');
 const habilidadService = require('../services/habilidadService.js');
 const proyectoService = require('../services/proyectoService.js');
-const notificacionService = require('../services/notificacionService.js');
 const { BadRequestError } = require('../errors/AppError.js');
 const { validarCreacionColaborador } = require('../validators/colaboradoresValidator.js');
 const { ColaboradorPublic } = require('../dtos/colaboradorPublic.js');
 const { ColaboracionPublic } = require('../dtos/colaboracionPublic.js');
 const { ProyectoPublic } = require('../dtos/proyectoPublic.js');
-const { NotificacionPublic } = require('../dtos/notificacionPublic.js');
 const { Paginado } = require('../dtos/paginado.js');
 const { AvisoModeracion } = require('../dtos/reportePublic.js');
 const reporteService = require('../services/reporteService.js');
@@ -21,7 +19,6 @@ class ColaboradorController {
         this.colaboracionService = colaboracionService;
         this.habilidadService = habilidadService;
         this.proyectoService = proyectoService;
-        this.notificacionService = notificacionService;
     }
 
     obtenerColaboradores = async (req, res) => {
@@ -114,11 +111,6 @@ class ColaboradorController {
     obtenerMisAvisosModeracion = async (req, res) => {
         const avisos = await reporteService.obtenerAvisosDe(req.usuario.id);
         res.status(200).json(avisos.map(AvisoModeracion.desde));
-    }
-
-    obtenerMisNotificaciones = async (req, res) => {
-    const notificaciones = await this.notificacionService.obtenerPropias(req.usuario.id);
-    res.status(200).json(notificaciones.map(NotificacionPublic.desde));
     }
 
     obtenerMiPerfil = async (req, res) => {

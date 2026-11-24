@@ -11,6 +11,9 @@ jest.mock('../../../src/services/colaboradorService.js', () => ({
     obtenerContactos: jest.fn(),
     buscarPorUsuario: jest.fn(),
 }));
+jest.mock('../../../src/repositories/colectivoRepository.js', () => ({
+    findByUsuario: jest.fn(),
+}));
 jest.mock('../../../src/models/Notificacion.js', () => ({
     ...jest.requireActual('../../../src/models/Notificacion.js'),
     obtenerNotificador: jest.fn(),
@@ -20,6 +23,7 @@ const notificacionRepository = require('../../../src/repositories/notificacionRe
 const proyectoService = require('../../../src/services/proyectoService.js');
 const colaboradorService = require('../../../src/services/colaboradorService.js');
 const { obtenerNotificador } = require('../../../src/models/Notificacion.js');
+const colectivoRepository = require('../../../src/repositories/colectivoRepository.js');
 const notificacionService = require('../../../src/services/notificacionService.js');
 const { ConflictError, NotFoundError } = require('../../../src/errors/AppError.js');
 
@@ -136,24 +140,42 @@ describe('NotificacionService', () => {
 
     describe('obtenerPropias', () => {
         const ID_USUARIO = '507f1f77bcf86cd7994390aa';
+        const ID_TITULAR = '507f1f77bcf86cd7994390bb';
 
-        test('devuelve las notificaciones de la colaboradora de la sesión', async () => {
-            colaboradorService.buscarPorUsuario.mockResolvedValue({ id: ID_COLAB });
-            notificacionRepository.findByDestinatario.mockResolvedValue([notificacionGuardada()]);
+        beforeEach(() => notificacionRepository.findByDestinatario.mockResolvedValue([notificacionGuardada()]));
 
-            const resultado = await notificacionService.obtenerPropias(ID_USUARIO);
+        // Las notificaciones se guardan con el id del usuario, no del colaborador
+        test('a una colaboradora le devuelve las dirigidas a su usuario', async () => {
+            const resultado = await notificacionService.obtenerPropias({ id: ID_USUARIO, rol: 'colaborador' });
 
-            expect(colaboradorService.buscarPorUsuario).toHaveBeenCalledWith(ID_USUARIO);
-            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith(ID_COLAB);
+            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith([ID_USUARIO]);
+            expect(colectivoRepository.findByUsuario).not.toHaveBeenCalled();
             expect(resultado).toHaveLength(1);
         });
 
-        // Antes faltaba importar NotFoundError y esto terminaba en un ReferenceError (500)
-        test('lanza NotFoundError si el usuario no tiene perfil de colaboradora', async () => {
-            colaboradorService.buscarPorUsuario.mockResolvedValue(null);
+        test('a la titular de un colectivo le devuelve solo las suyas', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue({ usuario: ID_USUARIO });
 
-            await expect(notificacionService.obtenerPropias(ID_USUARIO)).rejects.toThrow(NotFoundError);
-            expect(notificacionRepository.findByDestinatario).not.toHaveBeenCalled();
+            await notificacionService.obtenerPropias({ id: ID_USUARIO, rol: 'colectivo' });
+
+            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith([ID_USUARIO]);
+        });
+
+        test('a un administrador adicional también le devuelve las dirigidas a la titular', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue({ usuario: ID_TITULAR });
+
+            await notificacionService.obtenerPropias({ id: ID_USUARIO, rol: 'colectivo' });
+
+            expect(colectivoRepository.findByUsuario).toHaveBeenCalledWith(ID_USUARIO);
+            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith([ID_USUARIO, ID_TITULAR]);
+        });
+
+        test('una cuenta de colectivo sin colectivo creado ve solo las suyas', async () => {
+            colectivoRepository.findByUsuario.mockResolvedValue(null);
+
+            await notificacionService.obtenerPropias({ id: ID_USUARIO, rol: 'colectivo' });
+
+            expect(notificacionRepository.findByDestinatario).toHaveBeenCalledWith([ID_USUARIO]);
         });
     });
 });

@@ -1,8 +1,10 @@
 const NotificacionModel = require('../database/schemas/notificacionSchema.js');
 
 class NotificacionRepository {
-    async findByDestinatario(idUsuario) {
-        return await NotificacionModel.find({ destinatario: idUsuario })
+    // idsUsuarios: id o lista de ids de usuario
+    async findByDestinatario(idsUsuarios) {
+        const ids = [].concat(idsUsuarios);
+        return await NotificacionModel.find({ destinatario: { $in: ids } })
             .sort({ fecha: -1 });
     }
 

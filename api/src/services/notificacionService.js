@@ -3,6 +3,8 @@ const proyectoService = require('./proyectoService.js');
 const { obtenerNotificador } = require('../models/Notificacion.js');
 const { ConflictError, NotFoundError } = require('../errors/AppError.js');
 const colaboradorService = require('./colaboradorService.js');
+const colectivoRepository = require('../repositories/colectivoRepository.js');
+const { roles } = require('../auth/models/usuario.js');
 
 class NotificacionService {
     constructor() {
@@ -10,6 +12,7 @@ class NotificacionService {
         this.proyectoService = proyectoService;
         this.obtenerNotificador = obtenerNotificador;
         this.colaboradorService = colaboradorService;
+        this.colectivoRepository = colectivoRepository;
     }
 
     obtenerColaborador = async (cuentaGit) => {
@@ -55,12 +58,18 @@ class NotificacionService {
         }
     }
 
-    //obtiene las notis proias del usuario - se identifica por la sesion
-    obtenerPropias = async (idUsuario) => {
-    const colaborador = await this.colaboradorService.buscarPorUsuario(idUsuario);
-    if (!colaborador)
-        throw new NotFoundError("El usuario no tiene un perfil de colaboradora");
-    return await this.notificacionRepository.findByDestinatario(colaborador.id);
+    // Mensajes del usuario de la sesión (cualquier rol). Las notificaciones se guardan con el id del usuario.
+    // Los avisos a un colectivo se dirigen a su cuenta titular: los administradores adicionales también los ven.
+    obtenerPropias = async ({ id, rol }) => {
+        const destinatarios = [id];
+
+        if (rol === roles.COLECTIVO) {
+            const colectivo = await this.colectivoRepository.findByUsuario(id);
+            const titular = colectivo?.usuario?.toString();
+            if (titular && titular !== id.toString()) destinatarios.push(titular);
+        }
+
+        return await this.notificacionRepository.findByDestinatario(destinatarios);
     }
 }
 
