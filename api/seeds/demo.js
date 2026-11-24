@@ -584,7 +584,7 @@ const cargarNotificaciones = (colaboradores, proyectos) =>
         const proyecto = proyectos.get(n.proyecto);
         const perfilProyecto = proyecto.perfiles.find((p) => p.titulo === n.perfil);
         return {
-            destinatario: colaboradores.get(n.destinatario)._id,
+            destinatario: colaboradores.get(n.destinatario).usuario,
             proyecto: { id: proyecto._id, titulo: proyecto.titulo },
             perfil: { id: perfilProyecto._id, descripcion: perfilProyecto.descripcion },
             mensaje: n.mensaje,

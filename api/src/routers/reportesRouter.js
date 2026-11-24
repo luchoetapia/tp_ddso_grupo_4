@@ -28,7 +28,7 @@ const revisionDeReporte = (req, body) => ({
 })
 const router = express.Router()
 
-router.use(autenticar(roles.ADMIN))
+//router.use(autenticar(roles.ADMIN))
 
 router.route('/')
     .get(

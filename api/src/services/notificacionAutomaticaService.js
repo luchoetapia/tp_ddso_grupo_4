@@ -28,9 +28,10 @@ class NotificacionAutomaticaService {
             });
 
             for (const colaborador of candidatas) {
-                if (await this.notificar(colaborador, proyecto, perfil)) enviadas++;
+                if (await this.notificar(colaborador, `Encontramos un proyecto para vos: "${proyecto.titulo}", perfil "${perfil.titulo}."`)) enviadas++;
             }
         }
+
         return enviadas;
     }
 
@@ -45,26 +46,28 @@ class NotificacionAutomaticaService {
         for (const proyecto of proyectos) {
             const perfiles = proyecto.perfiles.filter(p => p.estaAbierto() && p.cumpleHabilidadesRequeridas(idsHabilidades));
             for (const perfil of perfiles) {
-                if (await this.notificar(colaborador, proyecto, perfil)) enviadas++;
+                if (await this.notificar(colaborador, `El proyecto "${proyecto.titulo}" te contactó por el perfil "${perfil.titulo}"`)) enviadas++;
             }
         }
         return enviadas;
     }
 
-    notificar = async (colaborador, proyecto, perfil) => {
-        if (colaborador.usuario?.activo === false) return false;
+    notificar = async (destinatario, mensaje) => {
+        if (destinatario.usuario?.activo === false) return false;
         try {
             const notificacion = await this.notificacionRepository.save({
-                destinatario: colaborador.id,
-                proyecto: { id: proyecto.id, titulo: proyecto.titulo },
-                perfil: { id: perfil.id, descripcion: perfil.descripcion ?? perfil.titulo },
-                mensaje: MENSAJE_AUTOMATICO,
+                destinatario: destinatario.usuario,
+                mensaje: mensaje,
                 automatica: true
             });
-            this.replicarPorMediosDeContacto(colaborador.contactos, notificacion);
+
+            if(destinatario.contactos != null) {
+                this.replicarPorMediosDeContacto(destinatario.contactos, notificacion);
+            }
+
             return true;
         } catch (error) {
-            console.error(`Notificación automática fallida (colaboradora ${colaborador.id}, proyecto ${proyecto.id}):`, error);
+            console.error(`Notificación automática fallida (Destinatario ID:  ${destinatario.id}`, error);
             return false;
         }
     }
