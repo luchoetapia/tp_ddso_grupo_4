@@ -3,13 +3,15 @@ const { LogroPublic } = require('./logroPublic.js');
 
 // Vista para listados y búsquedas
 class ProyectoPublic {
-    constructor(id, titulo, descripcion, finalizado, porcentajeFinalizado, perfiles = []) {
+    constructor(id, titulo, descripcion, finalizado, porcentajeFinalizado, perfiles = [], requiereRevisionManual = false) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
         this.finalizado = finalizado
         this.porcentajeFinalizado = porcentajeFinalizado
         this.perfiles = perfiles.map(PerfilResumen.desde)
+        // Marcado por el cron diario por no tener actualizaciones recientes
+        this.requiereRevisionManual = requiereRevisionManual
     }
 
     static desde(proyecto) {
@@ -19,7 +21,8 @@ class ProyectoPublic {
             proyecto.descripcion,
             proyecto.finalizado,
             proyecto.porcentajeFinalizado,
-            proyecto.perfiles
+            proyecto.perfiles,
+            proyecto.requiereRevisionManual ?? false
         )
     }
 }
@@ -27,7 +30,7 @@ class ProyectoPublic {
 // Vista completa para cuando se consulta un único proyecto.
 // colectivo: { id, nombre } del colectivo al que pertenece, o null
 class ProyectoDetalle {
-    constructor(id, titulo, descripcion, finalizado, porcentajeFinalizado, enlaceSistema, enlaceCodigoFuente, perfiles = [], logros = [], estrategiaAceptacion, colectivo = null) {
+    constructor(id, titulo, descripcion, finalizado, porcentajeFinalizado, enlaceSistema, enlaceCodigoFuente, perfiles = [], logros = [], estrategiaAceptacion, colectivo = null, revision = {}) {
         this.id = id
         this.titulo = titulo
         this.descripcion = descripcion
@@ -39,6 +42,10 @@ class ProyectoDetalle {
         this.logros = logros.map(LogroPublic.desde)
         this.estrategiaAceptacion = estrategiaAceptacion
         this.colectivo = colectivo
+        // Marca del cron diario de proyectos sin actualizaciones (motivo y fecha en que se marcó)
+        this.requiereRevisionManual = revision.requiereRevisionManual ?? false
+        this.revisionManualMotivo = revision.revisionManualMotivo ?? null
+        this.revisionManualFecha = revision.revisionManualFecha ?? null
     }
 
     static desde(proyecto, colectivo = null) {
@@ -53,7 +60,12 @@ class ProyectoDetalle {
             proyecto.perfiles,
             proyecto.logros,
             proyecto.estrategiaAceptacion,
-            colectivo ? { id: String(colectivo._id ?? colectivo.id), nombre: colectivo.nombre } : null
+            colectivo ? { id: String(colectivo._id ?? colectivo.id), nombre: colectivo.nombre } : null,
+            {
+                requiereRevisionManual: proyecto.requiereRevisionManual,
+                revisionManualMotivo: proyecto.revisionManualMotivo,
+                revisionManualFecha: proyecto.revisionManualFecha,
+            }
         )
     }
 }

@@ -4131,6 +4131,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LogroAnidado"
+        requiereRevisionManual:
+          type: boolean
+          default: false
+          description: >
+            Lo marca el cron diario (00:00, hora de Argentina) si el proyecto está en curso, tiene colaboraciones
+            activas y no cargó logros en los últimos `DIAS_SIN_ACTUALIZACION` días (30 por defecto).
+            Se desmarca al cargar un logro. Viene también en los listados.
+        revisionManualMotivo:
+          type: string
+          nullable: true
+          example: Sin actualizaciones recientes
+          description: Solo en la ficha del proyecto (GET /proyectos/{id})
+        revisionManualFecha:
+          type: string
+          format: date-time
+          nullable: true
+          description: Cuándo se marcó. Solo en la ficha del proyecto (GET /proyectos/{id})
 
     ProyectoAnidado:
       description: Proyecto tal como aparece dentro de un colectivo (los perfiles vienen como ids)

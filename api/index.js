@@ -1,4 +1,5 @@
 const mongoClient = require("./src/database/mongoose.js");
+const { iniciarRevisionProyectosJob } = require("./src/jobs/revisionProyectosJob.js");
 
 require('dotenv').config();
 
@@ -10,6 +11,7 @@ app.listen(PORT, async () => {
 
     try {
         await mongoClient.connect();
+        iniciarRevisionProyectosJob();
     }
     catch (error) {
         console.error("Error connecting to MongoDB:", error);

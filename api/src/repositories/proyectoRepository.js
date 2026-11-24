@@ -82,7 +82,10 @@ class ProyectoRepository {
     async agregarLogro(idProyecto, datosLogro) {
         return await ProyectoModel.findByIdAndUpdate(
             idProyecto,
-            { $push: { logros: datosLogro } },
+            {
+                $push: { logros: datosLogro },
+                $set: { requiereRevisionManual: false, revisionManualMotivo: null, revisionManualFecha: null }
+            },
             { new: true }
         );
     }
@@ -266,7 +269,8 @@ class ProyectoRepository {
     }
 
     async marcarParaRevisionPorFaltaDeActualizaciones(fechaLimite) {
-        const proyectosIniciados = await ColaboracionModel.distinct('proyecto', {
+        // Proyectos con al menos una colaboración activa
+        const proyectosIniciados = await ColaboracionModel.distinct('proyecto.id', {
             fin: null
         });
 
