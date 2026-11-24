@@ -160,11 +160,12 @@ describe('Endpoints /colaboradores', () => {
                 proyecto: { id: ID_PROY, titulo: 'Aula' },
                 inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
             };
-            const colaboracionEsperada = {
-                id: 'c1',
-                colaborador: { nombre: 'Juan', apellido: 'Pérez' },
-                proyecto: { id: ID_PROY, titulo: 'Aula' },
-                inicio: '2024-01-01T00:00:00.000Z', fin: null, esAnonima: false,
+             const colaboracionEsperada = {
+             id: 'c1',
+             colaborador: { nombre: 'Juan', apellido: 'Pérez', nombreFantasia: null, cuentaGit: 'juanp' },
+             proyecto: { id: ID_PROY, titulo: 'Aula' },
+             idPerfil: null,
+             inicio: '2024-01-01T00:00:00.000Z', fin: null, activa: true, esAnonima: false,
             };
             colaboradorService.obtenerPorCuentaGit.mockResolvedValue(colaborador);
             colaboracionService.crear.mockResolvedValue(colaboracion);
