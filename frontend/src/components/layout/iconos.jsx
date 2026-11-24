@@ -49,3 +49,23 @@ export const IconoMonitor = () => (
         <path d="M8 21h8M12 17v4" />
     </svg>
 );
+
+export const IconoOrganizacion = () => (
+    <svg {...propsIcono} width={18} height={18}>
+        <rect x="4" y="2" width="16" height="20" rx="2" />
+        <path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01" />
+    </svg>
+);
+
+export const IconoEquipo = () => (
+    <svg {...propsIcono} width={18} height={18}>
+        <circle cx="9" cy="7" r="4" />
+        <path d="M2 21a7 7 0 0 1 14 0M16 3.13a4 4 0 0 1 0 7.75M22 21a7 7 0 0 0-4-6.3" />
+    </svg>
+);
+
+export const IconoActividad = () => (
+    <svg {...propsIcono} width={18} height={18}>
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+);

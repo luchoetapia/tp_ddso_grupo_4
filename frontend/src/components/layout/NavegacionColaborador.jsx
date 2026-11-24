@@ -1,14 +1,16 @@
 import Link from "next/link";
 import EnlacesNav from "./EnlacesNav";
 import MenuUsuario from "./MenuUsuario";
-import { IconoCampana } from "./iconos";
+import { IconoCampana, IconoUsuario } from "./iconos";
 
 const enlaces = [
     { href: "/colaboradoras/inicio", texto: "Inicio" },
     { href: "/colaboradoras/proyectos", texto: "Proyectos" },
-    { href: "/colaboradoras/misPostulaciones", texto: "Mis Trabajos"},
-    { href: "/colaboradoras/datos-personales", texto: "Datos personales" },
-    { href: "/colaboradoras/miPerfil", texto: "Mi perfil" }
+    { href: "/colaboradoras/misPostulaciones", texto: "Mis Trabajos" },
+];
+
+const enlacesCuenta = [
+    { href: "/colaboradoras/datos-personales", texto: "Datos personales", Icono: IconoUsuario },
 ];
 
 export default function NavegacionColaborador({ usuario, rutaActual, onCerrarSesion }) {
@@ -30,7 +32,7 @@ export default function NavegacionColaborador({ usuario, rutaActual, onCerrarSes
                 </Link>
             </li>
             <li>
-                <MenuUsuario nombre={usuario.username} onCerrarSesion={onCerrarSesion} />
+                <MenuUsuario nombre={usuario.username} onCerrarSesion={onCerrarSesion} enlaces={enlacesCuenta} />
             </li>
         </ul>
     );

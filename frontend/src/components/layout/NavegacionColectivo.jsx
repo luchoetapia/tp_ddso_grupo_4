@@ -1,26 +1,25 @@
-import Link from "next/link";
 import EnlacesNav from "./EnlacesNav";
 import MenuUsuario from "./MenuUsuario";
-import { IconoCampana } from "./iconos";
+import { IconoActividad, IconoEquipo, IconoOrganizacion } from "./iconos";
 
 const enlaces = [
     { href: "/colectivo/inicio", texto: "Inicio" },
     { href: "/colectivo/misProyectos", texto: "Mis proyectos" },
     { href: "/colaboradoras", texto: "Buscar colaboradores" },
-    { href: "/colectivo/perfil", texto: "Mi organización" },
-    { href: "/colectivo/equipo", texto: "Equipo" },
-    { href: "/colectivo/actividad", texto: "Actividad" },
+];
+
+const enlacesCuenta = [
+    { href: "/colectivo/perfil", texto: "Mi organización", Icono: IconoOrganizacion },
+    { href: "/colectivo/equipo", texto: "Equipo", Icono: IconoEquipo },
+    { href: "/colectivo/actividad", texto: "Actividad", Icono: IconoActividad },
 ];
 
 export default function NavegacionColectivo({ usuario, rutaActual, onCerrarSesion }) {
-    const enMensajes = rutaActual === "/mensajes";
-
     return (
         <ul className="nav-enlaces flex-wrap justify-end">
             <EnlacesNav enlaces={enlaces} rutaActual={rutaActual} />
-
             <li>
-                <MenuUsuario nombre={usuario.username} onCerrarSesion={onCerrarSesion} />
+                <MenuUsuario nombre={usuario.username} onCerrarSesion={onCerrarSesion} enlaces={enlacesCuenta} />
             </li>
         </ul>
     );
